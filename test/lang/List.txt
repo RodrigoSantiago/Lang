@@ -1,0 +1,5 @@
+public interface List<T> {
+    int Length { get; }
+
+    T this[int i] { let; }
+}

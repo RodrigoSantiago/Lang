@@ -1,0 +1,6 @@
+namespace reflection;
+
+public class Property<T, V> {
+    public this(string name, function<V, T> get, function<void, T, V> set) {
+    }
+}

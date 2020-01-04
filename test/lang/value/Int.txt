@@ -1,0 +1,139 @@
+namespace value;
+
+public final class Int {
+    public final int value;
+
+    public this(int value) {
+        this.value = value;
+    }
+
+    public static string toString(int value) {
+        return toString(value, 10);
+    }
+
+    public static string toString(int value, int radix) {
+        return 0;
+    }
+
+    public static int parse(string s) {
+        return 0;
+    }
+
+    public static int parse(string s, int radix) {
+        return 0;
+    }
+
+    public static int parse(string s, int radix, in bool valid) {
+        return 0;
+    }
+
+    public string toString() {
+        return toString(value);
+    }
+
+    public int hash() {
+        return value;
+    }
+
+    public bool equals(Object other) {
+        let obj = (Int) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+struct int : Int {
+
+    private this() {
+    }
+
+    byte operator cast(int value) {
+    }
+    short operator cast(int value) {
+    }
+    long operator autocast(int value) {
+    }
+
+    bool operator ==(int value, double other) {
+    }
+    bool operator !=(int value, double other) {
+    }
+    bool operator >(int value, double other) {
+    }
+    bool operator <(int value, double other) {
+    }
+    bool operator >=(int value, double other) {
+    }
+    bool operator <=(int value, double other) {
+    }
+
+    int operator +(int value, int other) {
+    }
+    int operator -(int value, int other) {
+    }
+    int operator *(int value, int other) {
+    }
+    int operator /(int value, int other) {
+    }
+
+    long operator +(int value, long other) {
+    }
+    long operator -(int value, long other) {
+    }
+    long operator *(int value, long other) {
+    }
+    long operator /(int value, long other) {
+    }
+
+    float operator +(int value, float other) {
+    }
+    float operator -(int value, float other) {
+    }
+    float operator *(int value, float other) {
+    }
+    float operator /(int value, float other) {
+    }
+
+    double operator +(int value, double other) {
+    }
+    double operator -(int value, double other) {
+    }
+    double operator *(int value, double other) {
+    }
+    double operator /(int value, double other) {
+    }
+
+    int operator %(int value, long other) {
+    }
+
+    int operator ++(int value) {
+    }
+    int operator --(int value) {
+    }
+
+    int operator +(int value) {
+    }
+    int operator -(int value) {
+    }
+
+    int operator ~(int value) {
+    }
+
+    int operator |(int value, int other) {
+    }
+    int operator &(int value, int other) {
+    }
+    int operator ^(int value, int other) {
+    }
+
+    long operator |(int value, long other) {
+    }
+    long operator &(int value, long other) {
+    }
+    long operator ^(int value, long other) {
+    }
+
+    int operator >>(int value, long other) {
+    }
+    int operator <<(int value, long other) {
+    }
+}

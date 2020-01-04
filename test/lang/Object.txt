@@ -1,0 +1,19 @@
+public class Object {
+    public this() {
+    }
+
+    public ~this() {
+    }
+
+    public string toString() {
+        return "Object[" + hash() + "]";
+    }
+
+    public int hash() {
+        return 1;
+    }
+
+    public bool equals(Object other) {
+        return this == other;
+    }
+}

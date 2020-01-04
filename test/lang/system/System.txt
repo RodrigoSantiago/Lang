@@ -1,0 +1,8 @@
+namespace system;
+
+public class System {
+    public static string osName {get; set;};
+
+    public static void exit() {
+    }
+}

@@ -1,0 +1,138 @@
+namespace value;
+
+public final class Byte {
+    public final byte value;
+
+    public this(byte value) {
+        this.value = value;
+    }
+
+    public static byte parse(string s) {
+        return 0;
+    }
+
+    public static byte parse(string s, int radix) {
+        return 0;
+    }
+
+    public static byte parse(string s, int radix, in bool valid) {
+        return 0;
+    }
+
+    public string toString() {
+        return Int.toString(value);
+    }
+
+    public int hash() {
+        return value;
+    }
+
+    public bool equals(Object other) {
+        let obj = (Byte) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+struct byte : Byte {
+
+    private this() {
+    }
+
+    bool operator ==(byte value, double other) {
+    }
+    bool operator !=(byte value, double other) {
+    }
+    bool operator >(byte value, double other) {
+    }
+    bool operator <(byte value, double other) {
+    }
+    bool operator >=(byte value, double other) {
+    }
+    bool operator <=(byte value, double other) {
+    }
+
+    int operator +(byte value, int other) {
+    }
+    int operator -(byte value, int other) {
+    }
+    int operator *(byte value, int other) {
+    }
+    int operator /(byte value, int other) {
+    }
+
+    long operator +(byte value, long other) {
+    }
+    long operator -(byte value, long other) {
+    }
+    long operator *(byte value, long other) {
+    }
+    long operator /(byte value, long other) {
+    }
+
+    float operator +(byte value, float other) {
+    }
+    float operator -(byte value, float other) {
+    }
+    float operator *(byte value, float other) {
+    }
+    float operator /(byte value, float other) {
+    }
+
+    double operator +(byte value, double other) {
+    }
+    double operator -(byte value, double other) {
+    }
+    double operator *(byte value, double other) {
+    }
+    double operator /(byte value, double other) {
+    }
+
+    byte operator %(byte value, long other) {
+    }
+
+    byte operator ++(byte value) {
+    }
+    byte operator --(byte value) {
+    }
+
+    byte operator +(byte value) {
+    }
+    int operator -(byte value) {
+    }
+
+    byte operator ~(byte value) {
+    }
+
+    byte operator |(byte value, byte other) {
+    }
+    byte operator &(byte value, byte other) {
+    }
+    byte operator ^(byte value, byte other) {
+    }
+
+    short operator |(byte value, short other) {
+    }
+    short operator &(byte value, short other) {
+    }
+    short operator ^(byte value, short other) {
+    }
+
+    int operator |(byte value, int other) {
+    }
+    int operator &(byte value, int other) {
+    }
+    int operator ^(byte value, int other) {
+    }
+
+    long operator |(byte value, long other) {
+    }
+    long operator &(byte value, long other) {
+    }
+    long operator ^(byte value, long other) {
+    }
+
+    byte operator >>(byte value, long other) {
+    }
+    byte operator <<(byte value, long other) {
+    }
+}

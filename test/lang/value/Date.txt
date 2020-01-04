@@ -1,0 +1,239 @@
+namespace value;
+
+public final class Date {
+    public final date value;
+
+    public this(date value) {
+        this.value = value;
+    }
+
+    public static date milis() {
+        return 0;
+    }
+
+    public static long nano() {
+        return 0;
+    }
+
+}
+
+struct date : Date {
+    private static final int[] monthDay = new int[]{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
+    private static final int[] monthDayLeap = new int[]{0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
+
+    private long value;
+
+    public int Year {
+        get {
+            long days = value / 86400000L;
+            long years = days / 146097 * 400;
+            long daysOut = days % 146097;
+
+            if (daysOut >= 36525) {
+                if (daysOut < 73049) {
+                    daysOut -= 36525;
+                    years += 100;
+                } else if (daysOut < 109573) {
+                    daysOut -= 73049;
+                    years += 200;
+                } else {
+                    daysOut -= 109573;
+                    years += 300;
+                }
+                if (daysOut >= 1460) {
+                    daysOut -= 1460;
+                    years += 4;
+                } else {
+                    return (int)(years + daysOut / 365);
+                }
+            }
+
+            years += daysOut / 1461 * 4;
+            return (int)(years + (daysOut % 1461 - 1) / 365);
+        }
+    }
+
+    public int Month {
+        get {
+            in int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
+            int yearDay = YearDay;
+            for (int i = 1; i < arr.Length; i++) {
+                if (yearDay <= arr[i]) {
+                    return i;
+                }
+            }
+            return 0;
+        }
+    }
+
+    public int MonthDay {
+        get {
+            in int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
+            int yearDay = YearDay;
+            for (int i = 1; i < arr.Length; i++) {
+                if (yearDay <= arr[i]) {
+                    return yearDay - arr[i - 1];
+                }
+            }
+            return 0;
+        }
+    }
+
+    public int WeekDay {
+        get {
+            return (int) ((value / 86400000L + 6) % 7) + 1;
+        }
+    }
+
+    public int YearDay {
+        get {
+            long days = value / 86400000L;
+            long daysOut = days % 146097;
+
+            if (daysOut >= 36525) {
+                if (daysOut < 73049) {
+                    daysOut -= 36525;
+                } else if (daysOut < 109573) {
+                    daysOut -= 73049;
+                } else {
+                    daysOut -= 109573;
+                }
+                if (daysOut >= 1460) {
+                    daysOut -= 1460;
+                } else {
+                    return (int)(daysOut % 365 + 1);
+                }
+            }
+            daysOut = daysOut % 1461;
+            if (daysOut < 366) {
+                return (int)(daysOut + 1);
+            } else {
+                return (int)((daysOut - 366) % 365 + 1);
+            }
+        }
+    }
+
+    public int Hours {
+        get {
+            return (int) ((value / 3600000L) % 24);
+        }
+    }
+
+    public int Minuts {
+        get {
+            return (int) ((value / 60000L) % 60);
+        }
+    }
+
+    public int Seconds {
+        get {
+            return (int) ((value / 1000L) % 60);
+        }
+    }
+
+    public int Milliseconds {
+        get {
+            return (int) (value % 1000L);
+        }
+    }
+
+    public date(long value) {
+        set(value);
+    }
+
+    public date(int hour, int minuts, int seconds, int miliseconds) {
+        set(hour, minuts, seconds, miliseconds);
+    }
+
+    public date(int days, int hour, int minuts, int seconds, int miliseconds) {
+        set(days, hour, minuts, seconds, miliseconds);
+    }
+
+    public date(int year, int month, int monthday, int hour, int minuts, int seconds, int miliseconds) {
+        set(year, month, monthday, hour, minuts, seconds, miliseconds);
+    }
+
+    public void set(long value) {
+        this.value = value;
+    }
+
+    public void set(int hour, int minuts, int seconds, int miliseconds) {
+        this.value = hour * 3600000L + minuts * 60000L + seconds * 1000L + miliseconds;
+    }
+
+    public void set(int days, int hour, int minuts, int seconds, int miliseconds) {
+        this.value = days * 86400000L + hour * 3600000L + minuts * 60000L + seconds * 1000L + miliseconds;
+    }
+
+    public void set(int year, int month, int monthday, int hour, int minuts, int seconds, int miliseconds) {
+        if (year < 0) year = 0;
+        if (month > 12) month = 12;
+        if (month < 1) month = 1;
+        if (monthday < 1) monthday = 1;
+        if (hour < 0) hour = 0;
+        if (minuts < 0) minuts = 0;
+        if (seconds < 0) seconds = 0;
+        if (miliseconds < 0) miliseconds = 0;
+
+        long days;
+        long div400 = year / 400 + 1;
+        long div100 = year / 100 + 1 - div400;
+        long div4 = year / 4 + 1 - div100;
+        if ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0) {
+            days = (year - div4) * 365 + div4 * 366 - 1;
+        } else {
+            days = (year - div4) * 365 + div4 * 366;
+        }
+
+        days += (isLeapYear(year) ? monthDayLeap : monthDay)[month - 1] + monthday - 1;
+        this.value = days * 86400000L + hour * 3600000L + minuts * 60000L + seconds * 1000L + miliseconds;
+    }
+
+    private bool isLeapYear(int year) {
+        return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+    }
+
+    long operator autocast(date value) {
+        return value.value;
+    }
+
+    bool operator >(date value, long other) {
+        return value.value > other;
+    }
+
+    bool operator <(date value, long other) {
+        return value.value < other;
+    }
+
+    bool operator ==(date value, long other) {
+        return value.value == other;
+    }
+
+    bool operator !=(date value, long other) {
+        return value.value != other;
+    }
+
+    date operator +(date value, long other) {
+        return new date(value.value + other);
+    }
+
+    date operator -(date value, long other) {
+        return new date(value.value - other);
+    }
+
+    date operator +(date value) {
+        return value;
+    }
+
+    date operator -(date value) {
+        return new date(-value.value);
+    }
+
+    date operator ++(date value) {
+        return new date(value.value + 1);
+    }
+
+    date operator --(date value) {
+        return new date(value.value - 1);
+    }
+}

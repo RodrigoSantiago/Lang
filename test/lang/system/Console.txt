@@ -1,0 +1,27 @@
+namespace system;
+
+public final Console {
+
+    public static void print(string value) {
+    }
+
+    public static void println(string value) {
+    }
+
+    public static void print(Object value) {
+    }
+
+    public static void println(Object value) {
+    }
+
+    public static string readChar() {
+        return "";
+    }
+
+    public static string readLine() {
+        return "";
+    }
+
+    public static void clear() {
+    }
+}

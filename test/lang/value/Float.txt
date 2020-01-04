@@ -1,0 +1,118 @@
+namespace value;
+
+public final class Float {
+    public final float value;
+
+    public this(float value) {
+        this.value = value;
+    }
+
+    public static string toString(float value) {
+        return "";
+    }
+
+    public static string toHexString(float value) {
+        return "";
+    }
+
+    public static float parse(string s) {
+        return 0;
+    }
+
+    public static float parse(string s, bool hex) {
+        return 0;
+    }
+
+    public static float parse(string s, bool hex, in bool valid) {
+        return 0;
+    }
+
+    public static int floatToIntBits(float value) {
+        return 0;
+    }
+
+    public static float intBitsToFloat(int value) {
+        return 0;
+    }
+
+    public static bool isInfinity(float value) {
+        return false;
+    }
+
+    public static bool isNan(float value) {
+        return false;
+    }
+
+    public string toString() {
+        return toString(value);
+    }
+
+    public int hash() {
+        return floatToIntBits(value);
+    }
+
+    public bool equals(Object other) {
+        let obj = (Float) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+struct float : Float {
+
+    private this() {
+    }
+
+    byte operator cast(float value) {
+    }
+    char operator cast(float value) {
+    }
+    short operator cast(float value) {
+    }
+    int operator cast(float value) {
+    }
+    long operator cast(float value) {
+    }
+    double operator autocast(float value) {
+    }
+
+    bool operator ==(float value, double other) {
+    }
+    bool operator !=(float value, double other) {
+    }
+    bool operator >(float value, double other) {
+    }
+    bool operator <(float value, double other) {
+    }
+    bool operator >=(float value, double other) {
+    }
+    bool operator <=(float value, double other) {
+    }
+
+    float operator +(float value, float other) {
+    }
+    float operator -(float value, float other) {
+    }
+    float operator *(float value, float other) {
+    }
+    float operator /(float value, float other) {
+    }
+
+    double operator +(float value, double other) {
+    }
+    double operator -(float value, double other) {
+    }
+    double operator *(float value, double other) {
+    }
+    double operator /(float value, double other) {
+    }
+
+    float operator ++(float value) {
+    }
+    float operator --(float value) {
+    }
+
+    float operator +(float value) {
+    }
+    float operator -(float value) {
+    }
+}

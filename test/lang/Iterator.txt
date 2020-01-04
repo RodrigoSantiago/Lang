@@ -1,0 +1,8 @@
+public interface Iterator<T> {
+
+    T next();
+
+    bool hasNext();
+
+    bool remove();
+}

@@ -1,0 +1,34 @@
+public class Array<T> : List<T> {
+
+    private int length;
+    public int Length {
+        get {
+            return length;
+        }
+    }
+
+    public T this[int i] {
+        get {
+            native (return) {
+
+            }
+        }
+        set {
+            native (source) {
+
+            }
+        }
+        let {
+            native (return) {
+
+            }
+        }
+    }
+
+    public this() {
+    }
+
+    public static <T> T[] clone(T[] array) {
+
+    }
+}

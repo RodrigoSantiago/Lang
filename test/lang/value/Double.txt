@@ -1,0 +1,101 @@
+namespace value;
+
+public final class Double {
+    public final double value;
+
+    public this(double value) {
+        this.value = value;
+    }
+
+    public static string toString(double value) {
+        return "";
+    }
+
+    public static string toHexString(double value) {
+        return "";
+    }
+
+    public static double parse(string s) {
+        return 0;
+    }
+
+    public static double parse(string s, bool hex) {
+        return 0;
+    }
+
+    public static double parse(string s, bool hex, in bool valid) {
+        return 0;
+    }
+
+    public static long doubleToLongBits(double value) {
+        return 0;
+    }
+
+    public static double longBitsToDouble(long value) {
+        return 0;
+    }
+
+    public string toString() {
+        return toString(value);
+    }
+
+    public int hash() {
+        return (int) doubleToLongBits(value);
+    }
+
+    public bool equals(Object other) {
+        let obj = (Double) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+struct double : Double {
+
+    private this() {
+    }
+
+    byte operator cast(double value) {
+    }
+    char operator cast(double value) {
+    }
+    short operator cast(double value) {
+    }
+    int operator cast(double value) {
+    }
+    long operator cast(double value) {
+    }
+    float operator cast(double value) {
+    }
+
+    bool operator ==(double value, double other) {
+    }
+    bool operator !=(double value, double other) {
+    }
+    bool operator >(double value, double other) {
+    }
+    bool operator <(double value, double other) {
+    }
+    bool operator >=(double value, double other) {
+    }
+    bool operator <=(double value, double other) {
+    }
+
+    double operator +(double value, double other) {
+    }
+    double operator -(double value, double other) {
+    }
+    double operator *(double value, double other) {
+    }
+    double operator /(double value, double other) {
+    }
+
+    double operator ++(double value) {
+    }
+    double operator --(double value) {
+    }
+
+    double operator +(double value) {
+    }
+    double operator -(double value) {
+    }
+}

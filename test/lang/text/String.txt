@@ -1,0 +1,97 @@
+namespace lang;
+
+public class String {
+    public final string value;
+
+    public this(string value) {
+        this.value = value;
+    }
+
+    public string toString() {
+        return value;
+    }
+}
+
+public struct string : String {
+
+    public int Length { get; set; }
+    public this(byte[] chars) {
+    }
+
+    public this(byte[] chars, int start, int length) {
+    }
+
+    public this(byte[] chars, int start, int length, int charSet) {
+    }
+
+    public this(short[] chars) {
+    }
+
+    public this(short[] chars, int start, int length) {
+    }
+
+    public this(int[] chars) {
+    }
+
+    public this(int[] chars, int start, int length) {
+    }
+
+    public bool equalsIgnoreCase(string other) {
+        if (other.Length != Length) return false;
+        var it = iterateUTF32();
+        var itOther = other.iterateUTF32();
+        var l = Locale.GlobalLocale;
+
+        while (it.hasNext()) {
+            if (l.toUpperCase(it.next()) != l.toUpperCase(itOther.next())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static string toUpperCase() {
+        return "";
+    }
+
+    public static string toUpperCase(Locale locale) {
+        return "";
+    }
+
+    public static string toLowerCase() {
+        return "";
+    }
+
+    public static string toLowerCase(Locale locale) {
+        return "";
+    }
+
+    public Iterator<int> iterateUTF32() {
+        return null;
+    }
+
+    public Iterator<short> iterateUTF16() {
+        return null;
+    }
+
+    public Iterator<byte> iterateUTF8() {
+        return null;
+    }
+
+    bool operator ==(string value, string other) {
+    }
+    bool operator !=(string value, string other) {
+    }
+    bool operator >(string value, string other) {
+    }
+    bool operator <(string value, string other) {
+    }
+    bool operator >=(string value, string other) {
+    }
+    bool operator <=(string value, string other) {
+    }
+
+    string operator +(string value, string other) {
+    }
+}

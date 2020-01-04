@@ -1,0 +1,138 @@
+namespace value;
+
+public final class Short {
+    public final short value;
+
+    public this(short value) {
+        this.value = value;
+    }
+
+    public static short parse(string s) {
+        return 0;
+    }
+
+    public static short parse(string s, int radix) {
+        return 0;
+    }
+
+    public static short parse(string s, int radix, in bool valid) {
+        return 0;
+    }
+
+    public string toString() {
+        return Int.toString(value);
+    }
+
+    public int hash() {
+        return value;
+    }
+
+    public bool equals(Object other) {
+        let obj = (Short) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+struct short : Short {
+
+    private short() {
+    }
+
+    byte operator cast(short value) {
+    }
+    char operator cast(short value) {
+    }
+    int operator autocast(short value) {
+    }
+
+    bool operator ==(short value, double other) {
+    }
+    bool operator !=(short value, double other) {
+    }
+    bool operator >(short value, double other) {
+    }
+    bool operator <(short value, double other) {
+    }
+    bool operator >=(short value, double other) {
+    }
+    bool operator <=(short value, double other) {
+    }
+
+    int operator +(short value, int other) {
+    }
+    int operator -(short value, int other) {
+    }
+    int operator *(short value, int other) {
+    }
+    int operator /(short value, int other) {
+    }
+
+    long operator +(short value, long other) {
+    }
+    long operator -(short value, long other) {
+    }
+    long operator *(short value, long other) {
+    }
+    long operator /(short value, long other) {
+    }
+
+    float operator +(short value, float other) {
+    }
+    float operator -(short value, float other) {
+    }
+    float operator *(short value, float other) {
+    }
+    float operator /(short value, float other) {
+    }
+
+    double operator +(short value, double other) {
+    }
+    double operator -(short value, double other) {
+    }
+    double operator *(short value, double other) {
+    }
+    double operator /(short value, double other) {
+    }
+
+    short operator %(short value, long other) {
+    }
+
+    short operator ++(short value) {
+    }
+    short operator --(short value) {
+    }
+
+    short operator +(short value) {
+    }
+    short operator -(short value) {
+    }
+
+    short operator ~(short value) {
+    }
+
+    short operator |(short value, short other) {
+    }
+    short operator &(short value, short other) {
+    }
+    short operator ^(short value, short other) {
+    }
+
+    int operator |(short value, int other) {
+    }
+    int operator &(short value, int other) {
+    }
+    int operator ^(short value, int other) {
+    }
+
+    long operator |(short value, long other) {
+    }
+    long operator &(short value, long other) {
+    }
+    long operator ^(short value, long other) {
+    }
+
+    short operator >>(short value, long other) {
+    }
+    short operator <<(short value, long other) {
+    }
+}

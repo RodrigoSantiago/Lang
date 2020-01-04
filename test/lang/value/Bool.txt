@@ -1,0 +1,49 @@
+namespace value;
+
+public final class Bool {
+    public final bool value;
+
+    public this(bool value) {
+        this.value = value;
+    }
+
+    public static string toString(bool value) {
+        return value ? "true" : "false";
+    }
+
+    public static bool parse(string value) {
+        return value.equalsIgnoreCase("true");
+    }
+
+    public string toString() {
+        return value ? "true" : "false";
+    }
+
+    public int hash() {
+        return value ? 1231 : 1237;
+    }
+
+    public bool equals(Object other) {
+        let obj = (Bool) other;
+        if (obj != null) {
+            return obj.value == value;
+        }
+        return false;
+    }
+}
+
+struct bool : Bool {
+
+    private this() {
+    }
+
+    bool operator ==(bool value, bool other) {
+    }
+    bool operator !=(bool value, bool other) {
+    }
+
+    bool operator !(bool value) {
+    }
+    bool operator ^(bool value, bool other) {
+    }
+}

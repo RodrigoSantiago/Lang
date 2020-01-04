@@ -1,0 +1,127 @@
+namespace value;
+
+public final class Byte {
+    public final long value;
+
+    public this(long value) {
+        this.value = value;
+    }
+
+    public static string toString(long value) {
+        return toString(value, 10);
+    }
+
+    public static string toString(long value, int radix) {
+        return 0;
+    }
+
+    public static long parse(string s) {
+        return 0;
+    }
+
+    public static long parse(string s, int radix) {
+        return 0;
+    }
+
+    public static long parse(string s, int radix, in bool valid) {
+        return 0;
+    }
+
+    public string toString() {
+        return toString(value);
+    }
+
+    public int hash() {
+        return (int) value;
+    }
+
+    public bool equals(Object other) {
+        let obj = (Long) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+struct long : Long {
+
+    private this() {
+    }
+
+    byte operator cast(long value) {
+    }
+    char operator cast(long value) {
+    }
+    short operator cast(long value) {
+    }
+    int operator cast(long value) {
+    }
+    float operator autocast(long value) {
+    }
+
+    bool operator ==(long value, double other) {
+    }
+    bool operator !=(long value, double other) {
+    }
+    bool operator >(long value, double other) {
+    }
+    bool operator <(long value, double other) {
+    }
+    bool operator >=(long value, double other) {
+    }
+    bool operator <=(long value, double other) {
+    }
+
+    long operator +(long value, long other) {
+    }
+    long operator -(long value, long other) {
+    }
+    long operator *(long value, long other) {
+    }
+    long operator /(long value, long other) {
+    }
+
+    float operator +(long value, float other) {
+    }
+    float operator -(long value, float other) {
+    }
+    float operator *(long value, float other) {
+    }
+    float operator /(long value, float other) {
+    }
+
+    double operator +(long value, double other) {
+    }
+    double operator -(long value, double other) {
+    }
+    double operator *(long value, double other) {
+    }
+    double operator /(long value, double other) {
+    }
+
+    long operator %(long value, long other) {
+    }
+
+    long operator ++(long value) {
+    }
+    long operator --(long value) {
+    }
+
+    long operator +(long value) {
+    }
+    long operator -(long value) {
+    }
+
+    long operator ~(long value) {
+    }
+
+    long operator |(long value, long other) {
+    }
+    long operator &(long value, long other) {
+    }
+    long operator ^(long value, long other) {
+    }
+
+    long operator >>(long value, long other) {
+    }
+    long operator <<(long value, long other) {
+    }
+}

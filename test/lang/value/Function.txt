@@ -1,0 +1,26 @@
+namespace value;
+
+public class Function<T> {
+    public final function<T> value;
+
+    public this(function<T> value) {
+        this.value = value;
+    }
+
+    public T run(arg Object params) {
+    }
+}
+
+struct function<T> : Function<T> {
+
+    private this() {
+    }
+
+    public void run() {
+    }
+
+    public bool valid { get; }
+
+    bool operator autocast(function<T> value) {
+    }
+}

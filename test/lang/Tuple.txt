@@ -1,0 +1,20 @@
+public class Tuple<T> : List<T> {
+    private T[] values;
+
+    public int Length {
+        get {
+            return values.Length;
+        }
+    }
+
+    public T this[int i] {
+        let {
+            return values[i];
+        }
+    }
+
+    public Tuple(arg T[] values) {
+        this.values = new Array<T>();
+    }
+
+}

@@ -1,0 +1,9 @@
+namespace reflection;
+
+public class Operator<T> {
+    public this(string name, function<Object, T, Object[]> run) {
+    }
+
+    public Object run(arg Object[] params) {
+    }
+}

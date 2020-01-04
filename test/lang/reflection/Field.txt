@@ -1,0 +1,6 @@
+namespace reflection;
+
+public class Field<T, V> {
+    public this(string name, function<V, T> get, function<void, T, V> set) {
+    }
+}

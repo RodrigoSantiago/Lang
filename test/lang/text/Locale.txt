@@ -1,0 +1,146 @@
+public final class Locale {
+
+    private static locale globalLocale;
+
+    public static locale GlobalLocale {
+        get {
+            return globalLocale;
+        }
+        set {
+            globalLocale = value;
+        }
+    }
+
+    public final locale value;
+
+    public Locale (locale value) {
+        this.value = value;
+    }
+
+    public string toString() {
+        return value.name;
+    }
+
+    public bool equals(Object obj) {
+        let obj = (Locale) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+public struct locale : Locale {
+
+    public final string name;
+    public final string language;
+    public final string country;
+    public final string region;
+    public final string codepage;
+
+    private final function<int, int> fUpperCase;
+    private final function<int, int> fLowerCase;
+    private final function<bool, int> fIsUpperCase;
+    private final function<bool, int> fIsLowerCase;
+    private final function<bool, int> fIsDigit;
+    private final function<bool, int> fIsLetter;
+    private final function<bool, int> fIsNumber;
+    private final function<bool, int> fIsSpace;
+    private final function<bool, int> fIsWhiteSpace;
+
+    private final function<string, date> fformatDate;
+    private final function<string, long, long> fformatMoney;
+
+    private this() {
+    }
+
+    public this(string language, string country, string region, string codepage,
+            function<int, int> fUpperCase,
+            function<int, int> fLowerCase,
+            function<bool, int> fIsUpperCase,
+            function<bool, int> fIsLowerCase,
+            function<bool, int> fIsDigit,
+            function<bool, int> fIsLetter,
+            function<bool, int> fIsNumber,
+            function<bool, int> fIsSpace,
+            function<bool, int> fIsWhiteSpace,
+            function<string, date> fformatDate,
+            function<string, long, long> fformatMoney) {
+            
+        this.language = language;
+        this.country = country;
+        this.region = region;
+        this.codepage = codepage;
+        this.fUpperCase = fUpperCase;
+        this.fLowerCase = fLowerCase;
+        this.fIsUpperCase = fIsUpperCase;
+        this.fIsLowerCase = fIsLowerCase;
+        this.fIsDigit = fIsDigit;
+        this.fIsLetter = fIsLetter;
+        this.fIsNumber = fIsNumber;
+        this.fIsSpace = fIsSpace;
+        this.fIsWhiteSpace = fIsWhiteSpace;
+        this.fformatDate = fformatDate;
+        this.fformatMoney = fformatMoney;
+
+        this.name = language;
+        if (country != "") {
+            name += "_" + country;
+        }
+        if (region != "") {
+            name += "_" + region;
+        }
+        if (codepage != "") {
+            name += "." + codepage;
+        }
+    }
+
+    bool operator ==(locale value, locale other) {
+        return value.name == other.name;
+    }
+
+    bool operator !=(locale value, locale other) {
+        return value.name != other.name;
+    }
+
+    public string formatDate(date value) {
+        return fformatDate ? fformatDate.run(value) : Date.ToString(value);
+    }
+
+    public string formatMoney(date value, long integer, long decimal) {
+        return fformatMoney ? fformatMoney.run(integer, decimal) : Long.ToString(integer) + "." + Long.ToString(decimal);
+    }
+
+    public int toUpperCase(int cp) {
+        return fUpperCase ? fUpperCase.run(cp) : ((cp > 96 && cp < 123) ? cp - 32 : cp);
+    }
+
+    public int toLowerCase(int cp) {
+        return fLowerCase ? fLowerCase.run(cp) : ((cp > 64 && cp < 91) ? cp + 32: cp);
+    }
+
+    public bool isUpperCase(int cp) {
+        return fIsUpperCase ? fIsUpperCase.run(cp) : (cp > 64 && cp < 91);
+    }
+
+    public bool isLowerCase(int cp) {
+        return fIsLowerCase ? fIsLowerCase.run(cp) : (cp > 96 && cp < 123);
+    }
+
+    public bool isDigit(int cp) {
+        return fIsDigit ? fIsDigit.run(cp) : ((cp > 64 && cp < 91) || (cp > 96 && cp < 123) || (cp > 47 && cp < 58));
+    }
+
+    public bool isLetter(int cp) {
+        return fIsLetter ? fIsLetter.run(cp) : ((cp > 64 && cp < 91) || (cp > 96 && cp < 123));
+    }
+
+    public bool isNumber(int cp) {
+        return fIsNumber ? fIsNumber.run(cp) : (cp > 47 && cp < 58);
+    }
+
+    public bool isSpace(int cp) {
+        return fIsSpace ? fIsSpace.run(cp) : cp == 32;
+    }
+
+    public bool isWhitespace(int cp) {
+        return fIsWhiteSpace ? fIsWhiteSpace.run(cp) : (cp > 8 && cp < 14) || cp == 32;
+    }
+}

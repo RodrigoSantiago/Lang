@@ -1,8 +1,13 @@
 namespace system;
 
 public class System {
-    public static string osName {get; set;};
+    public static string osName;
+
+    public static bool isMobile () {
+        return false;
+    }
 
     public static void exit() {
+
     }
 }

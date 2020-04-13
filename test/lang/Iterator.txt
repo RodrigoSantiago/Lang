@@ -1,6 +1,6 @@
 public interface Iterator<T> {
 
-    T next();
+    let T next();
 
     bool hasNext();
 

@@ -1,6 +1,6 @@
 public class Array<T> : List<T> {
 
-    private int length;
+    private final int length;
     public int Length {
         get {
             return length;
@@ -10,25 +10,58 @@ public class Array<T> : List<T> {
     public T this[int i] {
         get {
             native (return) {
-
+                return data[v_i];
             }
         }
         set {
             native (source) {
-
+                data[v_i] = v_value;
             }
         }
-        let {
-            native (return) {
+    }
 
+    native (header) {
+        g_T* data;
+        create(std::initializer_list<g_T> list);
+    }
+
+    native (source) {
+        template <typename g_T>
+        c::lang::Array<g_T>::create(std::initializer_list<g_T> list) {
+            this->data = system::memory::array(sizeof(g_T), list.size());
+            if (this->data == nullptr) {
+                this->f_length = 0;
+            } else {
+                this->f_length = list.size();
+                long i = 0;
+                for (const g_T value : list) {
+                    this->data[i++] = value;
+                }
             }
         }
     }
 
     public this() {
+        this.Length = 0;
+
+        native (source) {
+            this->data = nullptr;
+        }
     }
 
-    public static <T> T[] clone(T[] array) {
-
+    public this(int length) {
+        native (source) {
+            this->data = system::memory::array(sizeof(g_T), v_length);
+            if (this->data == nullptr) {
+                this->f_length = 0;
+            } else {
+                this->f_length = v_length;
+                for (long i = 0; i < v_length; i++) {
+                    this->data[i] = generic<g_T>::def();
+                }
+            }
+        }
     }
+
+    // generic bypasss deve usar metodos staticos dentro de struct parcialmente especializadas
 }

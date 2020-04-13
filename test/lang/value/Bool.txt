@@ -25,10 +25,7 @@ public final class Bool {
 
     public bool equals(Object other) {
         let obj = (Bool) other;
-        if (obj != null) {
-            return obj.value == value;
-        }
-        return false;
+        return obj != null && obj.value == value;
     }
 }
 

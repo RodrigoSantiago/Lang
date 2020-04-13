@@ -3,25 +3,42 @@ namespace system;
 public final Console {
 
     public static void print(string value) {
+        native (source) {
+            system::console::print(f_value.data);
+        }
     }
 
     public static void println(string value) {
+        native (source) {
+            system::console::println(f_value.data);
+        }
     }
 
-    public static void print(Object value) {
+    public static void print(let Object value) {
+        print(value == null ? "null" : value.toString());
     }
 
-    public static void println(Object value) {
+    public static void println(let Object value) {
+        println(value == null ? "null" : value.toString());
     }
 
     public static string readChar() {
-        return "";
+        native (return) {
+            string str = system::console::readchar();
+            return s::lang::string(str, str.length());
+        }
     }
 
     public static string readLine() {
-        return "";
+        native (return) {
+            string str = system::console::readline();
+            return s::lang::string(str, str.length());
+        }
     }
 
     public static void clear() {
+        native (source) {
+            system::console::clear();
+        }
     }
 }

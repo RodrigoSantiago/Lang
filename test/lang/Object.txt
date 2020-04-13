@@ -1,4 +1,5 @@
 public class Object {
+
     public this() {
     }
 
@@ -10,10 +11,10 @@ public class Object {
     }
 
     public int hash() {
-        return 1;
+        return 0;
     }
 
-    public bool equals(Object other) {
+    public bool equals(let Object other) {
         return this == other;
     }
 }

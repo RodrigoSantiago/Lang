@@ -15,6 +15,23 @@ public final class Date {
         return 0;
     }
 
+    public static string toString(date value) {
+        return value.Year + "/" + value.Month + "/" + value.MonthDay + " - " +
+               value.Hours + ":" + value.Min + ":" + value.Sec + "::" + value.Millis;
+    }
+
+    public string toString() {
+        return toString(value);
+    }
+
+    public int hash() {
+        return (int) value;
+    }
+
+    public bool equals(Object other) {
+        let obj = (Date) other;
+        return obj != null && obj.value == value;
+    }
 }
 
 struct date : Date {
@@ -55,7 +72,7 @@ struct date : Date {
 
     public int Month {
         get {
-            in int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
+            let int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
             int yearDay = YearDay;
             for (int i = 1; i < arr.Length; i++) {
                 if (yearDay <= arr[i]) {
@@ -68,7 +85,7 @@ struct date : Date {
 
     public int MonthDay {
         get {
-            in int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
+            let int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
             int yearDay = YearDay;
             for (int i = 1; i < arr.Length; i++) {
                 if (yearDay <= arr[i]) {
@@ -119,19 +136,19 @@ struct date : Date {
         }
     }
 
-    public int Minuts {
+    public int Min {
         get {
             return (int) ((value / 60000L) % 60);
         }
     }
 
-    public int Seconds {
+    public int Sec {
         get {
             return (int) ((value / 1000L) % 60);
         }
     }
 
-    public int Milliseconds {
+    public int Millis {
         get {
             return (int) (value % 1000L);
         }

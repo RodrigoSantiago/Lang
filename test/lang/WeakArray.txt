@@ -1,0 +1,30 @@
+public class WeakArray<T> : List<T> {
+
+    private int length;
+    public int Length {
+        get {
+            return length;
+        }
+    }
+
+    public let T this[int i] {
+        get {
+            native (return) {
+
+            }
+        }
+        set {
+            native (source) {
+
+            }
+        }
+    }
+
+    public this() {
+
+    }
+
+    public static <T> T@[] clone(let T@[] array) {
+
+    }
+}

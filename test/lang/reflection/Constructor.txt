@@ -1,9 +1,0 @@
-namespace reflection;
-
-public class Constructor<T> {
-    public this(function<T, Object[]> run) {
-    }
-
-    public T create(arg Object[] params) {
-    }
-}

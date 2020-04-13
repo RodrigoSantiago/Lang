@@ -1,6 +1,6 @@
 namespace value;
 
-public class Function<T> {
+public class Function {
     public final function<T> value;
 
     public this(function<T> value) {
@@ -13,13 +13,13 @@ public class Function<T> {
 
 struct function<T> : Function<T> {
 
+    public bool valid { get; }
+
     private this() {
     }
 
     public void run() {
     }
-
-    public bool valid { get; }
 
     bool operator autocast(function<T> value) {
     }

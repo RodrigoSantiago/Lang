@@ -13,8 +13,11 @@ public class Tuple<T> : List<T> {
         }
     }
 
-    public Tuple(arg T[] values) {
+    public this(arg T[] values) {
         this.values = new Array<T>();
     }
 
+    public this(arg T@[] values) {
+        this.values = new Array<T>();
+    }
 }

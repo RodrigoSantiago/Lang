@@ -1,4 +1,0 @@
-namespace reflection;
-
-public interface Reflection {
-}

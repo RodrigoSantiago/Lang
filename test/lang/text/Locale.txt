@@ -13,7 +13,7 @@ public final class Locale {
 
     public final locale value;
 
-    public Locale (locale value) {
+    public this(locale value) {
         this.value = value;
     }
 
@@ -21,7 +21,11 @@ public final class Locale {
         return value.name;
     }
 
-    public bool equals(Object obj) {
+    public int hash() {
+        return value.name.hash();
+    }
+
+    public bool equals(let Object other) {
         let obj = (Locale) other;
         return obj != null && obj.value == value;
     }
@@ -104,8 +108,8 @@ public struct locale : Locale {
         return fformatDate ? fformatDate.run(value) : Date.ToString(value);
     }
 
-    public string formatMoney(date value, long integer, long decimal) {
-        return fformatMoney ? fformatMoney.run(integer, decimal) : Long.ToString(integer) + "." + Long.ToString(decimal);
+    public string formatMoney(long value, long decimal) {
+        return fformatMoney ? fformatMoney.run(value, decimal) : Long.ToString(value) + "." + Long.ToString(decimal);
     }
 
     public int toUpperCase(int cp) {

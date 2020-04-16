@@ -1,5 +1,5 @@
 public interface List<T> {
-    int Length { get; }
+    int Length { get : let; }
 
-    T this[int i] { let; }
+    T this[int i] { get : let; }
 }

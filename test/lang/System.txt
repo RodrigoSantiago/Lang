@@ -1,0 +1,36 @@
+namespace system;
+
+public class System {
+    public static string osName;
+
+    public static bool IsMobile {
+        get {
+            return false;
+        }
+    }
+
+    public static void exit() {
+
+    }
+
+    public static <T> void copy(let T[] src, int srcStart, let T[] dst, int dstStart, int length) {
+        if (length <= 0) return;
+        if (srcStart < 0) srcStart = 0;
+        if (dstStart < 0) dstStart = 0;
+
+        if (srcStart + length > src.Length) length = src.Length - srcStart;
+        if (dstStart + length > dst.Length) length = dst.Length - dstStart;
+
+        native (source) {
+            g_T* src = &v_src.data[v_srcStart];
+            g_T* dst = &v_dst.data[v_dstStart];
+            for (long i = 0; i < v_length; i ++) {
+                src[i] = dst[i];
+            }
+        }
+    }
+
+    public static <T> string toString(T value) {
+        return ((Object) value).toString();
+    }
+}

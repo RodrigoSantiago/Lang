@@ -1,0 +1,71 @@
+namespace text;
+
+public class Text {
+
+    private int cursor;
+    private byte[] data;
+
+    public byte this[int i] {
+        get {
+            return data[i];
+        }
+        set {
+            data[i] = value;
+        }
+    }
+
+    public this() {
+        data = new byte[64];
+    }
+
+    public this(int size) {
+        data = new byte[size];
+    }
+
+    public this(string start) {
+        data = new byte[start.Length * 2];
+        add(start);
+    }
+
+    public let Text addCodePoint(int cp) {
+
+        return this;
+    }
+
+    public let Text add(string value) {
+        if (value.Length + cursor > data.Length) {
+            int bestFit = 1;
+            while (bestFit > 0 && bestFit < value.Length + cursor) {
+                bestFit <<= 1;
+            }
+            if (bestFit < 0 || bestFit < value.Length + cursor) {
+                return null;
+            }
+            byte[] newData = new byte[bestFit];
+            System.copy(data, 0, newData, 0, cursor);
+            data = newData;
+        }
+
+        native (source) {
+            char* tData = &this->f_data->data[this->f_cursor];
+
+            for (long i = 0, len = v_value.data->length; i < len; i ++) {
+                tData[i] = v_value.data[i];
+            }
+        }
+        return this;
+    }
+
+    public let Text add(let Object value) {
+        return add(value == null ? "null" : value);
+    }
+
+    public let Text clear() {
+        cursor = 0;
+        return this;
+    }
+
+    public string toString() {
+        return new string(data, 0, cursor);
+    }
+}

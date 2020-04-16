@@ -1,0 +1,34 @@
+public class Function {
+    native (header) {
+        lang_int length;
+        lang_long[] typeList;
+    }
+
+    public final function<?> value; // automatic cast to any function type (null if is not valid)
+    public this(function<?> value) {
+        // copy to a NEW STD::FUNCTION
+    }
+
+    public ~this() {
+        // delete function value
+    }
+
+    /* T cast() {
+        if (!cast.isType(T.value, typeList[0])) return std::function<T>(null);
+        else static_cast<>(f_value);
+    } */
+}
+
+struct function<T> : Function<T> {
+
+    public bool valid { get; }
+
+    private this() {
+    }
+
+    public void run() {
+    }
+
+    bool operator autocast(function<T> value) {
+    }
+}

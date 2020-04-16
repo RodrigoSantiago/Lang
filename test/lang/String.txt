@@ -1,0 +1,272 @@
+public final class String {
+    public final string value;
+
+    public this(string value) {
+        this.value = value;
+    }
+
+    public string toString() {
+        return value;
+    }
+
+    public int hash() {
+        return value.hash;
+    }
+
+    public bool equals(let Object other) {
+        let obj = (String) other;
+        return obj != null && obj.value == value;
+    }
+}
+
+public struct string : String {
+
+    public int Length {
+        get {
+            native (source) {
+                return data->length;
+            }
+        }
+    }
+
+    public int CodePoints {
+        get {
+            native (source) {
+                return data->cp;
+            }
+        }
+    }
+
+    public byte this[int index] {
+        get {
+            native (return) {
+                return data->chars[v_index < 0 || v_index >= data->length ? 0 : v_index];
+            }
+        }
+    }
+
+    native (header) {
+        system::string * data;
+
+        string (system::string* data);
+        string (const char* str);
+    }
+
+    native (source) {
+        lang::string (system::string* data) {
+            this->data = data;
+            data->count ++;
+        }
+        lang::string (const char* str) {
+            this->data = system::memory::cstr(str);
+            data->count ++;
+        }
+    }
+
+    public this(string copy) {
+        native (source) {
+            this->data = v_copy.data;
+            data->count ++;
+        }
+    }
+
+    public this(let byte[] chars) {
+        this(chars, 0, chars.Length);
+    }
+
+    public this(let byte[] chars, int start, int length) {
+        this(chars, 0, chars.Length, 8);
+    }
+
+    public this(let byte[] chars, int start, int length, int charSet) {
+        charSet = charSet == 32 ? 32 : charSet == 16 ? 16 : 8;
+
+        native (source) {
+            this->data = system::memory::str(v_chars->data[v_start], v_length, v_charSet);
+            data->count ++;
+        }
+    }
+
+    public this(let short[] chars) {
+        this(chars, 0, chars.Length);
+    }
+
+    public this(let short[] chars, int start, int length) {
+        native (source) {
+            this->data = system::memory::str(v_chars->data[v_start], v_length, 16);
+            data->count ++;
+        }
+    }
+
+    public this(let int[] chars) {
+        this(chars, 0, chars.Length);
+    }
+
+    public this(let int[] chars, int start, int length) {
+        native (source) {
+            this->data = system::memory::str(v_chars->data[v_start], v_length, 32);
+            data->count ++;
+        }
+    }
+
+    public ~this() {
+        native (source) {
+            if (-- data->count == 0) {
+                system::memory::de_str(data);
+            }
+        }
+    }
+
+    public bool equalsIgnoreCase(string other) {
+        if (other.Length != Length) return false;
+
+        var it = iterateUTF32();
+        var itOther = other.iterateUTF32();
+        var l = Locale.GlobalLocale;
+
+        while (it.hasNext()) {
+            if (l.toUpperCase(it.next()) != l.toUpperCase(itOther.next())) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public int hash() {
+        native (return) {
+            if (data->hash == 0) {
+                // calculate hash
+            }
+            return data->hash;
+        }
+    }
+
+    public string toUpperCase() {
+        return toUpperCase(Locale.GlobalLocale);
+    }
+
+    public string toUpperCase(Locale locale) {
+        final Text text = new Text(Length);
+        for (int i : this) {
+            text.addCodePoint(locale.toUpperCase(i));
+        }
+        return text.toString();
+    }
+
+    public string toLowerCase() {
+        return toLowerCase(Locale.GlobalLocale);
+    }
+
+    public string toLowerCase(Locale locale) {
+        final Text text = new Text(Length);
+        for (int i : this) {
+            text.addCodePoint(locale.toLowerCase(i));
+        }
+        return text.toString();
+    }
+
+    public Iterator<int> iterateUTF32() {
+        return new StringUTF32Iterator(this);
+    }
+
+    public Iterator<short> iterateUTF16() {
+        return new StringUTF16Iterator(this);
+    }
+
+    public Iterator<byte> iterateUTF8() {
+        return new StringUTF8Iterator(this);
+    }
+
+    bool operator ==(string value, string other) {
+    }
+    bool operator !=(string value, string other) {
+    }
+    bool operator >(string value, string other) {
+    }
+    bool operator <(string value, string other) {
+    }
+    bool operator >=(string value, string other) {
+    }
+    bool operator <=(string value, string other) {
+    }
+
+    string operator +(string value, string other) {
+    }
+
+    string operator =(string other) {
+    }
+}
+
+final class StringUTF8Iterator : Iterator<byte> {
+
+    private string content;
+    private int index;
+
+    public this(string content) {
+        this.content = content;
+    }
+
+    public byte next() {
+        if (index < content.Length) {
+            native (source) {
+                return content.data->chars[f_index ++];
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    public bool hasNext() {
+        return index < content.Length;
+    }
+
+    public bool remove() {
+        return false;
+    }
+}
+
+final class StringUTF16Iterator : Iterator<short> {
+
+    private string content;
+    private int index;
+    private short nextPar;
+
+    public this(string content) {
+        this.content = content;
+    }
+
+    public short next() {
+        return 0;
+    }
+
+    public bool hasNext() {
+        return false;
+    }
+
+    public bool remove() {
+        return false;
+    }
+}
+
+final class StringUTF32Iterator : Iterator<int> {
+
+    private string content;
+    private int index;
+
+    public this(string content) {
+        this.content = content;
+    }
+
+    public int next() {
+        return 0;
+    }
+
+    public bool hasNext() {
+        return false;
+    }
+
+    public bool remove() {
+        return false;
+    }
+}

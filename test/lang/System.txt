@@ -1,4 +1,4 @@
-namespace system;
+namespace lang;
 
 public class System {
     public static string osName;
@@ -22,15 +22,15 @@ public class System {
         if (dstStart + length > dst.Length) length = dst.Length - dstStart;
 
         native (source) {
-            g_T* src = &v_src.data[v_srcStart];
-            g_T* dst = &v_dst.data[v_dstStart];
+            g_T* src = &v_src->data[v_srcStart];
+            g_T* dst = &v_dst->data[v_dstStart];
             for (long i = 0; i < v_length; i ++) {
                 src[i] = dst[i];
             }
         }
     }
 
-    public static <T> string toString(T value) {
-        return ((Object) value).toString();
+    public static <T : Object> string toString(T value) {
+        return value == null ? "null" : value.toString();
     }
 }

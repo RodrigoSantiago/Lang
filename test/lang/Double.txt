@@ -1,3 +1,5 @@
+namespace lang;
+
 public final class Double {
     public final double value;
 

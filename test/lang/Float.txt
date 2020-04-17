@@ -1,3 +1,5 @@
+namespace lang;
+
 public final class Float {
     public final float value;
 

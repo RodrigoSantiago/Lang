@@ -1,3 +1,5 @@
+namespace lang;
+
 public final class Bool {
     public final bool value;
 

@@ -1,3 +1,5 @@
+namespace lang;
+
 public class Array<T> : List<T> {
 
     private final int length;
@@ -10,12 +12,12 @@ public class Array<T> : List<T> {
     public T this[int i] {
         get {
             native (return) {
-                return data[v_i];
+                return data[ ARRAY_ACESS(v_i, f_length) ];
             }
         }
         set {
             native (source) {
-                data[v_i] = v_value;
+                data[ ARRAY_ACESS(v_i, f_length) ] = v_value;
             }
         }
     }
@@ -28,7 +30,7 @@ public class Array<T> : List<T> {
     native (source) {
         template <typename g_T>
         lang::Array<g_T>::create(g_T* list, long size) {
-            this->data = static_cast<g_T*>(system::memory::array(sizeof(g_T), size));
+            this->data = sCast<g_T*>(system::memory::array(sizeof(g_T), size));
 
             if (this->data == nullptr) {
                 this->f_length = 0;
@@ -51,7 +53,7 @@ public class Array<T> : List<T> {
 
     public this(int length) {
         native (source) {
-            this->data = static_cast<g_T*>(system::memory::array(sizeof(g_T), v_length));
+            this->data = sCast<g_T*>(system::memory::array(sizeof(g_T), v_length));
 
             if (this->data == nullptr) {
                 this->f_length = 0;

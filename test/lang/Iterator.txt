@@ -1,3 +1,5 @@
+namespace lang;
+
 public interface Iterator<T> {
 
     let T next();

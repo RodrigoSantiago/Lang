@@ -1,3 +1,5 @@
+namespace lang;
+
 public final class String {
     public final string value;
 
@@ -37,10 +39,10 @@ public struct string : String {
         }
     }
 
-    public byte this[int index] {
+    public byte this[int i] {
         get {
             native (return) {
-                return data->chars[v_index < 0 || v_index >= data->length ? 0 : v_index];
+                return data->chars[ ARRAY_ACESS(v_i, data->length) ];
             }
         }
     }
@@ -63,10 +65,18 @@ public struct string : String {
         }
     }
 
+    public default this() {
+        native (source) {
+            this->data = system::memory::str(nullptr, 0, 0);
+        }
+    }
+
     public this(string copy) {
         native (source) {
             this->data = v_copy.data;
-            data->count ++;
+            if (this->data.chars != nullptr) {
+                data->count ++;
+            }
         }
     }
 
@@ -111,8 +121,10 @@ public struct string : String {
 
     public ~this() {
         native (source) {
-            if (-- data->count == 0) {
-                system::memory::de_str(data);
+            if (data->chars != nullptr) {
+                if (-- data->count == 0) {
+                    system::memory::de_str(data);
+                }
             }
         }
     }

@@ -1,3 +1,5 @@
+namespace lang;
+
 public class Function {
     native (header) {
         lang_int length;

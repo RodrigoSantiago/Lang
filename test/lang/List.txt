@@ -1,3 +1,5 @@
+namespace lang;
+
 public interface List<T> {
     int Length { get : let; }
 

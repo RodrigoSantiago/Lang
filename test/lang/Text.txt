@@ -1,4 +1,4 @@
-namespace text;
+namespace lang;
 
 public class Text {
 

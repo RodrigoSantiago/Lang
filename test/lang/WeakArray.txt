@@ -1,3 +1,5 @@
+namespace lang;
+
 public class WeakArray<T> : List<T> {
 
     private final int length;
@@ -10,39 +12,39 @@ public class WeakArray<T> : List<T> {
     public T this[int i] {
         get : let {
             native (return) {
-                return data[v_i];
+                return data[ ARRAY_ACESS(v_i, f_length) ];
             }
         }
         set : let {
             native (source) {
-                data[v_i] = v_value;
+                data[ ARRAY_ACESS(v_i, f_length) ] = v_value;
             }
         }
     }
 
     native (header) {
-        g_T* data;
-        create(std::initializer_list<g_T> list);
+        let<g_T>* data;
+        create(let<g_T>* list, long size);
     }
 
     native (source) {
         template <typename g_T>
-        c::lang::Array<g_T>::create(std::initializer_list<g_T> list) {
-            this->data = static_cast<g_T*>(system::memory::array(sizeof(g_T), list.size()));
+        lang::WeakArray<let<g_T>>::create(let<g_T>* list, long size) {
+            this->data = sCast<let<g_T>*>(system::memory::array(sizeof(let<g_T>), size));
+
             if (this->data == nullptr) {
                 this->f_length = 0;
             } else {
-                this->f_length = list.size();
-                long i = 0;
-                for (const g_T value : list) {
-                    this->data[i++] = value;
+                this->f_length = size;
+                for (long i = 0; i < size; i++) {
+                    this->data[i] = list[i];
                 }
             }
         }
     }
 
     public this() {
-        this.Length = 0;
+        this.length = 0;
 
         native (source) {
             this->data = nullptr;
@@ -51,13 +53,14 @@ public class WeakArray<T> : List<T> {
 
     public this(int length) {
         native (source) {
-            this->data = static_cast<g_T*>(system::memory::array(sizeof(g_T), v_length));
+            this->data = sCast<let<g_T>*>(system::memory::array(sizeof(let<g_T>), v_length));
+
             if (this->data == nullptr) {
                 this->f_length = 0;
             } else {
                 this->f_length = v_length;
                 for (long i = 0; i < v_length; i++) {
-                    this->data[i] = generic<g_T>::def();
+                    this->data[i] = generic<let<g_T>>::def();
                 }
             }
         }

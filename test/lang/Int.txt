@@ -1,3 +1,5 @@
+namespace lang;
+
 public final class Int {
     public final int value;
 

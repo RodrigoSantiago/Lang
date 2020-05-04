@@ -1,4 +1,4 @@
-package logic.member.params;
+package logic.params;
 
 public class Params {
     Param[] params;

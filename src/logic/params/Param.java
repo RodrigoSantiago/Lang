@@ -1,7 +1,7 @@
-package logic.member.params;
+package logic.params;
 
 import content.Token;
-import logic.typdef.Pointer;
+import logic.Pointer;
 
 public class Param {
     Token name;

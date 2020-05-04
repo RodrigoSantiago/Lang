@@ -20,7 +20,3 @@ public class Object {
         return this == other;
     }
 }
-
-class test {
-   obj a {
-   }

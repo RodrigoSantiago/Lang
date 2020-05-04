@@ -1,12 +1,16 @@
 package logic.member;
 
 import content.Token;
-import logic.member.params.Params;
-import logic.typdef.Pointer;
+import logic.params.Params;
+import logic.Pointer;
 
-public class Operator {
+public class Operator extends Member {
     Token operator;
     Pointer castType;
     Pointer returnType;
     Params params;
+
+    public Operator(Token start, Token end) {
+
+    }
 }

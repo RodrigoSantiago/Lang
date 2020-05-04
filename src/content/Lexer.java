@@ -1,6 +1,6 @@
 package content;
 
-import data.TextFile;
+import data.ContentFile;
 
 public class  Lexer {
 
@@ -11,18 +11,17 @@ public class  Lexer {
     private int nextIndex;
 
     private int pChr;
-    private int tkStart, tkEnd, tkType;
+    private int tkStart, tkEnd;
     private Key tkKeyword;
+    private boolean tkComplex;
 
     private int pIndex;
     private int ppChr;
 
-    private TextFile file;
-    private String content;
+    private ContentFile cFile;
 
-    public Lexer(TextFile file) {
-        this.file = file;
-        this.content = file.content;
+    public Lexer(ContentFile cFile) {
+        this.cFile = cFile;
         index = 0;
     }
 
@@ -31,7 +30,8 @@ public class  Lexer {
         Token last = null;
 
         while (!eof() && nextToken()) {
-            Token token = new Token(file, tkStart, tkEnd, tkKeyword, tkType);
+            Token token = new Token(cFile.content, tkStart, tkEnd, tkKeyword, tkComplex);
+
             if (last == null) {
                 begin = token;
             } else {
@@ -72,7 +72,6 @@ public class  Lexer {
         Token last = null;
         Token token = parent.getChild();
         while (token != null) {
-
             token.setParent(parent);
 
             int tk = token.length > 0 ? token.at(0) : 0;
@@ -86,9 +85,14 @@ public class  Lexer {
                         lastChild.setNext(null);
                         token.setNext(nNext);
                     } else {
+                        parent.setNext(parent.getChild());
+                        parent.setChild(null);
                         return null;
                     }
                 } else if (tk == '>') {
+                    token.key = Key.CGENERIC;
+                    parent.key = Key.GENERIC;
+                    parent.setLastChild(token);
                     return token;
                 } else if (tk == ':' && level > 1) {
                     parent.setNext(parent.getChild());
@@ -96,20 +100,20 @@ public class  Lexer {
                     return null;
 
                 } else if (tk == ',' && parent.getParent() != null) {
-                    boolean isNew = parent.getPrev() != null && parent.getPrev().type == Token.WORD &&
+                    boolean isNew = parent.getPrev() != null && parent.getPrev().key == Key.WORD &&
                             parent.getPrev().getPrev() != null && parent.getPrev().getPrev().key == Key.NEW;
                     if (!isNew) {
                         Token pp = parent.getParent();
                         Token pprev = pp.getPrev();
-                        if ((pp.type == Token.PARAM && pprev != null && pprev.type == Token.WORD)
-                                || (pp.type == Token.INDEX && level > 1)
-                                || (pp.type == Token.BRACE && pprev != null && pprev.type == Token.INDEX)) {
+                        if ((pp.key == Key.PARAM && pprev != null && pprev.key == Key.WORD)
+                                || (pp.key == Key.INDEX && level > 1)
+                                || (pp.key == Key.BRACE && pprev != null && pprev.key == Key.INDEX)) {
                             parent.setNext(parent.getChild());
                             parent.setChild(null);
                             return null;
                         }
                     }
-                } else if (token.type != Token.WORD && tk != ',' && tk != ':') {
+                } else if (token.key != Key.WORD && tk != ',' && tk != ':') {
                     parent.setNext(parent.getChild());
                     parent.setChild(null);
                     return null;
@@ -124,6 +128,7 @@ public class  Lexer {
                 }
 
             } else if ((group == '[' && tk == ']') || (group == '{' && tk == '}') || (group == '(' && tk == ')')) {
+                parent.setLastChild(token);
                 return token;
 
             } else if (tk == '<') {
@@ -135,22 +140,33 @@ public class  Lexer {
                 }
 
             } else if (tk == '>') {
-                if (token.getPrev() != null && token.getPrev().endsWith('>') && token.getPrev().end == token.start) {
-                    token.getPrev().end = token.end;
-                    token.getPrev().type = Token.OPERATOR;
-                    token.getPrev().setNext(token.getNext());
-                    token = token.getPrev();
+                Token prev = token.getPrev();
+                if (prev != null && prev.endsWith('>') && prev.end == token.start) {
+                    prev.end = token.end;
+                    prev.key = Key.getSimbol(cFile.content, token.start, token.end);
+                    prev.setNext(token.getNext());
+                    token = prev;
                 }
             }
             last = token;
             token = token.getNext();
         }
 
-        return group == '[' || group == '{' || group == '(' ? last : null;
+        if (group == '[' || group == '{' || group == '(') {
+            parent.setLastChild(null);
+            return last;
+        } else if (group == '<') {
+            parent.setNext(parent.getChild());
+            parent.setChild(null);
+            return null;
+        } else {
+            return last;
+        }
     }
 
     public boolean nextToken() {
-        tkKeyword = null;
+        tkKeyword = Key.NOONE;
+        tkComplex = false;
 
         while (!eof()) {
             readNext();
@@ -158,15 +174,29 @@ public class  Lexer {
             // Name
             if (isLetter(chr)) {
                 tkStart = index;
+                int ccount = 0;
                 while (!eof()) {
-                    if (!isChar(readNext()) && (chr != ':' || (nChr != ':' && pChr != ':'))) {
+                    if (chr != ':') {
+                        ccount = 0;
+                    } else if (nChr == ':' && ccount == 0) {
+                        ccount = 1;
+                        tkComplex = true;
+                    } else if (ccount == 1) {
+                        ccount = 2;
+                    } else {
+                        readPrev();
+                        break;
+                    }
+                    if (!isChar(readNext()) && chr != ':') {
                         readPrev();
                         break;
                     }
                 }
                 tkEnd = nextIndex;
-                tkType = Token.WORD;
-                tkKeyword = Key.getKeyword(content, tkStart, tkEnd);
+                tkKeyword = Key.getKeyword(cFile.content, tkStart, tkEnd);
+                if (tkKeyword == Key.NOONE) {
+                    tkKeyword = Key.WORD;
+                }
 
                 return true;
             }
@@ -181,7 +211,7 @@ public class  Lexer {
                     }
                 }
                 tkEnd = nextIndex;
-                tkType = Token.NUMBER;
+                tkKeyword = Key.NUMBER;
                 return true;
             }
 
@@ -201,7 +231,7 @@ public class  Lexer {
                     }
                 }
                 tkEnd = nextIndex;
-                tkType = Token.STRING;
+                tkKeyword = Key.STRING;
                 return true;
             }
 
@@ -209,10 +239,7 @@ public class  Lexer {
             if (isSplitter(chr)) {
                 tkStart = index;
                 tkEnd = nextIndex;
-                tkType = chr == '(' ? Token.PARAM
-                        : chr == '{' ? Token.BRACE
-                        : chr == '[' ? Token.INDEX
-                        : Token.SPECIAL;
+                tkKeyword = Key.getSimbol(cFile.content, tkStart, tkEnd);
 
                 return true;
             }
@@ -227,7 +254,7 @@ public class  Lexer {
                     }
                 }
                 tkEnd = nextIndex;
-                tkType = Token.OPERATOR;
+                tkKeyword = Key.getSimbol(cFile.content, tkStart, tkEnd);
                 return true;
             }
 
@@ -267,17 +294,17 @@ public class  Lexer {
             if (!eof() && !validChar) {
                 tkStart = index;
                 tkEnd = nextIndex;
-                tkType = Token.INVALID;
+                tkKeyword = Key.INVALID;
                 return true;
             }
         }
         tkStart = tkEnd = -1;
-        tkKeyword = null;
+        tkKeyword = Key.NOONE;
         return false;
     }
 
     public boolean eof() {
-        return nextIndex >= content.length();
+        return nextIndex >= cFile.content.length();
     }
 
     private int readNext() {
@@ -286,9 +313,9 @@ public class  Lexer {
 
         index = nextIndex;
         pChr = chr;
-        chr = content.codePointAt(index);
+        chr = cFile.content.codePointAt(index);
         nextIndex = index + Character.charCount(chr);
-        nChr = nextIndex < content.length() ? content.codePointAt(nextIndex) : 0;
+        nChr = nextIndex < cFile.content.length() ? cFile.content.codePointAt(nextIndex) : 0;
 
         return chr;
     }

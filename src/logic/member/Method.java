@@ -1,11 +1,11 @@
 package logic.member;
 
 import content.Token;
-import logic.member.params.Params;
-import logic.typdef.Generic;
-import logic.typdef.Pointer;
+import logic.params.Params;
+import logic.Generic;
+import logic.Pointer;
 
-public class Method {
+public class Method extends Member {
     Token name;
     Pointer returnType;
     Params params;
@@ -13,4 +13,8 @@ public class Method {
     boolean isFinal;
     boolean isStatic;
     boolean isAbstract;
+
+    public Method(Token start, Token end) {
+
+    }
 }

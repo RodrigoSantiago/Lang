@@ -1,33 +1,49 @@
 package content;
 
-import data.TextFile;
+import data.ContentFile;
 
+/**
+ * Regras :
+ * Token sempre aponta para o próximo
+ * Token com pelo menos um child, deve ter um lastChild
+ * Um child deve ter prev como NULL e um lastChild deve ter next como null
+ * Todos os child.parent apontam para o mesmo parent
+ * O ultimo token aponta para null
+ * O token.prev.next sempre aponta para si mesmo
+ * O primeiro token tem prev como null
+ * Em um grupo, o parent é o iniciador "{(<", mas o ultimo nem sempre é o fechamento[substituir por lastChild = null]
+ */
 public class Token {
-    public static final int INVALID = 0;
-    public static final int WORD = 1;
-    public static final int NUMBER = 2;
-    public static final int OPERATOR = 3;
-    public static final int STRING = 4;
-    public static final int SPECIAL = 5;
-    public static final int PARAM = 6;
-    public static final int INDEX = 7;
-    public static final int BRACE = 8;
 
-    public final TextFile file;
+    private String source;
     public int start, length, end;
     public Key key;
-    public int type;
 
     private Token child, next;
-    private Token parent, prev;
+    private Token parent, prev, lastChild;
 
-    public Token(TextFile file, int start, int end, Key key, int type) {
-        this.file = file;
+    private boolean complex;
+    private int hash;
+
+    public Token(String source) {
+        this(source, 0, source.length(), Key.NOONE, false);
+    }
+
+    public Token(String source, boolean complex) {
+        this(source, 0, source.length(), Key.NOONE, complex);
+    }
+
+    public Token(String source, int start, int end, Key key, boolean complex) {
+        this.source = source;
         this.start = start;
         this.length = end - start;
         this.end = end;
         this.key = key;
-        this.type = type;
+        this.complex = complex;
+    }
+
+    public boolean isComplex() {
+        return complex;
     }
 
     public Token getParent() {
@@ -70,22 +86,82 @@ public class Token {
         return child;
     }
 
+    public void setLastChild(Token lastChild) {
+        this.lastChild = lastChild;
+    }
+
+    public Token getLastChild() {
+        return lastChild;
+    }
+
     public char at(int index) {
-        return file.content.charAt(start + index);
+        return source.charAt(start + index);
     }
 
     public boolean compare(int chr) {
         if (length != 1) return false;
-        return file.content.charAt(start) == chr;
+        return source.charAt(start) == chr;
     }
 
     public boolean endsWith(int chr) {
         if (length < 1) return false;
-        return file.content.charAt(start + length - 1) == chr;
+        return source.charAt(start + length - 1) == chr;
+    }
+
+    public boolean endsWith(String chr) {
+        if (length < chr.length()) return false;
+        int off = start + length - chr.length();
+
+        for (int i = 0, len = chr.length(); i < len; i++) {
+            if (source.charAt(off + i) != chr.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        if (hash == 0 && length > 0) {
+            for (int i = 0; i < length; i++) {
+                hash = 31 * hash + source.charAt(i);
+            }
+        }
+        return hash;
     }
 
     @Override
     public String toString() {
-        return "[" + file.content.substring(start, end) +"]";
+        return start == 0 && end == source.length() ? source : source.substring(start, end);
+    }
+
+    public String toString(int start, int end) {
+        return source.substring(this.start + start, this.start + end);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        if (obj == this) return true;
+        if (obj instanceof Token) {
+            Token other = (Token) obj;
+
+            if (other.source == source && other.start == start && other.end == end) { // pointer comparation
+                return true;
+            } else if (other.length == length) {
+                if (hash != 0 && other.hash != 0 && hash != other.hash) {
+                    return false;
+                }
+
+                final int off = other.start - start;
+                for (int i = start; i < end; i++) {
+                    if (source.charAt(i) != other.source.charAt(i + off)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 }

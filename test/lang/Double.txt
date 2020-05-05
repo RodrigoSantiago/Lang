@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Double {
+public final class Double : List<int> {
     public final double value;
 
     public this(double value) {

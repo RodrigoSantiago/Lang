@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Byte {
+public final class Long {
     public final long value;
 
     public this(long value) {

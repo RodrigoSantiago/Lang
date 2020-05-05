@@ -190,6 +190,10 @@ public class ContentFile {
         return new Pointer(mark(Compiler.getLangArray()), new Pointer[]{pointer});
     }
 
+    public Pointer langWrapper(Type type) {
+        return new Pointer(mark(Compiler.getLangWrapper()), new Pointer[]{new Pointer(type)});
+    }
+
     public void add(Using using) {
         usings.add(using);
 

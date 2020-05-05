@@ -12,7 +12,7 @@ import logic.member.*;
 
 import java.util.ArrayList;
 
-public class Type implements GenericOwner {
+public abstract class Type implements GenericOwner {
 
     public final ContentFile cFile;
 
@@ -23,9 +23,10 @@ public class Type implements GenericOwner {
     public Generics generics;
     ArrayList<TypeToken> parentTypeTokens = new ArrayList<>();
     ArrayList<Type> inheritanceTypes = new ArrayList<>();
+    public Pointer parent;
     public ArrayList<Pointer> parents = new ArrayList<>();
 
-    private boolean isPrivate, isPublic, isAbstract, isFinal;
+    private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
 
     public Type(ContentFile cFile, Key key, Token start, Token end) {
         this.cFile = cFile;
@@ -38,38 +39,38 @@ public class Type implements GenericOwner {
             if (state == 0 && token.key == key) {
                 state = 1;
             } else if (state == 0 && token.key.isAttribute) {
-                if (token.key == Key.PUBLIC) {
+                if (token.key == Key.PUBLIC || token.key == Key.PRIVATE) {
                     if (isPublic || isPrivate) {
                         cFile.erro(token, "Repated acess modifier");
                     } else {
-                        isPublic = true;
+                        isPublic = (token.key == Key.PUBLIC);
+                        isPrivate = (token.key == Key.PRIVATE);
                     }
-                } else if (token.key == Key.PRIVATE) {
-                    if (isPublic || isPrivate) {
-                        cFile.erro(token, "Repated acess modifier");
-                    } else {
-                        isPrivate = true;
-                    }
-                } else if (token.key == Key.ABSTRACT) {
-                    if (isAbstract || isFinal) {
+                } else if (token.key == Key.ABSTRACT || token.key == Key.FINAL) {
+                    if (!isClass()) {
+                        cFile.erro(token, "Unexpected modifier");
+                    } else if (isAbstract || isFinal) {
                         cFile.erro(token, "Repated inheritance modifier");
                     } else {
-                        isAbstract = true;
-                    }
-                } else if (token.key == Key.FINAL) {
-                    if (isAbstract || isFinal) {
-                        cFile.erro(token, "Repated inheritance modifier");
-                    } else {
-                        isFinal = true;
+                        isAbstract = (token.key == Key.ABSTRACT);
+                        isFinal = (token.key == Key.FINAL);
                     }
                 } else if (token.key == Key.STATIC) {
-                    cFile.erro(token, "Unexpected modifier");
+                    if (!isStruct()) {
+                        cFile.erro(token, "Unexpected modifier");
+                    } else {
+                        isStatic = true;
+                    }
                 }
             } else if (state == 1 && token.key == Key.WORD) {
                 nameToken = token;
                 state = 2;
             } else if (state == 2 && token.key == Key.GENERIC) {
-                generics = new Generics(this, token, true);
+                if (isEnum()) {
+                    cFile.erro(token, "A enum cannot have genrics");
+                } else {
+                    generics = new Generics(this, token, true);
+                }
                 state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.COLON) {
                 state = 4;
@@ -96,6 +97,13 @@ public class Type implements GenericOwner {
             token = next;
         }
 
+        if (isEnum()) {
+            isStatic = true;
+        }
+
+        if (isEnum() || isStruct()) {
+            isFinal = true;
+        }
     }
 
     public void preload() {
@@ -112,18 +120,13 @@ public class Type implements GenericOwner {
         if (generics != null) {
             generics.load(this, null);
         }
-
-        for (TypeToken parentTypeToken : parentTypeTokens) {
-            Pointer parent = cFile.getPointer(parentTypeToken.start, parentTypeToken.end, this, this);
-            if (parents.contains(parent)) {
-                cFile.erro(parentTypeToken.start, "Repeated parent");
-            } else {
-                parents.add(parent);
-            }
-        }
     }
 
     public void cross() {
+
+    }
+
+    public void build(StringBuilder hFile, StringBuilder cFile) {
 
     }
 
@@ -145,6 +148,26 @@ public class Type implements GenericOwner {
 
     public boolean isAbstract() {
         return isAbstract;
+    }
+
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    public boolean isClass() {
+        return false;
+    }
+
+    public boolean isInterface() {
+        return false;
+    }
+
+    public boolean isStruct() {
+        return false;
+    }
+
+    public boolean isEnum() {
+        return false;
     }
 
     @Override

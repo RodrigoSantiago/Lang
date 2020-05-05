@@ -1,0 +1,21 @@
+namespace lang;
+
+public class Wrapper<T> {
+    public final T value;
+
+    public Wrapper(T value) {
+        this.value = value;
+    }
+
+    public string toString() {
+        return "Wrapper[" + hash() + "]";
+    }
+
+    public int hash() {
+        return 0;
+    }
+
+    public bool equals(let Object other) {
+        return this == other;
+    }
+}

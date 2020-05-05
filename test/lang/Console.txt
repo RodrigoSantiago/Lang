@@ -1,6 +1,6 @@
 namespace lang;
 
-public final Console {
+public final class Console {
 
     public static void print(string value) {
         native (source) {

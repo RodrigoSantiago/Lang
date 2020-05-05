@@ -14,12 +14,13 @@ import java.nio.file.Files;
 public class Main {
     public static void main(String... args) {
         Library lang = new Library("lang", 0);
-        lang.fileAdd("Int", read("Int"));
-        lang.fileAdd("Bool", read("Bool"));
-        lang.fileAdd("List", read("List"));
-        lang.fileAdd("Array", read("Array"));
-        lang.fileAdd("Object", read("Object"));
-        lang.fileAdd("Object", read("Object"));
+        File dir = new File(System.getProperty("user.dir"), "test/lang/");
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                lang.fileAdd(file.getName(), read(file));
+            }
+        }
 
         Compiler.libAdd(lang);
 
@@ -30,7 +31,7 @@ public class Main {
 
         for (ContentFile cFile : lang.cFiles.values()) {
             for (Type type : cFile.types) {
-                System.out.println(type + ":" + (type.parents.size() > 0 ? type.parents.get(0) : null));
+                System.out.println(type + ":" +type.parent);
             }
         }
         for (ContentFile cFile : lang.cFiles.values()) {
@@ -43,8 +44,7 @@ public class Main {
         }
     }
 
-    private static String read(String name) {
-        File file = new File(System.getProperty("user.dir"), "test/lang/" + name + ".txt");
+    private static String read(File file) {
         try {
             return new String(Files.readAllBytes(file.toPath()), Charset.defaultCharset());
         } catch (IOException e) {

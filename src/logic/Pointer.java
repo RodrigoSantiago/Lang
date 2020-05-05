@@ -46,11 +46,16 @@ public class Pointer {
                             return false;
                         }
                     }
+                    return true;
                 }
+            } else if (other.pointers != pointers) {
+                return false;
+            } else {
+                return true;
             }
-            return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override

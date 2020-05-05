@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Int {
+public final class Int : Object {
     public final int value;
 
     public this(int value) {

@@ -52,4 +52,9 @@ public class Pointer {
         }
         return false;
     }
+
+    @Override
+    public String toString() {
+        return "Ptr[" + type + "]";
+    }
 }

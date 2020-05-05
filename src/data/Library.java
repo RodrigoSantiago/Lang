@@ -7,31 +7,70 @@ import logic.typdef.Type;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class Library {
 
-    public String name;
+    public final String name;
+    public final long version;
 
-    public ArrayList<ContentFile> cFiles = new ArrayList<>();
+    public HashMap<String, ContentFile> cFiles = new HashMap<>();
+    public HashMap<String, Dependency> dependencies = new HashMap<>();
     public HashMap<String, Namespace> namespaces = new HashMap<>();
 
-    public Library(String name) {
+    public ArrayList<ContentFile> invalidate = new ArrayList<>();
+    public HashMap<String, String> adds = new HashMap<>();
+    public HashSet<String> subs = new HashSet<>();
+
+    private boolean loaded;
+
+    public Library(String name, long version) {
         this.name = name;
+        this.version = version;
     }
 
-    public void add(String fileName, String content) {
-        cFiles.add(new ContentFile(this, fileName, content));
+    public Dependency dependencyAdd(Dependency dependency) {
+        return dependencies.put(dependency.name, dependency);
     }
 
-    public void add(String fileName, InputStream input) {
-
+    public Dependency dependencyRemove(String name) {
+        return dependencies.remove(name);
     }
 
-    public String[] update(String fileName, InputStream input) {
-        return null;
+    public boolean isDependency(String name) {
+        return dependencies.containsKey(name);
+    }
+
+    public boolean isDependency(Library library) {
+        return dependencies.containsKey(library.name);
+    }
+
+    public void fileAdd(String fileName, String content) {
+        ContentFile cFile = cFiles.get(fileName);
+        if (cFile != null) {
+            cFile.invalidate();
+        }
+
+        adds.put(fileName, content);
+        subs.add(fileName);
+    }
+
+    public void fileRemove(String fileName) {
+        ContentFile cFile = cFiles.get(fileName);
+        if (cFile != null) {
+            cFile.invalidate();
+        }
+
+        subs.add(fileName);
+        adds.remove(fileName);
     }
 
     Namespace getNamespace(String name) {
+        if (name == null || name.isEmpty()) {
+            name = this.name;
+        }
+
         Namespace namespace = namespaces.get(name);
         if (namespace == null) {
             namespace = new Namespace(this, name);
@@ -41,12 +80,16 @@ public class Library {
         return namespace;
     }
 
-    public Namespace findNamespace(String name) {
-        return namespaces.get(name);
+    void delNamespace(String name) {
+        namespaces.remove(name);
     }
 
-    public Type findType(Token typeName) {
-        return null;
+    public Namespace findNamespace(String name) {
+        return namespaces.get(name == null ? this.name : name);
+    }
+
+    public boolean isLoaded() {
+        return loaded;
     }
 
     /**
@@ -56,8 +99,12 @@ public class Library {
      *
      * */
     public void read() {
-        for (ContentFile cFile : cFiles) {
-            cFile.read();
+        unload();
+
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.getState() == 0) {
+                cFile.read();
+            }
         }
     }
 
@@ -65,8 +112,10 @@ public class Library {
      *
      * */
     public void load() {
-        for (ContentFile cFile : cFiles) {
-            cFile.load();
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.getState() == 1) {
+                cFile.load();
+            }
         }
     }
 
@@ -75,7 +124,11 @@ public class Library {
      *
      * */
     public void cross() {
-
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.getState() == 2) {
+                cFile.cross();
+            }
+        }
     }
 
     /**
@@ -95,14 +148,46 @@ public class Library {
     }
 
     /**
-     * Release memory reference for "Make" lines and Blocks
+     * Destroi todas as dependencias dos arquivos deletados
+     * Destroi os arquivos deletados
      *
-     * */
-    public void releaseMake() {
+     */
+    public void unload() {
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.isInvalided()) {
+                cFile.unload();
+            }
+        }
+
+        for (String fileName : subs) {
+            cFiles.remove(fileName);
+        }
+
+        for (Map.Entry<String,String> entry : adds.entrySet()) {
+            cFiles.put(entry.getKey(), new ContentFile(this, entry.getKey(), entry.getValue()));
+        }
+
+        adds.clear();
+        subs.clear();
+
+        Compiler.langInvalidate(this);
+    }
+
+    public void unmake() {
 
     }
 
-    public void releaseAll() {
+    public void release() {
+        for (ContentFile cFile : cFiles.values()) {
+            cFile.invalidate();
+        }
 
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.isInvalided()) {
+                cFile.unload();
+            }
+        }
+
+        Compiler.langInvalidate(this);
     }
 }

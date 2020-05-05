@@ -1,8 +1,10 @@
 import content.Token;
+import data.Compiler;
 import data.ContentFile;
 import data.Error;
 import data.Library;
 import logic.Namespace;
+import logic.typdef.Type;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,24 +13,27 @@ import java.nio.file.Files;
 
 public class Main {
     public static void main(String... args) {
-        Library library = new Library("lang");
-        library.add("Int", read("Int"));
-        library.add("Bool", read("Bool"));
-        library.add("List", read("List"));
-        library.add("Array", read("Array"));
-        library.add("Object", read("Object"));
+        Library lang = new Library("lang", 0);
+        lang.fileAdd("Int", read("Int"));
+        lang.fileAdd("Bool", read("Bool"));
+        lang.fileAdd("List", read("List"));
+        lang.fileAdd("Array", read("Array"));
+        lang.fileAdd("Object", read("Object"));
+        lang.fileAdd("Object", read("Object"));
 
-        library.read();
-        for (ContentFile cFile : library.cFiles) {
-            System.out.println(cFile.name);
-            System.out.println(cFile.namespace);
-        }
-        for (Namespace namespace : library.namespaces.values()) {
-            System.out.println(namespace);
-        }
+        Compiler.libAdd(lang);
 
-        library.load();
-        for (ContentFile cFile : library.cFiles) {
+        lang.read();
+        lang.load();
+        lang.cross();
+        lang.make();
+
+        for (ContentFile cFile : lang.cFiles.values()) {
+            for (Type type : cFile.types) {
+                System.out.println(type + ":" + (type.parents.size() > 0 ? type.parents.get(0) : null));
+            }
+        }
+        for (ContentFile cFile : lang.cFiles.values()) {
             if (cFile.erros.size() > 0) {
                 System.out.println("Erros at " + cFile.name);
                 for (Error error : cFile.erros) {

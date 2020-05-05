@@ -11,6 +11,7 @@ import logic.Using;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class ContentFile {
 
@@ -20,38 +21,42 @@ public class ContentFile {
     public Token token;
 
     public Namespace namespace;
+    public ArrayList<Type> types = new ArrayList<>();
     public ArrayList<Using> usings = new ArrayList<>();
+    public ArrayList<Using> usingsNormal = new ArrayList<>();
     public ArrayList<Using> usingsDirect = new ArrayList<>();
     public ArrayList<Using> usingsStatic = new ArrayList<>();
     public ArrayList<Using> usingsStaticDirect = new ArrayList<>();
-    public ArrayList<Type> types = new ArrayList<>();
 
     public ArrayList<Error> erros = new ArrayList<>();
+
+    private int state;
+    private boolean invalid;
+    private HashSet<ContentFile> usedBy = new HashSet<>();
 
     public ContentFile(Library library, String name, String content) {
         this.library = library;
         this.name = name;
         this.content = content;
+        invalidate();
     }
 
     public void read() {
-        Lexer lexer = new Lexer(this);
-        token = lexer.read();
+        if (token == null) {
+            Lexer lexer = new Lexer(this);
+            token = lexer.read();
+        }
 
         if (token != null) {
             Parser parser = new Parser(this);
             parser.parseWorkspace(token);
 
+            if (namespace == null) {
+                namespace = library.getNamespace(null);
+                namespace.mark(this);
+            }
+
             for (Using using : usings) {
-                using.preload();
-            }
-            for (Using using : usingsDirect) {
-                using.preload();
-            }
-            for (Using using : usingsStatic) {
-                using.preload();
-            }
-            for (Using using : usingsStaticDirect) {
                 using.preload();
             }
 
@@ -59,18 +64,69 @@ public class ContentFile {
                 type.preload();
             }
         }
+
+        invalid = false;
+        state = 1;
     }
 
     public void load() {
         for (Type type : types) {
             type.load();
         }
+
+        state = 2;
     }
 
     public void cross() {
         for (Type type : types) {
             type.cross();
         }
+
+        state = 3;
+    }
+
+    public void unload() {
+        for (Type type : types) {
+            namespace.remove(type);
+        }
+
+        if (namespace.unmark(this)) {
+            library.delNamespace(namespace.name);
+        }
+        namespace = null;
+
+        usings.clear();
+        usingsNormal.clear();
+        usingsDirect.clear();
+        usingsStatic.clear();
+        usingsStaticDirect.clear();
+        erros.clear();
+
+        types.clear();
+
+        state = 0;
+    }
+
+    public void invalidate() {
+        if (!invalid) {
+            invalid = true;
+
+            for (ContentFile cFile : usedBy) {
+                cFile.invalidate();
+            }
+
+            if (namespace != null) {
+                namespace.invalidate();
+            }
+        }
+    }
+
+    public boolean isInvalided() {
+        return invalid;
+    }
+
+    public int getState() {
+        return state;
     }
 
     public void setNamespace(Token start, Token end) {
@@ -102,20 +158,41 @@ public class ContentFile {
 
         String name = null;
         if (tokenName == null) {
-            erro(keyToken == null ? start : keyToken, "Incorrect Namespace syntax : Name expected");
+            erro(keyToken == null ? start : keyToken, "Invalid Namespace : Name expected");
         } else {
             name = tokenName.toString();
-            if (name.endsWith("::")) {
-                erro(keyToken, "Incorrect Namespace syntax : Invalid name");
-
-                name = name.substring(0, name.length() - 2);
+            if (tokenName.endsWith("::")) {
+                name = null;
+                erro(tokenName, "Invalid Namespace : Invalid name");
             }
         }
 
         namespace = library.getNamespace(name);
+        namespace.mark(this);
+    }
+
+    public Type mark(Type type) {
+        if (type != null) {
+            type.cFile.usedBy.add(this);
+        }
+        return type;
+    }
+
+    public void link(Namespace namespace) {
+        namespace.link(this);
+    }
+
+    public Pointer langObject() {
+        return new Pointer(mark(Compiler.getLangObject()));
+    }
+
+    public Pointer langArray(Pointer pointer) {
+        return new Pointer(mark(Compiler.getLangArray()), new Pointer[]{pointer});
     }
 
     public void add(Using using) {
+        usings.add(using);
+
         if (using.isDirect() && using.isStatic()) {
             usingsStaticDirect.add(using);
         } else if (using.isDirect()) {
@@ -123,7 +200,7 @@ public class ContentFile {
         } else if (using.isStatic()) {
             usingsStatic.add(using);
         } else {
-            usings.add(using);
+            usingsNormal.add(using);
         }
     }
 
@@ -136,36 +213,35 @@ public class ContentFile {
         }
     }
 
-    public Type findType(Token tokenType) {
+    public Type findType(Token typeToken) {
         Type type;
 
-        if (!tokenType.isComplex()) {
+        if (!typeToken.isComplex()) {
             for (Using using : usingsDirect) {
-                type = using.findType(tokenType);
+                type = using.findType(typeToken);
                 if (type != null) {
-                    return type;
+                    return type; // type marked
                 }
             }
 
-            for (Using using : usings) {
-                type = using.findType(tokenType);
+            for (Using using : usingsNormal) {
+                type = using.findType(typeToken);
                 if (type != null) {
-                    return type;
+                    return mark(type);
                 }
             }
 
-            type = namespace.findType(tokenType);
+            type = namespace.findType(typeToken);
             if (type != null) {
-                return type;
+                return mark(type);
             }
 
-            Library lang = Compiler.getLangLibrary();
-            type = (lang == null ? library : lang).findType(tokenType);
+            type = Compiler.getLangType(typeToken);
         } else {
-            type = Compiler.findType(tokenType);
+            type = Compiler.findType(library, typeToken);
         }
 
-        return type;
+        return mark(type);
     }
 
     public Pointer getPointer(Token typeToken, Token end) {
@@ -213,6 +289,7 @@ public class ContentFile {
                 Token iEnd = token.getLastChild();
                 while (iToken != null && iToken != iEnd) {
                     Token iNext = iToken.getNext();
+
                     if (iState == 0 && iToken.key == Key.WORD) {
                         if (iNext != null && (iNext.key == Key.GENERIC)) {
                             iNext = iNext.getNext();
@@ -241,7 +318,7 @@ public class ContentFile {
             token = next;
         }
 
-        // Todo - Check pointer generic validate
+        // Todo - validate generic pointer
 
         if (ptr == null) {
             ptr = new Pointer(type, iPointers == null ? null : iPointers.toArray(new Pointer[0]));
@@ -267,5 +344,20 @@ public class ContentFile {
 
     public void warning(Token token, String message) {
         erros.add(new Error(Error.WARNING, token.start, token.end, message));
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) return false;
+        if (obj == this) return true;
+        if (obj instanceof ContentFile) {
+            return ((ContentFile) obj).name.equals(name);
+        }
+        return false;
     }
 }

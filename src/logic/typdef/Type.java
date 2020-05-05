@@ -3,6 +3,7 @@ package logic.typdef;
 import content.Key;
 import content.Token;
 import content.TypeToken;
+import data.Compiler;
 import data.ContentFile;
 import logic.GenericOwner;
 import logic.Generics;
@@ -17,11 +18,12 @@ public class Type implements GenericOwner {
 
     public Token nameToken;
     public Token contentToken;
+    public Token pathnameToken;
 
     public Generics generics;
     ArrayList<TypeToken> parentTypeTokens = new ArrayList<>();
     ArrayList<Type> inheritanceTypes = new ArrayList<>();
-    ArrayList<Pointer> parents = new ArrayList<>();
+    public ArrayList<Pointer> parents = new ArrayList<>();
 
     private boolean isPrivate, isPublic, isAbstract, isFinal;
 
@@ -245,5 +247,10 @@ public class Type implements GenericOwner {
 
     public void add(TNative tnative) {
 
+    }
+
+    @Override
+    public String toString() {
+        return nameToken+"["+hashCode()+"]";
     }
 }

@@ -123,7 +123,7 @@ public class Token {
     @Override
     public int hashCode() {
         if (hash == 0 && length > 0) {
-            for (int i = 0; i < length; i++) {
+            for (int i = start; i < end; i++) {
                 hash = 31 * hash + source.charAt(i);
             }
         }

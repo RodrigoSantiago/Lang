@@ -12,7 +12,7 @@ public class Generics {
     Type owner;
     ContentFile cFile;
     private boolean isStatic;
-    private ArrayList<Generic> generics = new ArrayList<>();
+    public ArrayList<Generic> generics = new ArrayList<>();
 
     public Generics(Type owner, Token genericToken, boolean isStatic) {
         this.owner = owner;
@@ -75,11 +75,13 @@ public class Generics {
 
     public void load(Type cycleOwner, GenericOwner genericOwner) {
         for (Generic generic : generics) {
+            Pointer pointer;
             if (generic.typeToken == null) {
-                generic.pointer = Pointer.openPointer;
+                pointer = Pointer.openPointer;
             } else {
-                generic.pointer = cFile.getPointer(generic.typeToken, generic.end, cycleOwner, genericOwner);
+                pointer = cFile.getPointer(generic.typeToken, generic.end, cycleOwner, genericOwner);
             }
+            generic.pointer = new Pointer(pointer.type, pointer.pointers, generic);
         }
     }
 

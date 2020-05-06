@@ -120,6 +120,12 @@ public class Token {
         return true;
     }
 
+    public void addToBuilder(StringBuilder builder) {
+        if (length > 0) {
+            builder.append(source, start, end);
+        }
+    }
+
     @Override
     public int hashCode() {
         if (hash == 0 && length > 0) {

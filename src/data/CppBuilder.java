@@ -1,5 +1,8 @@
 package data;
 
+import content.Token;
+import logic.Generic;
+import logic.Generics;
 import logic.Pointer;
 import logic.typdef.Type;
 
@@ -52,7 +55,91 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder add(Token token) {
+        token.addToBuilder(tBuilder);
+        return this;
+    }
+
+    public CppBuilder name(String name) {
+        tBuilder.append(name);
+        return this;
+    }
+
+    public CppBuilder nameClass(Token token) {
+        token.addToBuilder(tBuilder);
+        return this;
+    }
+
+    public CppBuilder nameGeneric(Token token) {
+        tBuilder.append("g_");
+        token.addToBuilder(tBuilder);
+        return this;
+    }
+
     public CppBuilder add(Pointer pointer) {
+        if (pointer == Pointer.nullPointer) return add("nullptr");
+        if (pointer == Pointer.voidPointer) return add("void");
+        if (pointer.typeSource != null) {
+            nameGeneric(pointer.typeSource.nameToken);
+        } else {
+            if (pointer.type.isClass() || pointer.type.isInterface()) {
+                // Ptr<
+                add(pointer.type.pathToken);
+            } else {
+                add(pointer.type.pathToken);
+            }
+
+            if (pointer.pointers != null) {
+                tBuilder.append("<");
+                for (int i = 0; i < pointer.pointers.length; i++) {
+                    if (i > 0) tBuilder.append(", ");
+                    add(pointer.pointers[i]);
+                }
+                tBuilder.append(">");
+            }
+            if (pointer.type.isClass() || pointer.type.isInterface()) {
+                // >
+                add("*");
+            }
+        }
+        return this;
+    }
+
+    public CppBuilder parent(Pointer pointer) {
+        if (pointer == null) return add("IObject");
+        if (pointer == Pointer.nullPointer) return add("nullptr");
+        if (pointer == Pointer.voidPointer) return add("void");
+        if (pointer.typeSource != null) {
+            nameGeneric(pointer.typeSource.nameToken);
+        } else {
+            if (pointer.type.isClass() || pointer.type.isInterface()) {
+                // Ptr<
+                add(pointer.type.pathToken);
+            } else {
+                add(pointer.type.pathToken);
+            }
+
+            if (pointer.pointers != null) {
+                tBuilder.append("<");
+                for (int i = 0; i < pointer.pointers.length; i++) {
+                    if (i > 0) tBuilder.append(", ");
+                    add(pointer.pointers[i]);
+                }
+                tBuilder.append(">");
+            }
+        }
+        return this;
+    }
+
+    public CppBuilder add(Generics generics) {
+        if (generics != null) {
+            add("template<");
+            for (int i = 0; i < generics.generics.size(); i++) {
+                if (i != 0) add(", ");
+                add("typename ").nameGeneric(generics.generics.get(i).nameToken);
+            }
+            add(">").ln();
+        }
         return this;
     }
 
@@ -72,6 +159,7 @@ public class CppBuilder {
     }
 
     public CppBuilder ln() {
+        tBuilder.append("\n");
         return this;
     }
 

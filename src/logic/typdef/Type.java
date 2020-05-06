@@ -5,6 +5,7 @@ import content.Token;
 import content.TypeToken;
 import data.ContentFile;
 import data.CppBuilder;
+import logic.Generic;
 import logic.GenericOwner;
 import logic.Generics;
 import logic.Pointer;
@@ -18,7 +19,7 @@ public abstract class Type implements GenericOwner {
 
     public Token nameToken;
     public Token contentToken;
-    public Token pathNameToken;
+    public Token pathToken;
     public String fileName;
 
     public Generics generics;
@@ -111,7 +112,7 @@ public abstract class Type implements GenericOwner {
         String pathName = cFile.namespace.name + "::" + nameToken;
         fileName = (isClass() ? "c_" : isStruct() ? "s_" : isEnum() ? "e_" : "i_")
                 + pathName.replace("_", "__").replace("::", "_");
-        pathNameToken = new Token(pathName);
+        pathToken = new Token(pathName);
 
         for (TypeToken parentTypeToken : parentTypeTokens) {
             inheritanceType(parentTypeToken.start, parentTypeToken.end);
@@ -132,7 +133,7 @@ public abstract class Type implements GenericOwner {
 
     }
 
-    public void build(CppBuilder builder) {
+    public void build(CppBuilder cBuilder) {
     }
 
     public boolean isPrivate() {

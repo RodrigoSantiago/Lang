@@ -48,8 +48,25 @@ public class Class extends Type {
     }
 
     @Override
-    public void build(CppBuilder builder) {
+    public void build(CppBuilder cBuilder) {
+        cBuilder.toHeader();
+        cBuilder.add("\\\\").add(pathToken).add(".h").ln();
 
+        cBuilder.add("")
+                .add("#ifndef H_").add(pathToken).ln()
+                .add("#define H_").add(pathToken).ln()
+                .add("#include \"langCore.h\"").ln()
+                .ln();
+
+        cBuilder.add(generics)
+                .add("class ").add(nameToken).add(" : public ").parent(parent);
+        for (Pointer parent : parents) {
+            cBuilder.add(", public ").parent(parent);
+        }
+        cBuilder.add(" {").ln()
+                .add("public :").ln();
+        cBuilder.add("};").ln();
+        cBuilder.add("#endif").ln();
     }
 
     @Override

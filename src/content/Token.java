@@ -164,4 +164,44 @@ public class Token {
         }
         return false;
     }
+
+    public boolean equalsIgnoreCase(Token other) {
+        if (other == this) return true;
+        if (other == null) return false;
+
+        if (other.source == source && other.start == start && other.end == end) { // pointer comparation
+            return true;
+        } else if (other.length == length) {
+            final int off = other.start - start;
+            for (int i = start; i < end; i++) {
+                if (Character.toUpperCase(source.charAt(i)) !=
+                        Character.toUpperCase(other.source.charAt(i + off))) {
+                    return false;
+                }
+            }
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean equals(String obj) {
+        if (obj == null) return false;
+        if (length != obj.length()) return false;
+        for (int i = 0; i < length; i++) {
+            if (source.charAt(start + i) != obj.charAt(i)) return false;
+        }
+        return true;
+    }
+
+    public boolean equalsIgnoreCase(String obj) {
+        if (obj == null) return false;
+        if (length != obj.length()) return false;
+        for (int i = 0; i < length; i++) {
+            if (Character.toUpperCase(source.charAt(start + i)) !=
+                    Character.toUpperCase(obj.charAt(i))) return false;
+        }
+        return true;
+    }
 }

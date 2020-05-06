@@ -10,25 +10,31 @@ import java.util.HashMap;
 
 public class Compiler {
 
-    private static Library langLibrary;
-    private static HashMap<String, Library> libraries = new HashMap<>();
+    private Library langLibrary;
+    private HashMap<String, Library> libraries = new HashMap<>();
 
-    private static Namespace langSpace;
-    private static Type langObject, langWrapper, langArray, langInt, langBool;
+    private Namespace langSpace;
+    private Type langObject, langWrapper, langArray, langInt, langBool;
 
-    public static void setMainFile(ContentFile main) {
+    public void setMainFile(ContentFile main) {
 
     }
 
-    public static Library libAdd(Library library) {
+    public Library libAdd(Library library) {
         if (library.name.equals("lang")) {
             langLibrary = library;
         }
+        library.compiler = this;
 
-        return libraries.put(library.name, library);
+        Library old = libraries.put(library.name, library);
+        if (old != null) {
+            old.release();
+            old.compiler = null;
+        }
+        return old;
     }
 
-    public static Library libRemove(String name) {
+    public Library libRemove(String name) {
         if (name.equals("lang")) {
             langLibrary = null;
         }
@@ -36,19 +42,20 @@ public class Compiler {
         Library lib = libraries.get(name);
         if (lib != null) {
             lib.release();
+            lib.compiler = null;
         }
         return lib;
     }
 
-    public static Library findLibrary(String name) {
+    public Library findLibrary(String name) {
         return libraries.get(name);
     }
 
-    public static void build() {
+    public void build() {
 
     }
 
-    public static Type findType(Library library, Token typeToken) {
+    public Type findType(Library library, Token typeToken) {
         String name = typeToken.toString();
         int i = name.lastIndexOf("::");
         if (i > -1) {
@@ -60,7 +67,7 @@ public class Compiler {
         return null;
     }
 
-    public static Namespace findNamespace(Library library, String name) {
+    public Namespace findNamespace(Library library, String name) {
         if (library != null) {
             Namespace namespace = library.findNamespace(name);
             if (namespace != null) {
@@ -79,18 +86,18 @@ public class Compiler {
         return null;
     }
 
-    public static Library getLangLibrary() {
+    public Library getLangLibrary() {
         return langLibrary;
     }
 
-    public static Type getLangType(Token typeToken) {
+    public Type getLangType(Token typeToken) {
         if (langSpace == null) {
             langSpace = langLibrary.findNamespace(null);
         }
         return langSpace.findType(typeToken);
     }
 
-    public static Type getLangObject() {
+    public Type getLangObject() {
         if (langObject == null) {
             langObject = getLangType(new Token("Object"));
         }
@@ -98,7 +105,7 @@ public class Compiler {
         return langObject;
     }
 
-    public static Type getLangWrapper() {
+    public Type getLangWrapper() {
         if (langWrapper == null) {
             langWrapper = getLangType(new Token("Wrapper"));
         }
@@ -106,7 +113,7 @@ public class Compiler {
         return langArray;
     }
 
-    public static Type getLangArray() {
+    public Type getLangArray() {
         if (langArray == null) {
             langArray = getLangType(new Token("Array"));
         }
@@ -114,7 +121,7 @@ public class Compiler {
         return langArray;
     }
 
-    public static void langInvalidate(Library library) {
+    public void langInvalidate(Library library) {
         if (library == langLibrary) {
             langSpace = null;
             langObject = null;

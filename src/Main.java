@@ -1,8 +1,7 @@
 import content.Token;
+import data.*;
 import data.Compiler;
-import data.ContentFile;
 import data.Error;
-import data.Library;
 import logic.Namespace;
 import logic.typdef.Type;
 
@@ -21,14 +20,18 @@ public class Main {
                 lang.fileAdd(file.getName(), read(file));
             }
         }
+        lang.setSrcDir(new File(System.getProperty("user.dir"), "test/output/lang/src"));
+        lang.setObjDir(new File(System.getProperty("user.dir"), "test/output/lang/obj"));
 
-        Compiler.libAdd(lang);
+        Compiler compiler = new Compiler();
+        compiler.libAdd(lang);
 
         lang.read();
         lang.load();
         lang.cross();
         lang.make();
 
+        boolean erros = false;
         for (ContentFile cFile : lang.cFiles.values()) {
             for (Type type : cFile.types) {
                 System.out.println(type + ":" +type.parent);
@@ -36,9 +39,21 @@ public class Main {
         }
         for (ContentFile cFile : lang.cFiles.values()) {
             if (cFile.erros.size() > 0) {
+                erros = true;
                 System.out.println("Erros at " + cFile.name);
                 for (Error error : cFile.erros) {
                     System.out.println(error+" ["+cFile.content.substring(error.start, error.end)+"]");
+                }
+            }
+        }
+        if (!erros) {
+            lang.build(new CppBuilder());
+            for (ContentFile cFile : lang.cFiles.values()) {
+                if (cFile.erros.size() > 0) {
+                    System.out.println("Erros at " + cFile.name);
+                    for (Error error : cFile.erros) {
+                        System.out.println(error+" ["+cFile.content.substring(error.start, error.end)+"]");
+                    }
                 }
             }
         }

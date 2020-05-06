@@ -75,7 +75,7 @@ public class Using {
 
     public void preload() {
         if (isStatic) {
-            Type type = Compiler.findType(cFile.library, nameToken);
+            Type type = cFile.getCompiler().findType(cFile.library, nameToken);
             if (type == null) {
                 isUsable = false;
                 cFile.erro(nameToken, "Type not found");
@@ -83,7 +83,7 @@ public class Using {
                 staticType = cFile.mark(type);
             }
         } else if (isDirect) {
-            Type type = Compiler.findType(cFile.library, nameToken);
+            Type type = cFile.getCompiler().findType(cFile.library, nameToken);
             if (type == null) {
                 isUsable = false;
                 cFile.erro(nameToken, "Type not found");
@@ -91,7 +91,7 @@ public class Using {
                 directType = cFile.mark(type);
             }
         } else {
-            namespace = Compiler.findNamespace(cFile.library, nameToken.toString(0, nameToken.length - 2));
+            namespace = cFile.getCompiler().findNamespace(cFile.library, nameToken.toString(0, nameToken.length - 2));
             if (namespace == null) {
                 isUsable = false;
                 cFile.erro(nameToken, "Namespace not found");

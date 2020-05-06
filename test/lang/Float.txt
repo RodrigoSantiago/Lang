@@ -57,7 +57,7 @@ public final class Float {
     }
 }
 
-struct float : Float {
+public static struct float : Float {
 
     private this() {
     }

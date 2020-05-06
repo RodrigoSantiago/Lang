@@ -37,7 +37,7 @@ public final class Int : Object {
     }
 }
 
-struct int : Int {
+public static struct int : Int {
 
     private this() {
     }

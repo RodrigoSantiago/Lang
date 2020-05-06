@@ -21,7 +21,7 @@ public final class String {
     }
 }
 
-public struct string : String {
+public static struct string : String {
 
     public int Length {
         get {

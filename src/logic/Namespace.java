@@ -7,6 +7,7 @@ import logic.typdef.Type;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 public class Namespace {
 
@@ -22,6 +23,22 @@ public class Namespace {
     }
 
     public Type add(Type type) {
+        if (types.containsKey(type.nameToken)) {
+            return types.put(type.nameToken, type);
+        }
+
+        for (Map.Entry<Token, Type> entry : types.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(type.nameToken)) {
+                Type old = entry.getValue();
+                if (type.isClass() == old.isClass()
+                        && type.isStruct() == old.isStruct()
+                        && type.isEnum() == old.isEnum()
+                        && type.isInterface() == old.isInterface()) {
+                    return type;
+                }
+            }
+        }
+
         return types.put(type.nameToken, type);
     }
 

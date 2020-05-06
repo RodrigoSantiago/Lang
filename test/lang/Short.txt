@@ -29,7 +29,7 @@ public final class Short {
     }
 }
 
-struct short : Short {
+public static struct short : Short {
 
     private short() {
     }

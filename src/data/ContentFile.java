@@ -183,15 +183,19 @@ public class ContentFile {
     }
 
     public Pointer langObject() {
-        return new Pointer(mark(Compiler.getLangObject()));
+        return new Pointer(mark(getCompiler().getLangObject()));
     }
 
     public Pointer langArray(Pointer pointer) {
-        return new Pointer(mark(Compiler.getLangArray()), new Pointer[]{pointer});
+        return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer});
     }
 
     public Pointer langWrapper(Type type) {
-        return new Pointer(mark(Compiler.getLangWrapper()), new Pointer[]{new Pointer(type)});
+        return new Pointer(mark(getCompiler().getLangWrapper()), new Pointer[]{new Pointer(type)});
+    }
+
+    public Compiler getCompiler() {
+        return library.getCompiler();
     }
 
     public void add(Using using) {
@@ -210,10 +214,14 @@ public class ContentFile {
 
     public void add(Type type) {
         types.add(type);
-        Type old = namespace.add(type);
+        if (type.nameToken != null) {
+            Type old = namespace.add(type);
 
-        if (old != null && old.nameToken != null) {
-            erro(old.nameToken, "Repeated type name");
+            if (old == type) {
+                erro(old.nameToken, "Repeated type name (Insensitive case exception)");
+            } else if (old != null) {
+                erro(old.nameToken, "Repeated type name");
+            }
         }
     }
 
@@ -240,9 +248,9 @@ public class ContentFile {
                 return mark(type);
             }
 
-            type = Compiler.getLangType(typeToken);
+            type = getCompiler().getLangType(typeToken);
         } else {
-            type = Compiler.findType(library, typeToken);
+            type = getCompiler().findType(library, typeToken);
         }
 
         return mark(type);
@@ -263,14 +271,14 @@ public class ContentFile {
         if (ptr == null) {
             type = findType(typeToken);
             if (type == null) {
-                type = Compiler.getLangObject();
+                type = getCompiler().getLangObject();
                 erro(typeToken, "Undefined type");
             }
         }
 
         if (type != null && cycleOwner != null) {
             if (type.cyclicVerify(cycleOwner)) {
-                type = Compiler.getLangObject();
+                type = getCompiler().getLangObject();
                 erro(typeToken, "Cyclic reference");
             }
         }
@@ -328,7 +336,7 @@ public class ContentFile {
             ptr = new Pointer(type, iPointers == null ? null : iPointers.toArray(new Pointer[0]));
         }
         for (int i = 0; i < arr; i++) {
-            ptr = new Pointer(Compiler.getLangArray(), new Pointer[]{ptr});
+            ptr = new Pointer(getCompiler().getLangArray(), new Pointer[]{ptr});
         }
 
         return ptr;

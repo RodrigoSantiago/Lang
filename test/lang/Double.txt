@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Double : List<int> {
+public final class Double {
     public final double value;
 
     public this(double value) {
@@ -49,7 +49,7 @@ public final class Double : List<int> {
     }
 }
 
-struct double : Double {
+public static struct double : Double {
 
     private this() {
     }

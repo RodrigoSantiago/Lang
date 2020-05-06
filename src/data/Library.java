@@ -4,7 +4,9 @@ import content.Token;
 import logic.Namespace;
 import logic.typdef.Type;
 
+import java.io.File;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,11 +25,33 @@ public class Library {
     public HashMap<String, String> adds = new HashMap<>();
     public HashSet<String> subs = new HashSet<>();
 
+    Compiler compiler;
+    private File srcDir, objDir;
     private boolean loaded;
 
     public Library(String name, long version) {
         this.name = name;
         this.version = version;
+    }
+
+    public void setSrcDir(File srcDir) {
+        this.srcDir = srcDir;
+    }
+
+    public File getSrcDir() {
+        return srcDir;
+    }
+
+    public void setObjDir(File objDir) {
+        this.objDir = objDir;
+    }
+
+    public File getObjDir() {
+        return objDir;
+    }
+
+    public Compiler getCompiler() {
+        return compiler;
     }
 
     public Dependency dependencyAdd(Dependency dependency) {
@@ -132,7 +156,7 @@ public class Library {
     }
 
     /**
-     * Make : Reak Tokens to create Lines and Block
+     * Make : Read Tokens to create Lines and Block
      *
      * */
     public void make() {
@@ -143,8 +167,29 @@ public class Library {
      * Build : Transpiler the code to C++ language
      *
      * */
-    public void build() {
+    public void build(CppBuilder cppBuilder) {
+        for (ContentFile cFile : cFiles.values()) {
+            for (Type type : cFile.types) {
+                if (type.isLangBase()) {
+                    continue;
+                }
+                cppBuilder.reset();
+                type.build(cppBuilder);
 
+                File src = new File(srcDir, type.fileName + ".cpp");
+                File header = new File(srcDir, type.fileName + ".h");
+                try (PrintWriter pw = new PrintWriter(src)) {
+                    pw.print(cppBuilder.getSource());
+                } catch (Exception e) {
+                    cFile.erro(0, 0, "Unable to write to file[" + src + "]");
+                }
+                try (PrintWriter pw = new PrintWriter(header)) {
+                    pw.print(cppBuilder.getHeader());
+                } catch (Exception e) {
+                    cFile.erro(0, 0, "Unable to write to file[" + header + "]");
+                }
+            }
+        }
     }
 
     /**
@@ -170,7 +215,7 @@ public class Library {
         adds.clear();
         subs.clear();
 
-        Compiler.langInvalidate(this);
+        compiler.langInvalidate(this);
     }
 
     public void unmake() {
@@ -188,6 +233,6 @@ public class Library {
             }
         }
 
-        Compiler.langInvalidate(this);
+        compiler.langInvalidate(this);
     }
 }

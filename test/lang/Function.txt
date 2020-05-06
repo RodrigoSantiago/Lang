@@ -21,7 +21,7 @@ public class Function {
     } */
 }
 
-struct function<T> : Function<T> {
+public struct function<T> : Function<T> {
 
     public bool valid { get; }
 

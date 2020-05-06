@@ -41,4 +41,9 @@ public class Struct extends Type {
     public final boolean isStruct() {
         return true;
     }
+
+    @Override
+    public boolean isLangBase() {
+        return (cFile.library == cFile.getCompiler().getLangLibrary()) && isStatic() && !nameToken.equals("date");
+    }
 }

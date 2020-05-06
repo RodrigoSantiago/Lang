@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TypeToken;
 import data.ContentFile;
+import data.CppBuilder;
 import logic.Pointer;
 
 public class Class extends Type {
@@ -44,6 +45,11 @@ public class Class extends Type {
         if (this.parent == null && cFile.langObject().type != this) {
             this.parent = cFile.langObject();
         }
+    }
+
+    @Override
+    public void build(CppBuilder builder) {
+
     }
 
     @Override

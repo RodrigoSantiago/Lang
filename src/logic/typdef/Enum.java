@@ -1,8 +1,9 @@
 package logic.typdef;
 
 import content.Key;
+import content.Parser;
 import content.Token;
-import content.TypeToken;
+import content.TokenGroup;
 import data.ContentFile;
 import logic.Pointer;
 
@@ -15,7 +16,7 @@ public class Enum extends Type {
     public void load() {
         super.load();
 
-        for (TypeToken pTypeToken : parentTypeTokens) {
+        for (TokenGroup pTypeToken : parentTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this);
             if (parent.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined type");
@@ -25,6 +26,11 @@ public class Enum extends Type {
         }
 
         parent = cFile.langWrapper(this);
+
+        if (contentToken != null && contentToken.getChild() != null) {
+            Parser parser = new Parser();
+            parser.parseMembers(this, contentToken.getChild(), contentToken.getLastChild());
+        }
     }
 
     @Override

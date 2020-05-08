@@ -166,19 +166,19 @@ public static struct date : Date {
         }
     }
 
-    public date(long value) {
+    public this(long value) {
         set(value);
     }
 
-    public date(int hour, int minuts, int seconds, int miliseconds) {
+    public this(int hour, int minuts, int seconds, int miliseconds) {
         set(hour, minuts, seconds, miliseconds);
     }
 
-    public date(int days, int hour, int minuts, int seconds, int miliseconds) {
+    public this(int days, int hour, int minuts, int seconds, int miliseconds) {
         set(days, hour, minuts, seconds, miliseconds);
     }
 
-    public date(int year, int month, int monthday, int hour, int minuts, int seconds, int miliseconds) {
+    public this(int year, int month, int monthday, int hour, int minuts, int seconds, int miliseconds) {
         set(year, month, monthday, hour, minuts, seconds, miliseconds);
     }
 
@@ -222,7 +222,7 @@ public static struct date : Date {
         return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
     }
 
-    long operator autocast(date value) {
+    long operator auto(date value) {
         return value.value;
     }
 

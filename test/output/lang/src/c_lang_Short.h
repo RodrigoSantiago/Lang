@@ -1,6 +1,6 @@
-\\lang::Short.h
-#ifndef H_lang::Short
-#define H_lang::Short
+\\c_lang_Short.h
+#ifndef H_c_lang_Short
+#define H_c_lang_Short
 #include "langCore.h"
 
 class Short : public lang::Object {

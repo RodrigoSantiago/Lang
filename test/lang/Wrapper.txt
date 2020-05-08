@@ -3,7 +3,7 @@ namespace lang;
 public class Wrapper<T> {
     public final T value;
 
-    public Wrapper(T value) {
+    public this(T value) {
         this.value = value;
     }
 

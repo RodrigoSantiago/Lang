@@ -31,6 +31,6 @@ public struct function<T> : Function<T> {
     public void run() {
     }
 
-    bool operator autocast(function<T> value) {
+    bool operator auto(function<T> value) {
     }
 }

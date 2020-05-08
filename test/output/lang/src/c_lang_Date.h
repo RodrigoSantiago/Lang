@@ -1,6 +1,6 @@
-\\lang::Date.h
-#ifndef H_lang::Date
-#define H_lang::Date
+\\c_lang_Date.h
+#ifndef H_c_lang_Date
+#define H_c_lang_Date
 #include "langCore.h"
 
 class Date : public lang::Object {

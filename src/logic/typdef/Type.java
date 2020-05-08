@@ -2,32 +2,47 @@ package logic.typdef;
 
 import content.Key;
 import content.Token;
-import content.TypeToken;
+import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
-import logic.Generic;
 import logic.GenericOwner;
-import logic.Generics;
+import logic.Template;
 import logic.Pointer;
 import logic.member.*;
+import logic.member.view.FieldView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public abstract class Type implements GenericOwner {
 
     public final ContentFile cFile;
 
     public Token nameToken;
-    public Token contentToken;
     public Token pathToken;
     public String fileName;
 
-    public Generics generics;
-    ArrayList<TypeToken> parentTypeTokens = new ArrayList<>();
-    ArrayList<Type> inheritanceTypes = new ArrayList<>();
+    public Template template;
+    public Token contentToken;
+
     public Pointer parent;
     public ArrayList<Pointer> parents = new ArrayList<>();
+    public ArrayList<TokenGroup> parentTokens = new ArrayList<>();
 
+    public HashMap<Token, FieldView> fields = new HashMap<>();
+
+    public ArrayList<Property> properties = new ArrayList<>();
+    public ArrayList<Variable> variables = new ArrayList<>();
+    public ArrayList<Num> nums = new ArrayList<>();
+
+    public ArrayList<Method> methods = new ArrayList<>();
+    public ArrayList<Indexer> indexers = new ArrayList<>();
+    public ArrayList<Operator> operators = new ArrayList<>();
+    public ArrayList<Constructor> constructors = new ArrayList<>();
+    public ArrayList<Destructor> destructors = new ArrayList<>(1);
+    public ArrayList<MemberNative> memberNatives = new ArrayList<>();
+
+    private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
 
     public Type(ContentFile cFile, Key key, Token start, Token end) {
@@ -43,7 +58,7 @@ public abstract class Type implements GenericOwner {
             } else if (state == 0 && token.key.isAttribute) {
                 if (token.key == Key.PUBLIC || token.key == Key.PRIVATE) {
                     if (isPublic || isPrivate) {
-                        cFile.erro(token, "Repated acess modifier");
+                        cFile.erro(token, "Repeated acess modifier");
                     } else {
                         isPublic = (token.key == Key.PUBLIC);
                         isPrivate = (token.key == Key.PRIVATE);
@@ -52,7 +67,7 @@ public abstract class Type implements GenericOwner {
                     if (!isClass()) {
                         cFile.erro(token, "Unexpected modifier");
                     } else if (isAbstract || isFinal) {
-                        cFile.erro(token, "Repated inheritance modifier");
+                        cFile.erro(token, "Repeated inheritance modifier");
                     } else {
                         isAbstract = (token.key == Key.ABSTRACT);
                         isFinal = (token.key == Key.FINAL);
@@ -60,9 +75,13 @@ public abstract class Type implements GenericOwner {
                 } else if (token.key == Key.STATIC) {
                     if (!isStruct()) {
                         cFile.erro(token, "Unexpected modifier");
+                    } else if (isStatic) {
+                        cFile.erro(token, "Repeated modifier");
                     } else {
                         isStatic = true;
                     }
+                } else {
+                    cFile.erro(token, "Unexpected modifier");
                 }
             } else if (state == 1 && token.key == Key.WORD) {
                 nameToken = token;
@@ -71,7 +90,7 @@ public abstract class Type implements GenericOwner {
                 if (isEnum()) {
                     cFile.erro(token, "A enum cannot have genrics");
                 } else {
-                    generics = new Generics(this, token, true);
+                    template = new Template(cFile, token);
                 }
                 state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.COLON) {
@@ -83,7 +102,7 @@ public abstract class Type implements GenericOwner {
                 while (next != null && next.key == Key.INDEX) {
                     next = next.getNext();
                 }
-                parentTypeTokens.add(new TypeToken(token, next));
+                parentTokens.add(new TokenGroup(token, next));
                 state = 5;
             } else if (state == 5 && token.key == Key.COMMA) {
                 state = 4;
@@ -114,18 +133,18 @@ public abstract class Type implements GenericOwner {
                 + pathName.replace("_", "__").replace("::", "_");
         pathToken = new Token(pathName);
 
-        for (TypeToken parentTypeToken : parentTypeTokens) {
+        for (TokenGroup parentTypeToken : parentTokens) {
             inheritanceType(parentTypeToken.start, parentTypeToken.end);
         }
 
-        if (generics != null) {
-            generics.preload(this);
+        if (template != null) {
+            template.preload(this);
         }
     }
 
     public void load() {
-        if (generics != null) {
-            generics.load(this, null);
+        if (template != null) {
+            template.load(this, null);
         }
     }
 
@@ -181,9 +200,9 @@ public abstract class Type implements GenericOwner {
     }
 
     @Override
-    public Pointer findGeneric(Token genericName) {
-        if (generics != null) {
-            return generics.findGeneric(genericName);
+    public Pointer findGeneric(Token genericToken) {
+        if (template != null) {
+            return template.findGeneric(genericToken);
         }
         return null;
     }
@@ -246,40 +265,100 @@ public abstract class Type implements GenericOwner {
         }
     }
 
-    public void add(Field field) {
-
+    public void add(Variable variable) {
+        if (variable.load()) {
+            if (isInterface() && !variable.isStatic()) {
+                cFile.erro(variable.token, "Instance variables not allowed");
+            } else {
+                for (FieldView field : variable.getFields()) {
+                    if (fields.containsKey(field.nameToken)) {
+                        cFile.erro(field.nameToken, "Repeated field name");
+                    } else {
+                        fields.put(field.nameToken, field);
+                    }
+                }
+                variables.add(variable);
+            }
+        }
     }
 
-    public void add(Property prtoperty) {
-
+    public void add(Property property) {
+        if (property.load()) {
+            FieldView field = property.getField();
+            if (fields.containsKey(field.nameToken)) {
+                cFile.erro(field.nameToken, "Repeated field name");
+            } else {
+                fields.put(field.nameToken, field);
+            }
+            properties.add(property);
+        }
     }
 
     public void add(Num num) {
-
+        if (num.load()) {
+            if (!isEnum()) {
+                cFile.erro(num.token, "Unexpected enumeration");
+            } else {
+                for (FieldView field : num.getFields()) {
+                    if (fields.containsKey(field.nameToken)) {
+                        cFile.erro(field.nameToken, "Repeated field name");
+                    } else {
+                        fields.put(field.nameToken, field);
+                    }
+                }
+                nums.add(num);
+            }
+        }
     }
 
     public void add(Method method) {
-
+        if (method.load()) {
+            methods.add(method);
+        }
     }
 
     public void add(Indexer indexer) {
-
+        if (indexer.load()) {
+            indexers.add(indexer);
+        }
     }
 
     public void add(Operator operator) {
-
+        if (operator.load()) {
+            if (!isStruct()) {
+                cFile.erro(operator.token, "Operators not allowed");
+            } else {
+                operators.add(operator);
+            }
+        }
     }
 
     public void add(Constructor constructor) {
-
+        if (constructor.load()) {
+            if (isInterface() && !constructor.isStatic()) {
+                cFile.erro(constructor.token, "Instance constructors not allowed");
+            } else {
+                constructors.add(constructor);
+            }
+        }
     }
 
     public void add(Destructor destructor) {
-
+        if (destructor.load()) {
+            if (destructors.size() > 0) {
+                cFile.erro(destructor.token, "Repeated destructor");
+            } else if (isEnum() || isInterface()) {
+                cFile.erro(destructor.token, "Destructors not allowed");
+            } else {
+                destructors.add(destructor);
+            }
+        }
     }
 
-    public void add(TNative tnative) {
-
+    public void add(MemberNative memberNative) {
+        if (memberNative.load()) {
+            memberNatives.add(memberNative);
+        }
     }
 
     @Override

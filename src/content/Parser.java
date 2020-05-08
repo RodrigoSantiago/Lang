@@ -13,13 +13,11 @@ import logic.typdef.Type;
 
 public class Parser {
 
-    private ContentFile cFile;
+    public Parser() {
 
-    public Parser(ContentFile cFile) {
-        this.cFile = cFile;
     }
 
-    public void parseWorkspace(Token init) {
+    public void parseWorkspace(ContentFile cFile, Token init) {
         int state = 0;
 
         Key typeKey = Key.NOONE;
@@ -100,35 +98,35 @@ public class Parser {
 
             if (state == 0 && (token.key == Key.BRACE)) {
                 if (size == 1) {
-                    type.add(new Method(start, token));  // unexpected (empty brace)
+                    type.add(new Method(type, start, next));  // unexpected (empty brace)
                 } else {
-                    type.add(new Property(start, token));
+                    type.add(new Property(type, start, next));
                 }
             } else if ((state == 0 || state == 1) && (token.key == Key.SEMICOLON || next == end)) {
-                type.add(new Field(start, token));
+                type.add(new Variable(type, start, token));
 
             } else if (state == 2 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == end)) {
                 if (constructor) {
-                    type.add(new Constructor(start, token));
+                    type.add(new Constructor(type, start, next));
                 } else if (destructor) {
-                    type.add(new Destructor(start, token));
+                    type.add(new Destructor(type, start, next));
                 } else {
-                    type.add(new Method(start, token));
+                    type.add(new Method(type, start, next));
                 }
             } else if (state == 3 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == end)) {
-                type.add(new Indexer(start, token));
+                type.add(new Indexer(type, start, next));
 
             } else if (state == 4 && (token.key == Key.SEMICOLON || next == end)) {
-                type.add(new Property(start, token));
+                type.add(new Property(type, start, next));
 
             } else if (state == 5 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == end)) {
-                type.add(new Operator(start, token));
+                type.add(new Operator(type, start, next));
 
             } else if (state == 6 && (token.key == Key.SEMICOLON || next == end)) {
-                type.add(new Num(start, token));
+                type.add(new Num(type, start, next));
 
             } else if (state == 7 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == end)) {
-                type.add(new TNative(start, token));
+                type.add(new MemberNative(type, start, next));
 
             } else {
                 reset = false;

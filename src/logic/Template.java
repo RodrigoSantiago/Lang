@@ -7,18 +7,14 @@ import logic.typdef.Type;
 
 import java.util.ArrayList;
 
-public class Generics {
+public class Template {
 
-    Type owner;
     ContentFile cFile;
-    private boolean isStatic;
     public ArrayList<Generic> generics = new ArrayList<>();
 
-    public Generics(Type owner, Token genericToken, boolean isStatic) {
-        this.owner = owner;
-        this.cFile = owner.cFile;
+    public Template(ContentFile cFile, Token genericToken) {
+        this.cFile = cFile;
 
-        this.isStatic = isStatic;
         int state = 0;
 
         Token nameToken = null;

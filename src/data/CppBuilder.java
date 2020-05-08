@@ -1,8 +1,7 @@
 package data;
 
 import content.Token;
-import logic.Generic;
-import logic.Generics;
+import logic.Template;
 import logic.Pointer;
 import logic.typdef.Type;
 
@@ -131,12 +130,12 @@ public class CppBuilder {
         return this;
     }
 
-    public CppBuilder add(Generics generics) {
-        if (generics != null) {
+    public CppBuilder add(Template template) {
+        if (template != null) {
             add("template<");
-            for (int i = 0; i < generics.generics.size(); i++) {
+            for (int i = 0; i < template.generics.size(); i++) {
                 if (i != 0) add(", ");
-                add("typename ").nameGeneric(generics.generics.get(i).nameToken);
+                add("typename ").nameGeneric(template.generics.get(i).nameToken);
             }
             add(">").ln();
         }

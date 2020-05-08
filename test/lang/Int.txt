@@ -46,7 +46,7 @@ public static struct int : Int {
     }
     short operator cast(int value) {
     }
-    long operator autocast(int value) {
+    long operator auto(int value) {
     }
 
     bool operator ==(int value, double other) {

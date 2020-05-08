@@ -1,6 +1,6 @@
-\\lang::Array.h
-#ifndef H_lang::Array
-#define H_lang::Array
+\\c_lang_Array.h
+#ifndef H_c_lang_Array
+#define H_c_lang_Array
 #include "langCore.h"
 
 template<typename g_T>

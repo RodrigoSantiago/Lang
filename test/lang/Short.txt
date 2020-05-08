@@ -31,14 +31,14 @@ public final class Short {
 
 public static struct short : Short {
 
-    private short() {
+    private this() {
     }
 
     byte operator cast(short value) {
     }
     char operator cast(short value) {
     }
-    int operator autocast(short value) {
+    int operator auto(short value) {
     }
 
     bool operator ==(short value, double other) {

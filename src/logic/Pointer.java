@@ -2,9 +2,6 @@ package logic;
 
 import logic.typdef.Type;
 
-/**
- * Struct -
- */
 public class Pointer {
 
     public static final Pointer nullPointer = new Pointer(null); // Value
@@ -60,6 +57,8 @@ public class Pointer {
 
     @Override
     public String toString() {
+        if (this == voidPointer) return "void";
+        if (this == nullPointer) return "null";
         return "Ptr[" + type + "]";
     }
 }

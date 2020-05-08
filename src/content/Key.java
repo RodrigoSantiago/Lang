@@ -19,12 +19,12 @@ public class Key {
     public static final Key CINDEX = new Key("]");
     public static final Key CGENERIC = new Key(">");
 
-    public static final Key USING = new Key("using",            true);
-    public static final Key NAMESPACE = new Key("namespace",    true);
-    public static final Key CLASS = new Key("class",            true);
-    public static final Key STRUCT = new Key("struct",          true);
-    public static final Key INTERFACE = new Key("interface",    true);
-    public static final Key ENUM = new Key("enum",              true);
+    public static final Key USING = new Key("using",            true, false);
+    public static final Key NAMESPACE = new Key("namespace",    true, false);
+    public static final Key CLASS = new Key("class",            true, false);
+    public static final Key STRUCT = new Key("struct",          true, false);
+    public static final Key INTERFACE = new Key("interface",    true, false);
+    public static final Key ENUM = new Key("enum",              true, false);
 
     public static final Key PUBLIC = new Key("public",          false, true);
     public static final Key PRIVATE = new Key("private",        false, true);
@@ -33,8 +33,6 @@ public class Key {
     public static final Key ABSTRACT = new Key("abstract",      false, true);
 
     public static final Key OPERATOR = new Key("operator",      false, false);
-    public static final Key GET = new Key("get");
-    public static final Key SET = new Key("set");
 
     public static final Key IF = new Key("if");
     public static final Key ELSE = new Key("else");
@@ -51,11 +49,11 @@ public class Key {
     public static final Key CASE = new Key("case");
     public static final Key RETURN = new Key("return");
     public static final Key VAR = new Key("var");
-    public static final Key LET = new Key("let");
+    public static final Key LET = new Key("let",                false, true);
     public static final Key NEW = new Key("new");
     public static final Key THIS = new Key("this",              false, false);
     public static final Key SUPER = new Key("super");
-    public static final Key DEFAULT = new Key("default",        false, false);
+    public static final Key DEFAULT = new Key("default",        false, true);
 
     public static final Key SEMICOLON = new Key(";");
     public static final Key COLON = new Key(":");
@@ -63,43 +61,49 @@ public class Key {
     public static final Key COMMA = new Key(",");
     public static final Key QUEST = new Key("?");
     public static final Key LAMBDA = new Key("->");
-    public static final Key ADD = new Key("+");
-    public static final Key SUB = new Key("-");
-    public static final Key MUL = new Key("*");
-    public static final Key DIV = new Key("/");
-    public static final Key MOD = new Key("%");
-    public static final Key RSHIFT = new Key(">>");
-    public static final Key LSHIFT = new Key("<<");
-    public static final Key INC = new Key("++");
-    public static final Key DEC = new Key("--");
-    public static final Key SETVAL = new Key("=");
-    public static final Key SETADD = new Key("+=");
-    public static final Key SETSUB = new Key("-=");
-    public static final Key SETDIV = new Key("/=");
-    public static final Key SETMOD = new Key("%=");
-    public static final Key SETRSHIFT = new Key(">>=");
-    public static final Key SETLSHIFT = new Key("<<=");
-    public static final Key BITAND = new Key("&");
-    public static final Key BITOR = new Key("|");
-    public static final Key BITNOT = new Key("~");
-    public static final Key BITXOR = new Key("^");
-    public static final Key SETAND = new Key("&=");
-    public static final Key SETOR = new Key("|=");
-    public static final Key SETNOT = new Key("~=");
-    public static final Key SETXOR = new Key("^=");
-    public static final Key EQUAL = new Key("==");
-    public static final Key MORE = new Key(">");
-    public static final Key LESS = new Key("<");
-    public static final Key EMORE = new Key(">=");
-    public static final Key ELESS = new Key("<=");
-    public static final Key DIF = new Key("!=");
-    public static final Key AND = new Key("&&");
-    public static final Key OR = new Key("||");
-    public static final Key NOT = new Key("!");
+    public static final Key ADD = new Key("+",                  false, false, true);
+    public static final Key SUB = new Key("-",                  false, false, true);
+    public static final Key MUL = new Key("*",                  false, false, true);
+    public static final Key DIV = new Key("/",                  false, false, true);
+    public static final Key MOD = new Key("%",                  false, false, true);
+    public static final Key RSHIFT = new Key(">>",              false, false, true);
+    public static final Key LSHIFT = new Key("<<",              false, false, true);
+    public static final Key INC = new Key("++",                 false, false, true);
+    public static final Key DEC = new Key("--",                 false, false, true);
+    public static final Key SETVAL = new Key("=",               false, false, true);
+    public static final Key SETADD = new Key("+=",              false, false, false);
+    public static final Key SETSUB = new Key("-=",              false, false, false);
+    public static final Key SETDIV = new Key("/=",              false, false, false);
+    public static final Key SETMOD = new Key("%=",              false, false, false);
+    public static final Key SETRSHIFT = new Key(">>=",          false, false, false);
+    public static final Key SETLSHIFT = new Key("<<=",          false, false, false);
+    public static final Key BITAND = new Key("&",               false, false, true);
+    public static final Key BITOR = new Key("|",                false, false, true);
+    public static final Key BITNOT = new Key("~",               false, false, true);
+    public static final Key BITXOR = new Key("^",               false, false, true);
+    public static final Key SETAND = new Key("&=",              false, false, false);
+    public static final Key SETOR = new Key("|=",               false, false, false);
+    public static final Key SETNOT = new Key("~=",              false, false, false);
+    public static final Key SETXOR = new Key("^=",              false, false, false);
+    public static final Key EQUAL = new Key("==",               false, false, true);
+    public static final Key MORE = new Key(">",                 false, false, true);
+    public static final Key LESS = new Key("<",                 false, false, true);
+    public static final Key EMORE = new Key(">=",               false, false, true);
+    public static final Key ELESS = new Key("<=",               false, false, true);
+    public static final Key DIF = new Key("!=",                 false, false, true);
+    public static final Key AND = new Key("&&",                 false, false, true);
+    public static final Key OR = new Key("||",                  false, false, true);
+    public static final Key NOT = new Key("!",                  false, false, true);
+
+    // public static final Key GET = new Key("get");
+    // public static final Key SET = new Key("set");
+    public static final Key CAST = new Key("cast",              false, false, true);
+    public static final Key AUTO = new Key("auto",              false, false, true);
 
     public final String string;
     public final boolean isNamespace;
     public final boolean isAttribute;
+    public final boolean isOperator;
     public final boolean isBlock = true;
     public final boolean isLine = true;
 
@@ -112,9 +116,13 @@ public class Key {
     }
 
     private Key(String string, boolean isNamespace, boolean isAttribute) {
+        this(string, isNamespace, isAttribute, false);
+    }
+    private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator) {
         this.string = string;
         this.isNamespace = isNamespace;
         this.isAttribute = isAttribute;
+        this.isOperator = isOperator;
     }
 
     public static Key getSimbol(String str, int start, int end) {
@@ -172,7 +180,7 @@ public class Key {
             return  IF.isEqual(str, start, end) ? IF : DO.isEqual(str, start, end) ? DO : NOONE;
         } else if (len == 3) {
             return  NEW.isEqual(str, start, end) ? NEW : VAR.isEqual(str, start, end) ? VAR :
-                    GET.isEqual(str, start, end) ? GET : SET.isEqual(str, start, end) ? SET :
+                    // GET.isEqual(str, start, end) ? GET : SET.isEqual(str, start, end) ? SET :
                     FOR.isEqual(str, start, end) ? FOR : LET.isEqual(str, start, end) ? LET : NOONE;
         } else if (len == 4) {
             return  ENUM.isEqual(str, start, end) ? ENUM : ELSE.isEqual(str, start, end) ? ELSE :

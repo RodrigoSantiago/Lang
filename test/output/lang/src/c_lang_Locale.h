@@ -1,6 +1,6 @@
-\\lang::Locale.h
-#ifndef H_lang::Locale
-#define H_lang::Locale
+\\c_lang_Locale.h
+#ifndef H_c_lang_Locale
+#define H_c_lang_Locale
 #include "langCore.h"
 
 class Locale : public lang::Object {

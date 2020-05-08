@@ -48,8 +48,8 @@ public class ContentFile {
         }
 
         if (token != null) {
-            Parser parser = new Parser(this);
-            parser.parseWorkspace(token);
+            Parser parser = new Parser();
+            parser.parseWorkspace(this, token);
 
             if (namespace == null) {
                 namespace = library.getNamespace(null);
@@ -263,6 +263,10 @@ public class ContentFile {
     public Pointer getPointer(Token typeToken, Token end, Type cycleOwner, GenericOwner genericOwner) {
         Pointer ptr = null;
         Type type = null;
+
+        if (typeToken.getNext() == end && typeToken.equals("void")) {
+            return Pointer.voidPointer;
+        }
 
         if (genericOwner != null) {
             ptr = genericOwner.findGeneric(typeToken);

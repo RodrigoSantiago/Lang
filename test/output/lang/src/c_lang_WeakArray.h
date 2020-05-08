@@ -1,6 +1,6 @@
-\\lang::WeakArray.h
-#ifndef H_lang::WeakArray
-#define H_lang::WeakArray
+\\c_lang_WeakArray.h
+#ifndef H_c_lang_WeakArray
+#define H_c_lang_WeakArray
 #include "langCore.h"
 
 template<typename g_T>

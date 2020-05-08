@@ -1,6 +1,6 @@
-\\lang::Wrapper.h
-#ifndef H_lang::Wrapper
-#define H_lang::Wrapper
+\\c_lang_Wrapper.h
+#ifndef H_c_lang_Wrapper
+#define H_c_lang_Wrapper
 #include "langCore.h"
 
 template<typename g_T>

@@ -1,11 +1,13 @@
 package logic.typdef;
 
 import content.Key;
+import content.Parser;
 import content.Token;
-import content.TypeToken;
+import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.Pointer;
+import logic.member.Method;
 
 public class Class extends Type {
     public Class(ContentFile cFile, Token start, Token end) {
@@ -16,7 +18,7 @@ public class Class extends Type {
     public void load() {
         super.load();
 
-        for (TypeToken pTypeToken : parentTypeTokens) {
+        for (TokenGroup pTypeToken : parentTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this);
             if (parents.contains(parent)) {
                 cFile.erro(pTypeToken.start, "Repeated parent");
@@ -45,20 +47,25 @@ public class Class extends Type {
         if (this.parent == null && cFile.langObject().type != this) {
             this.parent = cFile.langObject();
         }
+
+        if (contentToken != null && contentToken.getChild() != null) {
+            Parser parser = new Parser();
+            parser.parseMembers(this, contentToken.getChild(), contentToken.getLastChild());
+        }
     }
 
     @Override
     public void build(CppBuilder cBuilder) {
         cBuilder.toHeader();
-        cBuilder.add("\\\\").add(pathToken).add(".h").ln();
+        cBuilder.add("\\\\").add(fileName).add(".h").ln();
 
         cBuilder.add("")
-                .add("#ifndef H_").add(pathToken).ln()
-                .add("#define H_").add(pathToken).ln()
+                .add("#ifndef H_").add(fileName).ln()
+                .add("#define H_").add(fileName).ln()
                 .add("#include \"langCore.h\"").ln()
                 .ln();
 
-        cBuilder.add(generics)
+        cBuilder.add(template)
                 .add("class ").add(nameToken).add(" : public ").parent(parent);
         for (Pointer parent : parents) {
             cBuilder.add(", public ").parent(parent);

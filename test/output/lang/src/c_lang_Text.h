@@ -1,6 +1,6 @@
-\\lang::Text.h
-#ifndef H_lang::Text
-#define H_lang::Text
+\\c_lang_Text.h
+#ifndef H_c_lang_Text
+#define H_c_lang_Text
 #include "langCore.h"
 
 class Text : public lang::Object {

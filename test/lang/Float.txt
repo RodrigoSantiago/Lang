@@ -72,7 +72,7 @@ public static struct float : Float {
     }
     long operator cast(float value) {
     }
-    double operator autocast(float value) {
+    double operator auto(float value) {
     }
 
     bool operator ==(float value, double other) {

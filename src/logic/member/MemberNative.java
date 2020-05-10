@@ -26,7 +26,7 @@ public class MemberNative extends Member {
                 this.token = token;
                 state = 2;
             } else if (state == 2 && token.key == Key.PARAM) {
-                sourceToken = token;
+                readSourceToken(token.getChild(), token.getLastChild());
                 state = 3;
             } else if (state == 3 && token.key == Key.BRACE) {
                 contentToken = token;
@@ -35,6 +35,26 @@ public class MemberNative extends Member {
                 cFile.erro(token, "Unexpected token");
             }
             if (next == end && state != 4) {
+                cFile.erro(token, "Unexpected end of tokens");
+            }
+            token = next;
+        }
+    }
+
+    private void readSourceToken(Token init, Token end) {
+
+        int state = 0;
+        Token next;
+        Token token = init;
+        while (token != null && token != end) {
+            next = token.getNext();
+            if (state == 0 && (token.equals("source") || token.equals("header") || token.equals("return"))) {
+                sourceToken = token;
+                state = 1;
+            } else {
+                cFile.erro(token, "Unexpected token");
+            }
+            if (next == end && state != 1) {
                 cFile.erro(token, "Unexpected end of tokens");
             }
             token = next;

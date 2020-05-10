@@ -47,6 +47,11 @@ public class Num extends Member {
         }
     }
 
+    @Override
+    public boolean load() {
+        return nameTokens.size() > 0;
+    }
+
     public ArrayList<FieldView> getFields() {
         ArrayList<FieldView> fields = new ArrayList<>();
         for (int i = 0; i < nameTokens.size(); i++) {
@@ -54,10 +59,5 @@ public class Num extends Member {
             fields.add(new FieldView(nameToken, null, this, i));
         }
         return fields;
-    }
-
-    @Override
-    public boolean load() {
-        return true;
     }
 }

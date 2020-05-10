@@ -12,9 +12,11 @@ import java.util.ArrayList;
 
 public class Variable extends Member {
 
-    TokenGroup typeToken;
-    ArrayList<Token> nameTokens = new ArrayList<>();
-    ArrayList<TokenGroup> initTokens = new ArrayList<>();
+    private TokenGroup typeToken;
+    private Pointer typePtr;
+
+    private ArrayList<Token> nameTokens = new ArrayList<>();
+    private ArrayList<TokenGroup> initTokens = new ArrayList<>();
 
     public Variable(Type type, Token start, Token end) {
         super(type);
@@ -28,13 +30,7 @@ public class Variable extends Member {
                 readModifier(cFile, token, true, true, false, true, true, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 this.token = token;
-                if (next != null && (next.key == Key.GENERIC)) {
-                    next = next.getNext();
-                }
-                while (next != null && next.key == Key.INDEX) {
-                    next = next.getNext();
-                }
-                typeToken = new TokenGroup(token, next);
+                typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
             } else if (state == 1 && token.key == Key.WORD) {
                 nameTokens.add(token);
@@ -58,6 +54,11 @@ public class Variable extends Member {
             } else if (state == 2 && token.key == Key.SEMICOLON) {
                 initTokens.add(null);
                 state = 3;
+            } else {
+                cFile.erro(token, "Unexpected token");
+            }
+            if (next == end && state != 3) {
+                cFile.erro(token, "Unexpected end of tokens");
             }
             token = next;
         }
@@ -65,13 +66,18 @@ public class Variable extends Member {
 
     @Override
     public boolean load() {
-        return true;
+        if (typeToken != null) {
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type);
+
+            return nameTokens.size() > 0 ;
+        }
+        return false;
     }
 
     public ArrayList<FieldView> getFields() {
         ArrayList<FieldView> fields =  new ArrayList<>();
         for (int i = 0; i < nameTokens.size(); i++) {
-            fields.add(new FieldView(nameTokens.get(i), null, this, i));
+            fields.add(new FieldView(nameTokens.get(i), typePtr, this, i));
         }
         return fields;
     }

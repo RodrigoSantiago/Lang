@@ -1,8 +1,10 @@
-package logic;
+package logic.templates;
 
 import content.Key;
 import content.Token;
 import data.ContentFile;
+import logic.GenericOwner;
+import logic.Pointer;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
@@ -77,14 +79,14 @@ public class Template {
             } else {
                 pointer = cFile.getPointer(generic.typeToken, generic.end, cycleOwner, genericOwner);
             }
-            generic.pointer = new Pointer(pointer.type, pointer.pointers, generic);
+            generic.type = new Pointer(pointer.type, pointer.pointers, generic);
         }
     }
 
     public Pointer findGeneric(Token genericName) {
         for (Generic generic : generics) {
             if (genericName.equals(generic.nameToken)) {
-                return generic.pointer;
+                return generic.type;
             }
         }
         return null;

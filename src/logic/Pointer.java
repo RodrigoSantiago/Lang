@@ -1,5 +1,6 @@
 package logic;
 
+import logic.templates.Generic;
 import logic.typdef.Type;
 
 public class Pointer {
@@ -28,6 +29,16 @@ public class Pointer {
 
     public boolean isDefault() {
         return this == nullPointer || this == voidPointer || this == openPointer;
+    }
+
+    public boolean hasGeneric() {
+        if (typeSource != null) return true;
+        if (pointers != null) {
+            for (Pointer pointer : pointers) {
+                if (pointer.hasGeneric()) return true;
+            }
+        }
+        return false;
     }
 
     public int isChildOf(Pointer other) {

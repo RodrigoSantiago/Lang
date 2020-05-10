@@ -2,12 +2,11 @@ package logic.member;
 
 import content.Key;
 import content.Token;
-import data.ContentFile;
 import logic.typdef.Type;
 
 public class Destructor extends Member {
 
-    Token contentToken;
+    private Token contentToken;
 
     public Destructor(Type type, Token start, Token end) {
         super(type);
@@ -29,15 +28,9 @@ public class Destructor extends Member {
                     cFile.erro(token, "A destruct cannot have parameters");
                 }
                 state = 3;
-            } else if (token.key == Key.BRACE || token.key == Key.SEMICOLON) {
-                if (contentToken == null) {
-                    contentToken = token;
-                }
-                if (state != 3) {
-                    cFile.erro(token, "Unexpected token");
-                } else {
-                    state = 4;
-                }
+            } else if (state == 3 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
+                contentToken = token;
+                state = 4;
             } else {
                 cFile.erro(token, "Unexpected token");
             }
@@ -50,7 +43,7 @@ public class Destructor extends Member {
 
     @Override
     public boolean load() {
-        return token != null && contentToken != null;
+        return contentToken != null;
     }
 
     @Override

@@ -11,6 +11,7 @@ public class Parameters {
 
     public final ContentFile cFile;
     public ArrayList<Arg> args = new ArrayList<>();
+    private boolean hasGeneric;
 
     public Parameters(ContentFile cFile, Token param) {
         this.cFile = cFile;
@@ -48,6 +49,16 @@ public class Parameters {
         }
     }
 
+    public boolean load() {
+        for (Arg arg : args) {
+            arg.type = cFile.getPointer(arg.typeToken.start, arg.typeToken.end);
+            if (!hasGeneric && arg.type != null && arg.type.hasGeneric()) {
+                hasGeneric = true;
+            }
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
@@ -60,7 +71,7 @@ public class Parameters {
             for (int i = 0; i < args.size(); i++) {
                 Arg arg = args.get(i);
                 Arg otherArg = other.args.get(i);
-                if (!arg.typePointer.equals(otherArg.typePointer)) return false;
+                if (!arg.type.equals(otherArg.type)) return false;
                 if (arg.isLet != otherArg.isLet) return false;
             }
             return true;
@@ -76,9 +87,5 @@ public class Parameters {
             str.append(args.get(i));
         }
         return str + ")";
-    }
-
-    public boolean load() {
-        return false;
     }
 }

@@ -6,11 +6,11 @@ import logic.Pointer;
 
 public class Arg {
 
-    boolean isLet;
-    TokenGroup typeToken;
-    Token nameToken;
+    public boolean isLet;
+    public TokenGroup typeToken;
+    public Token nameToken;
 
-    Pointer typePointer;
+    public Pointer type;
 
     public Arg(Token nameToken, TokenGroup typeToken, boolean isLet) {
         this.isLet = isLet;

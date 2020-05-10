@@ -8,15 +8,14 @@ import logic.Pointer;
 import logic.typdef.Type;
 
 public class Operator extends Member {
-    Token operator;
-    Pointer castType;
-    Pointer returnType;
+
     Parameters params;
 
-    Token nameToken;
+    Token operator;
+    Key op = Key.NOONE;
     Token contentToken;
     TokenGroup typeToken;
-    Key op;
+    Pointer typePtr;
 
     public Operator(Type type, Token start, Token end) {
         super(type);
@@ -32,39 +31,29 @@ public class Operator extends Member {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
             } else if (state == 1 && token.key == Key.OPERATOR) {
-                this.token = token;
                 state = 2;
             } else if (state == 2 && token.key.isOperator) {
+                this.token = operator = token;
                 op = token.key;
-                state = 2;
+                state = 3;
             } else if (state == 2 && token.equals("cast")) {
+                this.token = operator = token;
                 op = Key.CAST;
-                state = 2;
+                state = 3;
             } else if (state == 2 && token.equals("auto")) {
+                this.token = operator = token;
                 op = Key.AUTO;
-                state = 2;
-            } else if (token.key == Key.PARAM) {
-                if (state != 2 || params != null) {
-                    cFile.erro(token, "Unexpected parameters");
-                } else {
-                    state = 3;
-                }
-                if (params == null) {
-                    params = new Parameters(cFile, token);
-                }
-            } else if (token.key == Key.BRACE || token.key == Key.SEMICOLON) {
-                if (state != 3 || contentToken != null) {
-                    cFile.erro(token, "Unexpected token");
-                } else {
-                    state = 4;
-                }
-                if (contentToken == null) {
-                    contentToken = token;
-                }
+                state = 3;
+            } else if (state == 3 && token.key == Key.PARAM) {
+                params = new Parameters(cFile, token);
+                state = 4;
+            } else if (state == 4 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
+                contentToken = token;
+                state = 5;
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 4) {
+            if (next == end && state != 5) {
                 cFile.erro(token, "Unexpected end of token");
             }
             token = next;
@@ -73,11 +62,20 @@ public class Operator extends Member {
 
     @Override
     public boolean load() {
-        return true;
+        if (typeToken != null) {
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type);
+
+            if (params != null) {
+                params.load();
+
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public String toString() {
-        return "operator "+op+" "+params+" : "+ returnType;
+        return "operator "+op+" "+params+" : "+ typePtr;
     }
 }

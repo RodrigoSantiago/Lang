@@ -6,7 +6,7 @@ import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.GenericOwner;
-import logic.Template;
+import logic.templates.Template;
 import logic.Pointer;
 import logic.member.*;
 import logic.member.view.FieldView;

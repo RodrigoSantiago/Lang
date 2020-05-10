@@ -1,10 +1,7 @@
-package logic;
+package logic.templates;
 
-import content.Key;
 import content.Token;
-import data.ContentFile;
-
-import java.util.ArrayList;
+import logic.Pointer;
 
 public class Generic {
 
@@ -12,7 +9,7 @@ public class Generic {
     public int index;
 
     public Token nameToken;
-    public Pointer pointer;
+    public Pointer type;
 
     Token typeToken, end;
 

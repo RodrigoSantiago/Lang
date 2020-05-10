@@ -2,14 +2,13 @@ package logic.member;
 
 import content.Key;
 import content.Token;
-import data.ContentFile;
 import logic.params.Parameters;
 import logic.typdef.Type;
 
 public class Constructor extends Member {
 
-    public Parameters params;
-    public Token contentToken;
+    private Parameters params;
+    private Token contentToken;
 
     public Constructor(Type type, Token start, Token end) {
         super(type);
@@ -19,6 +18,7 @@ public class Constructor extends Member {
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
+
             if (state == 0 && token.key.isAttribute) {
                 readModifier(cFile, token, true, true, false, false, true, false, true);
             } else if (state == 0 && token.key == Key.THIS) {
@@ -27,15 +27,9 @@ public class Constructor extends Member {
             } else if (state == 1 && token.key == Key.PARAM) {
                 params = new Parameters(cFile, token);
                 state = 2;
-            } else if (token.key == Key.BRACE || token.key == Key.SEMICOLON) {
-                if (contentToken == null) {
-                    contentToken = token;
-                }
-                if (state != 2) {
-                    cFile.erro(token, "Unexpected token");
-                } else {
-                    state = 3;
-                }
+            } else if (state == 2 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
+                contentToken = token;
+                state = 3;
             } else {
                 cFile.erro(token, "Unexpected token");
             }
@@ -47,17 +41,22 @@ public class Constructor extends Member {
         }
     }
 
+    public Parameters getParams() {
+        return params;
+    }
+
     @Override
     public boolean load() {
         if (token != null && params != null) {
             params.load();
+
             if (isStatic() && params.args.size() > 0) {
                 cFile.erro(token, "Static constructors cannot have parameters");
             }
+
             return true;
-        } else {
-            return token != null && contentToken != null;
         }
+        return false;
     }
 
     @Override

@@ -3,14 +3,15 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.ContentFile;
-import logic.Template;
+import logic.Pointer;
 import logic.params.Parameters;
 import logic.typdef.Type;
 
 public class Indexer extends Member {
 
     public TokenGroup typeToken;
+    public Pointer typePtr;
+
     public Parameters params;
     public Token contentToken;
     Token getContentToken, setContentToken, ownContentToken;
@@ -36,29 +37,17 @@ public class Indexer extends Member {
             } else if (state == 1 && token.key == Key.THIS) {
                 this.token = token;
                 state = 2;
-            } else if (token.key == Key.INDEX) {
-                if (state != 2 || params != null) {
-                    cFile.erro(token, "Unexpected parameters");
-                } else {
-                    state = 3;
-                }
-                if (params == null) {
-                    params = new Parameters(cFile, token);
-                }
-            } else if (token.key == Key.BRACE || token.key == Key.SEMICOLON) {
-                if (state != 3 || contentToken != null) {
-                    cFile.erro(token, "Unexpected token");
-                } else {
-                    state = 4;
-                }
-                if (contentToken == null) {
-                    contentToken = token;
-                }
+            } else if (state == 2 && token.key == Key.INDEX) {
+                params = new Parameters(cFile, token);
+                state = 3;
+            } else if (state == 3 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
+                contentToken = token;
+                state = 4;
             } else {
                 cFile.erro(token, "Unexpected token");
             }
             if (next == end && state != 4) {
-                cFile.erro(token, "Unexpected end of token");
+                cFile.erro(token, "Unexpected end of tokens");
             }
             token = next;
         }
@@ -169,7 +158,16 @@ public class Indexer extends Member {
 
     @Override
     public boolean load() {
-        return true;
+        if (typeToken != null) {
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type);
+
+            if (params != null) {
+                params.load();
+
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean hasGet() {

@@ -9,31 +9,38 @@ import logic.member.Num;
 public class FieldView {
 
     public Token nameToken;
-    public Pointer pointer;
+    public Pointer type;
 
     public Variable srcVar;
     public Num srcNum;
     public Property srcPro;
     public int srcID;
 
-    public FieldView(Token nameToken, Pointer pointer, Variable variable, int index) {
+    public FieldView(Token nameToken, Pointer type, Variable variable, int index) {
         this.nameToken = nameToken;
-        this.pointer = pointer;
+        this.type = type;
         this.srcVar = variable;
         this.srcID = index;
     }
 
-    public FieldView(Token nameToken, Pointer pointer, Num num, int index) {
+    public FieldView(Token nameToken, Pointer type, Num num, int index) {
         this.nameToken = nameToken;
-        this.pointer = pointer;
+        this.type = type;
         this.srcNum = num;
         this.srcID = index;
     }
 
-    public FieldView(Token nameToken, Pointer pointer, Property property) {
+    public FieldView(Token nameToken, Pointer type, Property property) {
         this.nameToken = nameToken;
-        this.pointer = pointer;
+        this.type = type;
         this.srcPro = property;
+    }
+
+    public FieldView(FieldView fieldView, Pointer caller) {
+        this.srcVar = fieldView.srcVar;
+        this.srcNum = fieldView.srcNum;
+        this.srcPro = fieldView.srcPro;
+        this.srcID = fieldView.srcID;
     }
 
     public Token getName() {
@@ -41,7 +48,7 @@ public class FieldView {
     }
 
     public Pointer getType() {
-        return pointer;
+        return type;
     }
 
     public boolean hasGet() {

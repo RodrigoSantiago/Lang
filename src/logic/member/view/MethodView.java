@@ -2,6 +2,7 @@ package logic.member.view;
 
 import content.Token;
 import logic.Pointer;
+import logic.templates.Template;
 import logic.member.Method;
 
 public class MethodView {
@@ -12,10 +13,10 @@ public class MethodView {
     public MethodView(Pointer caller, Method method) {
         this.caller = caller;
         this.method = method;
-        if (method.returnType != null && !method.returnType.isDefault()) {
-            ptr = Pointer.byGeneric(method.returnType, caller);
+        if (method.typePtr != null && !method.typePtr.isDefault()) {
+            ptr = Pointer.byGeneric(method.typePtr, caller);
         } else {
-            ptr = method.returnType;
+            ptr = method.typePtr;
         }
     }
 
@@ -27,32 +28,12 @@ public class MethodView {
         return ptr;
     }
 
-    public int getParamsCount() {
-        return method.params.args.size();
+    public Parameter getParams() {
+        return method.params;
     }
 
-    public Pointer getParamType(int index) {
-        return null;
-    }
-
-    public Token getParamName(int index) {
-        return null;
-    }
-
-    public boolean isParamLet(int index) {
-        return false;
-    }
-
-    public int getGenericsCount() {
-        return 0;
-    }
-
-    public Token getGenericName(int index) {
-        return null;
-    }
-
-    public Pointer getGenericType(int index) {
-        return null;
+    public Template getTemplate() {
+        return method.template;
     }
 
     public boolean isPrivate() {

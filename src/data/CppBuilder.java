@@ -1,7 +1,7 @@
 package data;
 
 import content.Token;
-import logic.Template;
+import logic.templates.Template;
 import logic.Pointer;
 import logic.typdef.Type;
 

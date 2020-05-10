@@ -9,13 +9,13 @@ public class WeakArray<T> : List<T> {
         }
     }
 
-    public T this[int i] {
-        get : let {
+    public let T this[int i] {
+        get, own {
             native (return) {
                 return data[ ARRAY_ACESS(v_i, f_length) ];
             }
         }
-        set : let {
+        set {
             native (source) {
                 data[ ARRAY_ACESS(v_i, f_length) ] = v_value;
             }

@@ -25,6 +25,7 @@ public abstract class Type implements GenericOwner {
     public Template template;
     public Token contentToken;
 
+    public Pointer self;
     public Pointer parent;
     public ArrayList<Pointer> parents = new ArrayList<>();
     public ArrayList<TokenGroup> parentTokens = new ArrayList<>();
@@ -358,6 +359,51 @@ public abstract class Type implements GenericOwner {
     public void add(MemberNative memberNative) {
         if (memberNative.load()) {
             memberNatives.add(memberNative);
+        }
+    }
+
+    public FieldView getField(Token nameToken) {
+        FieldView field = fields.get(nameToken);
+        if (field == null && (parent != null && parent.type != null)) {
+            return parent.type.getField(nameToken);
+        } else {
+            return null;
+        }
+    }
+
+    public int getMethodsCount() {
+        return methods.size() + (parent != null && parent.type != null ? parent.type.getMethodsCount() : 0);
+    }
+
+    public Method getMethod(int index) {
+        if (index < methods.size()) {
+            return methods.get(index);
+        } else {
+            return parent.type.getMethod(index - methods.size());
+        }
+    }
+
+    public int getIndexersCount() {
+        return indexers.size() + (parent != null && parent.type != null ? parent.type.getIndexersCount() : 0);
+    }
+
+    public Indexer getIndexer(int index) {
+        if (index < indexers.size()) {
+            return indexers.get(index);
+        } else {
+            return parent.type.getIndexer(index - indexers.size());
+        }
+    }
+
+    public int getOperatorsCount() {
+        return methods.size() + (parent != null && parent.type != null ? parent.type.getOperatorsCount() : 0);
+    }
+
+    public Operator getOperator(int index) {
+        if (index < operators.size()) {
+            return operators.get(index);
+        } else {
+            return parent.type.getOperator(index - operators.size());
         }
     }
 

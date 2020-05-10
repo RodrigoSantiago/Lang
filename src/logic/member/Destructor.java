@@ -50,7 +50,7 @@ public class Destructor extends Member {
 
     @Override
     public boolean load() {
-        return true;
+        return token != null && contentToken != null;
     }
 
     @Override

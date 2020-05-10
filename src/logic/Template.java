@@ -30,7 +30,7 @@ public class Template {
             } else if (state == 1 && token.key == Key.COLON) {
                 state = 2;
             } else if (state == 1 && token.key == Key.COMMA) {
-                generics.add(new Generic(nameToken, null, null));
+                generics.add(new Generic(this, generics.size(), nameToken, null, null));
                 state = 0;
             } else if (state == 2 && token.key == Key.WORD) {
                 if (next != null && (next.key == Key.GENERIC)) {
@@ -39,7 +39,7 @@ public class Template {
                 while (next != null && next.key == Key.INDEX) {
                     next = next.getNext();
                 }
-                generics.add(new Generic(nameToken, token, next));
+                generics.add(new Generic(this, generics.size(), nameToken, token, next));
                 state = 3;
             } else if (state == 3 && token.key == Key.COMMA) {
                 state = 0;
@@ -47,10 +47,10 @@ public class Template {
                 cFile.erro(token, "Unexpected token");
             }
             if (state == 1 && next == end) {
-                generics.add(new Generic(nameToken, null, null));
+                generics.add(new Generic(this, generics.size(), nameToken, null, null));
             }
             if (state == 2 && next == end) {
-                generics.add(new Generic(nameToken, null, null));
+                generics.add(new Generic(this, generics.size(), nameToken, null, null));
                 cFile.erro(token, "Unexpected end of tokens");
             }
             token = next;

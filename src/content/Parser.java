@@ -61,16 +61,21 @@ public class Parser {
     public void parseMembers(Type type, Token init, Token end) {
         boolean destructor = false, constructor = false;
         boolean prevThis = false, prevDest = false;
-        int size = 0, state = 0;
+        int state = 0;
 
+        Token prev = null;
         Token token = init;
         Token start = token;
         while (token != end) {
             Token next = token.getNext();
-            size ++;
 
-            if (state == 0 && size == 2 && (token.key == Key.COMMA || token.key == Key.SEMICOLON || next == end)) {
-                state = 6;  // enum
+            if (type.isEnum() && state == 0) {
+                if (token.key == Key.WORD && (next == end || next.key == Key.COMMA || next.key == Key.SEMICOLON)) {
+                    state = 6;  // enum
+                } else if (prev != null && prev.key == Key.WORD && token.key == Key.PARAM &&
+                        (next == end || next.key == Key.COMMA || next.key == Key.SEMICOLON)) {
+                    state = 6;  // enum + constructor
+                }
             }
 
             if (state == 0 && (token.key == Key.SETVAL || token.key == Key.COMMA)) {
@@ -97,7 +102,7 @@ public class Parser {
             boolean reset = true;
 
             if (state == 0 && (token.key == Key.BRACE)) {
-                if (size == 1) {
+                if (prev == null) {
                     type.add(new Method(type, start, next));  // unexpected (empty brace)
                 } else {
                     type.add(new Property(type, start, next));
@@ -134,12 +139,13 @@ public class Parser {
 
             if (reset) {
                 start = next;
-                state = size = 0;
+                state = 0;
                 constructor = destructor = false;
             }
 
             prevThis = (token.key == Key.THIS);
             prevDest = prevThis && token.getPrev() != null && token.getPrev().key == Key.BITNOT;
+            prev = token;
             token = next;
         }
     }

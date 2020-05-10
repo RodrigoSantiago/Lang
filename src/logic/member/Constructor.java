@@ -9,7 +9,7 @@ import logic.typdef.Type;
 public class Constructor extends Member {
 
     public Parameters params;
-    Token contentToken;
+    public Token contentToken;
 
     public Constructor(Type type, Token start, Token end) {
         super(type);
@@ -49,7 +49,15 @@ public class Constructor extends Member {
 
     @Override
     public boolean load() {
-        return true;
+        if (token != null && params != null) {
+            params.load();
+            if (isStatic() && params.args.size() > 0) {
+                cFile.erro(token, "Static constructors cannot have parameters");
+            }
+            return true;
+        } else {
+            return token != null && contentToken != null;
+        }
     }
 
     @Override

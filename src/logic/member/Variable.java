@@ -63,16 +63,16 @@ public class Variable extends Member {
         }
     }
 
+    @Override
+    public boolean load() {
+        return true;
+    }
+
     public ArrayList<FieldView> getFields() {
         ArrayList<FieldView> fields =  new ArrayList<>();
         for (int i = 0; i < nameTokens.size(); i++) {
             fields.add(new FieldView(nameTokens.get(i), null, this, i));
         }
         return fields;
-    }
-
-    @Override
-    public boolean load() {
-        return true;
     }
 }

@@ -10,7 +10,7 @@ public class Array<T> : List<T> {
     }
 
     public T this[int i] {
-        get {
+        get, own {
             native (return) {
                 return data[ ARRAY_ACESS(v_i, f_length) ];
             }

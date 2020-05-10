@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class Parameters {
 
     public final ContentFile cFile;
-    ArrayList<Arg> args = new ArrayList<>();
+    public ArrayList<Arg> args = new ArrayList<>();
 
     public Parameters(ContentFile cFile, Token param) {
         this.cFile = cFile;
@@ -76,5 +76,9 @@ public class Parameters {
             str.append(args.get(i));
         }
         return str + ")";
+    }
+
+    public boolean load() {
+        return false;
     }
 }

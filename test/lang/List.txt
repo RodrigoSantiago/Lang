@@ -1,7 +1,7 @@
 namespace lang;
 
 public interface List<T> {
-    int Length { get : let; }
+    int Length { get; }
 
-    T this[int i] { get : let; }
+    T this[int i] { get; }
 }

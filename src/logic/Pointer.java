@@ -26,6 +26,48 @@ public class Pointer {
         this.typeSource = typeSource;
     }
 
+    public boolean isDefault() {
+        return this == nullPointer || this == voidPointer || this == openPointer;
+    }
+
+    public int isChildOf(Pointer other) {
+        // List<int> isChildOf (Obj)
+        // Array<T> isChildOf(List<T>) = 1
+        // T isChildOf(Object?????????????????????)
+        return -1;
+    }
+
+    public static Pointer byGeneric(Pointer source, Pointer caller) {
+        if (!hasGeneric(source, caller)) {
+            return source;
+        }
+
+        if (source.typeSource != null && caller.type != null && source.typeSource.owner == caller.type.template) {
+            return caller.pointers[source.typeSource.index];
+        } else if (source.pointers != null) {
+            Pointer[] inner = new Pointer[source.pointers.length];
+            for (int i = 0; i < source.pointers.length; i++) {
+                inner[i] = byGeneric(source.pointers[i], caller);
+            }
+            return new Pointer(source.type, inner, source.typeSource);
+        }
+
+        return source;
+    }
+
+    public static boolean hasGeneric(Pointer source, Pointer caller)  {
+        if (source.typeSource != null && caller.type != null && source.typeSource.owner == caller.type.template) {
+            return true;
+        } else if (source.pointers != null) {
+            for (int i = 0; i < source.pointers.length; i++) {
+                if (hasGeneric(source.pointers[i], caller)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
@@ -59,6 +101,7 @@ public class Pointer {
     public String toString() {
         if (this == voidPointer) return "void";
         if (this == nullPointer) return "null";
+        if (this == openPointer) return "any";
         return "Ptr[" + type + "]";
     }
 }

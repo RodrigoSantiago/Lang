@@ -12,12 +12,13 @@ import logic.typdef.Type;
 
 public class Method extends Member implements GenericOwner {
 
-    Token nameToken;
-    Token contentToken;
-    Pointer returnType;
-    Parameters params;
-    Template template;
-    TokenGroup returnTypeToken;
+    public Token nameToken;
+    public Token contentToken;
+    public Parameters params;
+    public Template template;
+
+    public Pointer returnType;
+    public TokenGroup returnTypeToken;
 
     public Method(Type type, Token start, Token end) {
         super(type);

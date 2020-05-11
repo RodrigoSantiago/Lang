@@ -26,6 +26,7 @@ public class Property extends Member {
 
         int state = 0;
         Token next;
+        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -40,7 +41,7 @@ public class Property extends Member {
                 state = 2;
             } else if (state == 2 && token.key == Key.BRACE) {
                 contentToken = token;
-                readBlocks(contentToken.getChild(), contentToken.getLastChild());
+                readBlocks(contentToken);
                 state = 3;
             } else if (state == 3 && token.key == Key.SETVAL) {
                 while (next != null && next != end && next.key != Key.SEMICOLON) {
@@ -56,21 +57,25 @@ public class Property extends Member {
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state < 3) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
+
+            last = token;
             token = next;
+        }
+
+        if (state < 3) {
+            cFile.erro(last, "Unexpected end of tokens");
         }
     }
 
-    private void readBlocks(Token init, Token end) {
+    private void readBlocks(Token group) {
         boolean isPrivate = false, isPublic = false, isAbstract = false, isFinal = false;
         boolean getOwn = false;
         int type = 0;
 
         int state = 0;
         Token next;
-        Token token = init;
+        Token end =  group.getLastChild();
+        Token token = group.getChild();
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
@@ -157,10 +162,11 @@ public class Property extends Member {
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && (state != 0 || (!hasGet && !hasSet && !hasOwn))) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
             token = next;
+        }
+
+        if (state != 0 || (!hasGet && !hasSet && !hasOwn)) {
+            cFile.erro(end != null ? end : group, "Unexpected end of tokens");
         }
     }
 

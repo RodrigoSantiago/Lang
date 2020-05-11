@@ -108,7 +108,7 @@ public class Parser {
                     type.add(new Property(type, start, next));
                 }
             } else if ((state == 0 || state == 1) && (token.key == Key.SEMICOLON || next == end)) {
-                type.add(new Variable(type, start, token));
+                type.add(new Variable(type, start, next));
 
             } else if (state == 2 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == end)) {
                 if (constructor) {

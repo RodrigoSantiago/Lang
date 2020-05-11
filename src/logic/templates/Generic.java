@@ -1,6 +1,7 @@
 package logic.templates;
 
 import content.Token;
+import content.TokenGroup;
 import logic.Pointer;
 
 public class Generic {
@@ -10,15 +11,15 @@ public class Generic {
 
     public Token nameToken;
     public Pointer type;
+    public Pointer ptr;
 
-    Token typeToken, end;
+    public TokenGroup typeToken;
 
-    public Generic(Template owner, int index, Token nameToken, Token typeToken, Token end) {
+    public Generic(Template owner, int index, Token nameToken, TokenGroup typeToken) {
         this.owner = owner;
         this.index = index;
         this.nameToken = nameToken;
         this.typeToken = typeToken;
-        this.end = end;
     }
 
 }

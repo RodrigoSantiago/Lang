@@ -24,6 +24,7 @@ public class Method extends Member implements GenericOwner {
 
         int state = 0;
         Token next;
+        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -32,6 +33,9 @@ public class Method extends Member implements GenericOwner {
             } else if (state == 0 && token.key == Key.GENERIC) {
                 template = new Template(cFile, token);
                 state = 1;
+            } else if ((state == 0 || state == 1) && token.key == Key.VOID) {
+                typeToken = new TokenGroup(token, next);
+                state = 2;
             } else if ((state == 0 || state == 1) && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 2;
@@ -48,23 +52,35 @@ public class Method extends Member implements GenericOwner {
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 5) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
+
+            last = token;
             token = next;
+        }
+
+        if (state != 5) {
+            cFile.erro(last, "Unexpected end of tokens");
         }
     }
 
     @Override
     public boolean load() {
         if (typeToken != null) {
-            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, this);
+            if (typeToken.start.key == Key.VOID) {
+                typePtr = Pointer.voidPointer;
+            } else {
+                typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, this);
+            }
+
+            if (template != null) {
+                template.load(null, isStatic() ? null : type);
+            }
 
             if (params != null) {
-                params.load();
+                params.load(this);
 
                 return true;
             }
+
         }
         return false;
     }

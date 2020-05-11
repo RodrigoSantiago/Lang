@@ -15,6 +15,7 @@ public class Constructor extends Member {
 
         int state = 0;
         Token next;
+        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -33,22 +34,20 @@ public class Constructor extends Member {
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 3) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
 
+            last = token;
             token = next;
         }
-    }
 
-    public Parameters getParams() {
-        return params;
+        if (state != 3) {
+            cFile.erro(last, "Unexpected end of tokens");
+        }
     }
 
     @Override
     public boolean load() {
         if (token != null && params != null) {
-            params.load();
+            params.load(isStatic() ? null : type);
 
             if (isStatic() && params.args.size() > 0) {
                 cFile.erro(token, "Static constructors cannot have parameters");
@@ -57,6 +56,10 @@ public class Constructor extends Member {
             return true;
         }
         return false;
+    }
+
+    public Parameters getParams() {
+        return params;
     }
 
     @Override

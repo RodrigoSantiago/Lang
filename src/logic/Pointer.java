@@ -28,7 +28,8 @@ public class Pointer {
     }
 
     public boolean isDefault() {
-        return this == nullPointer || this == voidPointer || this == openPointer;
+        return this == nullPointer || this == voidPointer || this == openPointer ||
+                (typeSource != null && typeSource.type == openPointer);
     }
 
     public boolean hasGeneric() {

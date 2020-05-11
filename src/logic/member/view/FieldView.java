@@ -10,6 +10,7 @@ public class FieldView {
 
     public Token nameToken;
     public Pointer type;
+    public Pointer caller;
 
     public Variable srcVar;
     public Num srcNum;
@@ -41,6 +42,12 @@ public class FieldView {
         this.srcNum = fieldView.srcNum;
         this.srcPro = fieldView.srcPro;
         this.srcID = fieldView.srcID;
+        this.caller = caller;
+        if (Pointer.hasGeneric(fieldView.getType(), caller)) {
+            type = Pointer.byGeneric(fieldView.getType(), caller);
+        } else {
+            type = fieldView.getType();
+        }
     }
 
     public Token getName() {

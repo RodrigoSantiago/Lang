@@ -139,9 +139,9 @@ public class  Lexer {
                     token.setNext(nNext);
                 }
 
-            } else if (tk == '>') {
+            } else if (token.key.isOperator) {
                 Token prev = token.getPrev();
-                if (prev != null && prev.endsWith('>') && prev.end == token.start) {
+                if (prev != null && prev.end == token.start && prev.key.isOperator) {
                     prev.end = token.end;
                     prev.key = Key.getSimbol(cFile.content, token.start, token.end);
                     prev.setNext(token.getNext());
@@ -247,10 +247,12 @@ public class  Lexer {
             // Operator
             if (isOperator(chr) && (chr != '/' || (nChr != '/' && nChr != '*'))) {
                 tkStart = index;
-                while (!eof()) {
-                    if (!isOperatorP(readNext())) {
-                        readPrev();
-                        break;
+                if (nChr != '>') {
+                    while (!eof()) {
+                        if (!isOperatorP(readNext())) {
+                            readPrev();
+                            break;
+                        }
                     }
                 }
                 tkEnd = nextIndex;

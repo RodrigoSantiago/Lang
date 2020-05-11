@@ -7,7 +7,6 @@ import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.Pointer;
-import logic.member.Method;
 
 public class Interface extends Type {
     public Interface(ContentFile cFile, Token start, Token end) {

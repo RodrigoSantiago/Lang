@@ -7,7 +7,6 @@ import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.Pointer;
-import logic.member.Method;
 
 public class Class extends Type {
     public Class(ContentFile cFile, Token start, Token end) {

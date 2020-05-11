@@ -54,6 +54,7 @@ public class Key {
     public static final Key THIS = new Key("this",              false, false);
     public static final Key SUPER = new Key("super");
     public static final Key DEFAULT = new Key("default",        false, true);
+    public static final Key VOID = new Key("void");
 
     public static final Key SEMICOLON = new Key(";");
     public static final Key COLON = new Key(":");
@@ -185,7 +186,7 @@ public class Key {
         } else if (len == 4) {
             return  ENUM.isEqual(str, start, end) ? ENUM : ELSE.isEqual(str, start, end) ? ELSE :
                     CASE.isEqual(str, start, end) ? CASE : LOCK.isEqual(str, start, end) ? LOCK :
-                    THIS.isEqual(str, start, end) ? THIS : NOONE;
+                    THIS.isEqual(str, start, end) ? THIS : VOID.isEqual(str, start, end) ? VOID :NOONE;
         } else if (len == 5) {
             return  USING.isEqual(str, start, end) ? USING : CLASS.isEqual(str, start, end) ? CLASS :
                     FINAL.isEqual(str, start, end) ? FINAL : WHILE.isEqual(str, start, end) ? WHILE :

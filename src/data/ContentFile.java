@@ -264,10 +264,6 @@ public class ContentFile {
         Pointer ptr = null;
         Type type = null;
 
-        if (typeToken.getNext() == end && typeToken.equals("void")) {
-            return Pointer.voidPointer;
-        }
-
         if (genericOwner != null) {
             ptr = genericOwner.findGeneric(typeToken);
         }
@@ -286,6 +282,7 @@ public class ContentFile {
                 erro(typeToken, "Cyclic reference");
             }
         }
+
 
         int arr = 0;
         ArrayList<Pointer> iPointers = null;

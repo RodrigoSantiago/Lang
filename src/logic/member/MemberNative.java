@@ -17,6 +17,7 @@ public class MemberNative extends Member {
 
         int state = 0;
         Token next;
+        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -34,10 +35,13 @@ public class MemberNative extends Member {
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 4) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
+
+            last = token;
             token = next;
+        }
+
+        if (state != 4) {
+            cFile.erro(last, "Unexpected end of tokens");
         }
     }
 
@@ -45,6 +49,7 @@ public class MemberNative extends Member {
 
         int state = 0;
         Token next;
+        Token last = init;
         Token token = init;
         while (token != null && token != end) {
             next = token.getNext();
@@ -54,10 +59,13 @@ public class MemberNative extends Member {
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 1) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
+
+            last = token;
             token = next;
+        }
+
+        if (state != 1) {
+            cFile.erro(last, "Unexpected end of tokens");
         }
     }
 

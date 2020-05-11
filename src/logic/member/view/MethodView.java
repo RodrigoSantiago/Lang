@@ -8,16 +8,25 @@ import logic.member.Method;
 public class MethodView {
     public final Pointer caller;
     public final Method method;
+    public final ParamView paramView;
     private Pointer ptr;
 
     public MethodView(Pointer caller, Method method) {
         this.caller = caller;
         this.method = method;
-        if (method.typePtr != null && !method.typePtr.isDefault()) {
+        if (method.typePtr != null) {
             ptr = Pointer.byGeneric(method.typePtr, caller);
-        } else {
-            ptr = method.typePtr;
         }
+        paramView = new ParamView(method.params, caller);
+    }
+
+    public MethodView(Pointer caller, MethodView methodView) {
+        this.caller = caller;
+        this.method = methodView.method;
+        if (methodView.ptr != null) {
+            ptr = Pointer.byGeneric(methodView.getType(), caller);
+        }
+        paramView = new ParamView(methodView.getParams(), caller);
     }
 
     public Token getName() {
@@ -25,11 +34,11 @@ public class MethodView {
     }
 
     public Pointer getType() {
-        return ptr;
+        return ptr != null ? ptr : method.typePtr;
     }
 
-    public Parameter getParams() {
-        return method.params;
+    public ParamView getParams() {
+        return paramView;
     }
 
     public Template getTemplate() {

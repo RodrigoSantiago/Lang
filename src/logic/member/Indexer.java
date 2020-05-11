@@ -14,18 +14,19 @@ public class Indexer extends Member {
 
     public Parameters params;
     public Token contentToken;
-    Token getContentToken, setContentToken, ownContentToken;
+    private Token getContentToken, setContentToken, ownContentToken;
 
-    boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
-    boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate;
-    boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate;
-    boolean isGetOwn;
+    private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
+    private boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate;
+    private boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate;
+    private boolean isGetOwn;
 
     public Indexer(Type type, Token start, Token end) {
         super(type);
 
         int state = 0;
         Token next;
+        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -42,25 +43,30 @@ public class Indexer extends Member {
                 state = 3;
             } else if (state == 3 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
                 contentToken = token;
+                readBlocks(contentToken);
                 state = 4;
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 4) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
+
+            last = token;
             token = next;
+        }
+
+        if (state != 4) {
+            cFile.erro(last, "Unexpected end of tokens");
         }
     }
 
-    private void readBlocks(Token init, Token end) {
+    private void readBlocks(Token group) {
         boolean isPrivate = false, isPublic = false, isAbstract = false, isFinal = false;
         boolean getOwn = false;
         int type = 0;
 
         int state = 0;
         Token next;
-        Token token = init;
+        Token end = group.getLastChild();
+        Token token = group.getChild();
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
@@ -93,7 +99,7 @@ public class Indexer extends Member {
             } else if (state == 1 && token.key == Key.COMMA) {
                 state = 2;
             } else if (state == 2 && token.equals("get")) {
-                if (type == 0) {
+                if (type == 2) {
                     if (hasGet) {
                         cFile.erro(token, "Repeated get");
                     } else {
@@ -104,7 +110,7 @@ public class Indexer extends Member {
                 }
                 state = 3;
             } else if (state == 2 && token.equals("own")) {
-                if (type == 2) {
+                if (type == 0) {
                     if (hasOwn) {
                         cFile.erro(token, "Repeated own");
                     } else {
@@ -114,45 +120,45 @@ public class Indexer extends Member {
                     cFile.erro(token, "Unexpected token");
                 }
                 state = 3;
-            } else if (token.key == Key.BRACE || token.key == Key.SEMICOLON) {
-                if (state != 1 && state != 3) {
-                    cFile.erro(token, "Unexpected token");
+            } else if ((state == 1 || state == 3) && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
+                if (type == 0) {
+                    if (hasGet || isGetOwn) cFile.erro(token, "Repeated get");
+                    hasGet = true;
+                    getContentToken = token;
+                    isGetPublic = isPublic;
+                    isGetPrivate = isPrivate;
+                    isGetFinal = isFinal;
+                    isGetAbstract = isAbstract;
+                } else if (type == 1) {
+                    if (hasSet) cFile.erro(token, "Repeated set");
+                    hasSet = true;
+                    setContentToken = token;
+                    isSetPublic = isPublic;
+                    isSetPrivate = isPrivate;
+                    isSetFinal = isFinal;
+                    isSetAbstract = isAbstract;
+                } else {
+                    if (hasOwn || isGetOwn) cFile.erro(token, "Repeated own");
+                    hasOwn = true;
+                    ownContentToken = token;
+                    isOwnPublic = isPublic;
+                    isOwnPrivate = isPrivate;
+                    isOwnFinal = isFinal;
+                    isOwnAbstract = isAbstract;
                 }
-                if (state >= 1) {
-                    if (type == 0) {
-                        hasGet = true;
-                        getContentToken = token;
-                        isGetPublic = isPublic;
-                        isGetPrivate = isPrivate;
-                        isGetFinal = isFinal;
-                        isGetAbstract = isAbstract;
-                    } else if (type == 1) {
-                        hasSet = true;
-                        setContentToken = token;
-                        isSetPublic = isPublic;
-                        isSetPrivate = isPrivate;
-                        isSetFinal = isFinal;
-                        isSetAbstract = isAbstract;
-                    } else {
-                        hasOwn = true;
-                        ownContentToken = token;
-                        isOwnPublic = isPublic;
-                        isOwnPrivate = isPrivate;
-                        isOwnFinal = isFinal;
-                        isOwnAbstract = isAbstract;
-                    }
-                    isGetOwn = getOwn;
-                    type = 0;
-                    isPublic = isPrivate = isAbstract = isFinal = getOwn = false;
-                }
+                isGetOwn = getOwn;
+                type = 0;
+                isPublic = isPrivate = isAbstract = isFinal = getOwn = false;
                 state = 0;
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 0) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
+
             token = next;
+        }
+
+        if (state != 0 || (!hasGet && !hasSet && !hasOwn)) {
+            cFile.erro(end != null ? end : group, "Unexpected end of tokens");
         }
     }
 
@@ -162,9 +168,9 @@ public class Indexer extends Member {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type);
 
             if (params != null) {
-                params.load();
+                params.load(isStatic() ? null : type);
 
-                return true;
+                return false;
             }
         }
         return false;

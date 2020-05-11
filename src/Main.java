@@ -42,7 +42,8 @@ public class Main {
                 erros = true;
                 System.out.println("Erros at " + cFile.name);
                 for (Error error : cFile.erros) {
-                    System.out.println(error+" ["+cFile.content.substring(error.start, error.end)+"]");
+                    System.out.println(error+" ["+cFile.content.substring(error.start-5, error.end+5)+"]"
+                            +"["+error.start+", "+ error.end+"]");
                 }
             }
         }
@@ -52,7 +53,8 @@ public class Main {
                 if (cFile.erros.size() > 0) {
                     System.out.println("Erros at " + cFile.name);
                     for (Error error : cFile.erros) {
-                        System.out.println(error+" ["+cFile.content.substring(error.start, error.end)+"]");
+                        System.out.println(error+" ["+cFile.content.substring(error.start-5, error.end+5)+"]"
+                        +"["+error.start+", "+ error.end+"]");
                     }
                 }
             }

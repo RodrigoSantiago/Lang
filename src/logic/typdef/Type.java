@@ -51,9 +51,11 @@ public abstract class Type implements GenericOwner {
 
         int state = 0;
         Token next;
+        Token last = start;
         Token token = start;
         while (token != end) {
             next = token.getNext();
+
             if (state == 0 && token.key == key) {
                 state = 1;
             } else if (state == 0 && token.key.isAttribute) {
@@ -97,13 +99,7 @@ public abstract class Type implements GenericOwner {
             } else if ((state == 2 || state == 3) && token.key == Key.COLON) {
                 state = 4;
             } else if (state == 4 && token.key == Key.WORD) {
-                if (next != null && (next.key == Key.GENERIC)) {
-                    next = next.getNext();
-                }
-                while (next != null && next.key == Key.INDEX) {
-                    next = next.getNext();
-                }
-                parentTokens.add(new TokenGroup(token, next));
+                parentTokens.add(new TokenGroup(token, next = TokenGroup.nextType(next, end)));
                 state = 5;
             } else if (state == 5 && token.key == Key.COMMA) {
                 state = 4;
@@ -113,10 +109,13 @@ public abstract class Type implements GenericOwner {
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (next == end && state != 6) {
-                cFile.erro(token, "Unexpected end of tokens");
-            }
+
+            last = token;
             token = next;
+        }
+
+        if (state != 6) {
+            cFile.erro(last, "Unexpected end of tokens");
         }
 
         if (isEnum()) {

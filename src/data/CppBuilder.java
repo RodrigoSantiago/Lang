@@ -81,11 +81,15 @@ public class CppBuilder {
         if (pointer.typeSource != null) {
             nameGeneric(pointer.typeSource.nameToken);
         } else {
-            if (pointer.type.isClass() || pointer.type.isInterface()) {
-                // Ptr<
-                add(pointer.type.pathToken);
-            } else {
-                add(pointer.type.pathToken);
+            try {
+                if (pointer.type.isClass() || pointer.type.isInterface()) {
+                    // Ptr<
+                    add(pointer.type.pathToken);
+                } else {
+                    add(pointer.type.pathToken);
+                }
+            }catch ( Exception e) {
+                System.out.println();
             }
 
             if (pointer.pointers != null) {

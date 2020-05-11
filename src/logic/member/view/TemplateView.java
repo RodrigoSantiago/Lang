@@ -37,15 +37,14 @@ public class TemplateView {
     }
 
     public int getGenCount() {
-        return types.length;
+        return template.generics.size();
     }
 
     public Pointer getGenType(int index) {
-        Pointer type = types[index];
-        if (type == null) {
-            type = template.generics.get(index).type;
+        if (types == null || types[index] == null) {
+            return template.generics.get(index).type;
         }
-        return type;
+        return types[index];
     }
 
     public Token getGenName(int index) {

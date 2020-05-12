@@ -99,4 +99,33 @@ public class Parameters {
         }
         return str + ")";
     }
+
+    public boolean canOverload(Parameters other) {
+        if (other.args.size() == args.size()) {
+            boolean dif = false;
+            for (int i = 0; i < args.size(); i++) {
+                Arg argA = args.get(i);
+                Arg argB = other.args.get(i);
+                if (!argA.type.hasGeneric() && !argB.type.hasGeneric() && !argA.type.equals(argB.type)) {
+                    dif = true;
+                    break;
+                }
+            }
+            return dif;
+        } else {
+            return true;
+        }
+    }
+
+    public boolean equals(Parameters other) {
+        if (other.args.size() != args.size()) return false;
+        for (int i = 0; i < args.size(); i++) {
+            Arg argA = args.get(i);
+            Arg argB = other.args.get(i);
+            if (!argA.type.equals(argB.type)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

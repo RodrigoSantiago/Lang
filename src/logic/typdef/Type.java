@@ -6,6 +6,9 @@ import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.GenericOwner;
+import logic.ViewList;
+import logic.member.view.IndexerView;
+import logic.member.view.MethodView;
 import logic.templates.Template;
 import logic.Pointer;
 import logic.member.*;
@@ -27,10 +30,10 @@ public abstract class Type implements GenericOwner {
 
     public Pointer self;
     public Pointer parent;
-    public ArrayList<Pointer> parents = new ArrayList<>();
-    public ArrayList<TokenGroup> parentTokens = new ArrayList<>();
+    public ArrayList<Token> parentTokens = new ArrayList<>();
 
-    public HashMap<Token, FieldView> fields = new HashMap<>();
+    public ArrayList<Pointer> parents = new ArrayList<>();
+    public ArrayList<TokenGroup> parentTypeTokens = new ArrayList<>();
 
     public ArrayList<Property> properties = new ArrayList<>();
     public ArrayList<Variable> variables = new ArrayList<>();
@@ -45,6 +48,11 @@ public abstract class Type implements GenericOwner {
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
+    private boolean isCrossed;
+
+    public HashMap<Token, FieldView> fields = new HashMap<>();
+    public ViewList<MethodView> methodView = new ViewList<>();
+    public ArrayList<IndexerView> indexerView = new ArrayList<>();
 
     public Type(ContentFile cFile, Key key, Token start, Token end) {
         this.cFile = cFile;
@@ -99,7 +107,7 @@ public abstract class Type implements GenericOwner {
             } else if ((state == 2 || state == 3) && token.key == Key.COLON) {
                 state = 4;
             } else if (state == 4 && token.key == Key.WORD) {
-                parentTokens.add(new TokenGroup(token, next = TokenGroup.nextType(next, end)));
+                parentTypeTokens.add(new TokenGroup(token, next = TokenGroup.nextType(next, end)));
                 state = 5;
             } else if (state == 5 && token.key == Key.COMMA) {
                 state = 4;
@@ -133,7 +141,7 @@ public abstract class Type implements GenericOwner {
                 + pathName.replace("_", "__").replace("::", "_");
         pathToken = new Token(pathName);
 
-        for (TokenGroup parentTypeToken : parentTokens) {
+        for (TokenGroup parentTypeToken : parentTypeTokens) {
             inheritanceType(parentTypeToken.start, parentTypeToken.end);
         }
 
@@ -149,7 +157,50 @@ public abstract class Type implements GenericOwner {
     }
 
     public void cross() {
+        if (isCrossed || isStruct() || isEnum()) return;
+        isCrossed = true;
 
+        if (parent != null) {
+            Type parentType = parent.type;
+            parentType.cross();
+        }
+
+        for (Pointer parent : parents) {
+            Type pType = parent.type;
+            pType.cross();
+        }
+
+        for (int i = 0; i < parents.size() + 1; i++) {
+            Pointer pPtr = i == 0 ? parent : parents.get(i - 1);
+            if (pPtr != null) {
+                for (MethodView pMW : pPtr.type.methodView) {
+                    pMW = new MethodView(pPtr, pMW);
+
+                    boolean overriden = false;
+                    boolean add = true;
+                    for (MethodView mw : methodView.get(pMW.getName())) {
+                        if (mw.canOverride(pMW)) {
+                            if (!mw.isAbstract()) mw.method.setOverriden();
+
+                            overriden = true;
+                            add = false;
+                            break;
+                        } else if (!mw.canOverload(pMW)) {
+                            cFile.erro(parentTokens.get(i), "Incompatible method signature [" + pMW.getName() + "]");
+                            add = false;
+                            break;
+                        }
+                    }
+
+                    if (!isAbstract() && pMW.isAbstract() && !overriden) {
+                        cFile.erro(nameToken, "Abstract method not implemented [" + pMW.getName() + "]");
+                    }
+                    if (add && (!pMW.isAbstract() || isAbstract())) {
+                        methodView.put(pMW.getName(), pMW);
+                    }
+                }
+            }
+        }
     }
 
     public void build(CppBuilder cBuilder) {
@@ -313,13 +364,31 @@ public abstract class Type implements GenericOwner {
 
     public void add(Method method) {
         if (method.load()) {
+            for (Method methodB : methods) {
+                if (method.nameToken.equals(methodB.nameToken)) {
+                    if (!method.params.canOverload(methodB.params)) {
+                        cFile.erro(method.nameToken, "Invalid overloading");
+                        return;
+                    }
+                }
+            }
+
             methods.add(method);
+            methodView.put(method.nameToken, new MethodView(self, method));
         }
     }
 
     public void add(Indexer indexer) {
         if (indexer.load()) {
+            for (Indexer indexerB : indexers) {
+                if (!indexerB.params.canOverload(indexerB.params)) {
+                    cFile.erro(indexerB.token, "Invalid overloading");
+                    return;
+                }
+            }
+
             indexers.add(indexer);
+            indexerView.add(new IndexerView(self, indexer));
         }
     }
 
@@ -394,15 +463,19 @@ public abstract class Type implements GenericOwner {
         }
     }
 
+    public IndexerView getIndexerView(int index) {
+        return indexerView.get(index);
+    }
+
     public int getOperatorsCount() {
-        return methods.size() + (parent != null && parent.type != null ? parent.type.getOperatorsCount() : 0);
+        return operators.size();
     }
 
     public Operator getOperator(int index) {
         if (index < operators.size()) {
             return operators.get(index);
         } else {
-            return parent.type.getOperator(index - operators.size());
+            return null;
         }
     }
 

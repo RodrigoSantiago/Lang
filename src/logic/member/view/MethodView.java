@@ -29,6 +29,22 @@ public class MethodView {
         paramView = new ParamView(methodView.getParams(), caller);
     }
 
+    public boolean canOverload(MethodView other) {
+        if (getType().equals(other.getType())) {
+            return getParams().canOverload(other.getParams());
+        }
+
+        return false;
+    }
+
+    public boolean canOverride(MethodView other) {
+        if (getType().equals(other.getType())) {
+            return getParams().canOverride(other.getParams());
+        }
+
+        return false;
+    }
+
     public Token getName() {
         return method.nameToken;
     }

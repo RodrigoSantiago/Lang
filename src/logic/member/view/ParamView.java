@@ -40,6 +40,38 @@ public class ParamView {
         }
     }
 
+    public boolean canOverload(ParamView other) {
+        if (getArgsCount() == other.getArgsCount()) {
+            boolean dif = false;
+            for (int i = 0; i < getArgsCount(); i++) {
+                Pointer ptrA = getArgType(i);
+                Pointer ptrB = other.getArgType(i);
+                if (!ptrA.hasGeneric() && !ptrB.hasGeneric() && !ptrA.equals(ptrB)) {
+                    dif = true;
+                    break;
+                }
+            }
+            return dif;
+        } else {
+            return true;
+        }
+    }
+
+    public boolean canOverride(ParamView other) {
+        if (getArgsCount() == other.getArgsCount()) {
+            for (int i = 0; i < getArgsCount(); i++) {
+                Pointer ptrA = getArgType(i);
+                Pointer ptrB = other.getArgType(i);
+                if (!ptrA.equals(ptrB)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public int getArgsCount() {
         return params.args.size();
     }

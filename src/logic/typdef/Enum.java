@@ -16,7 +16,7 @@ public class Enum extends Type {
     public void load() {
         super.load();
 
-        for (TokenGroup pTypeToken : parentTokens) {
+        for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this);
             if (parent.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined type");
@@ -26,6 +26,7 @@ public class Enum extends Type {
         }
 
         parent = cFile.langWrapper(this);
+        self = new Pointer(this, null);
 
         if (contentToken != null && contentToken.getChild() != null) {
             Parser parser = new Parser();

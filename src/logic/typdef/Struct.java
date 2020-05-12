@@ -16,7 +16,7 @@ public class Struct extends Type {
     public void load() {
         super.load();
 
-        for (TokenGroup pTypeToken : parentTokens) {
+        for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this);
             if (parent.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined wrapper");
@@ -36,6 +36,14 @@ public class Struct extends Type {
         if (parent == null) {
             parent = cFile.langWrapper(this);
         }
+
+        Pointer[] p = template == null ? null : new Pointer[template.generics.size()];
+        if (p != null) {
+            for (int i = 0; i < p.length; i++) {
+                p[i] = template.generics.get(i).ptr;
+            }
+        }
+        self = new Pointer(this, p);
 
         if (contentToken != null && contentToken.getChild() != null) {
             Parser parser = new Parser();

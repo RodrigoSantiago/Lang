@@ -42,7 +42,7 @@ public class Main {
                 erros = true;
                 System.out.println("Erros at " + cFile.name);
                 for (Error error : cFile.erros) {
-                    System.out.println(error+" ["+cFile.content.substring(error.start-5, error.end+5)+"]"
+                    System.out.println(error+" ["+cFile.content.substring(error.start-10, error.end+10)+"]"
                             +"["+error.start+", "+ error.end+"]");
                 }
             }

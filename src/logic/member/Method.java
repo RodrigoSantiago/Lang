@@ -101,4 +101,8 @@ public class Method extends Member implements GenericOwner {
         }
         return pointer;
     }
+
+    public void setOverriden() {
+
+    }
 }

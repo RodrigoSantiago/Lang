@@ -29,7 +29,7 @@ public class Method extends Member implements GenericOwner {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, true, true, true, true, false);
+                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, true, false);
             } else if (state == 0 && token.key == Key.GENERIC) {
                 template = new Template(cFile, token);
                 state = 1;
@@ -60,6 +60,10 @@ public class Method extends Member implements GenericOwner {
         if (state != 5) {
             cFile.erro(last, "Unexpected end of tokens");
         }
+    }
+
+    public void toAbstract() {
+        isAbstract = true;
     }
 
     @Override

@@ -133,6 +133,10 @@ public abstract class Type implements GenericOwner {
         if (isEnum() || isStruct()) {
             isFinal = true;
         }
+
+        if (isInterface()) {
+            isAbstract = true;
+        }
     }
 
     public void preload() {
@@ -160,44 +164,73 @@ public abstract class Type implements GenericOwner {
         if (isCrossed || isStruct() || isEnum()) return;
         isCrossed = true;
 
-        if (parent != null) {
-            Type parentType = parent.type;
-            parentType.cross();
-        }
-
         for (Pointer parent : parents) {
             Type pType = parent.type;
             pType.cross();
         }
 
-        for (int i = 0; i < parents.size() + 1; i++) {
-            Pointer pPtr = i == 0 ? parent : parents.get(i - 1);
-            if (pPtr != null) {
-                for (MethodView pMW : pPtr.type.methodView) {
-                    pMW = new MethodView(pPtr, pMW);
+        for (int i = 0; i < parents.size(); i++) {
+            Pointer pPtr = parents.get(i);
+            for (MethodView pMW : pPtr.type.methodView) {
+                pMW = new MethodView(pPtr, pMW);
 
-                    boolean overriden = false;
-                    boolean add = true;
-                    for (MethodView mw : methodView.get(pMW.getName())) {
-                        if (mw.canOverride(pMW)) {
-                            if (!mw.isAbstract()) mw.method.setOverriden();
+                boolean impl = false;
+                boolean add = true;
+                for (MethodView mw : methodView.get(pMW.getName())) {
+                    if (mw.canOverride(pMW)) {
+                        if (!mw.isAbstract()) pMW.method.setOverriden(); // mark - for best code generation
 
-                            overriden = true;
-                            add = false;
-                            break;
-                        } else if (!mw.canOverload(pMW)) {
-                            cFile.erro(parentTokens.get(i), "Incompatible method signature [" + pMW.getName() + "]");
-                            add = false;
-                            break;
-                        }
+                        impl = true;
+                        add = false;
+                        break;
+                    } else if (!mw.canOverload(pMW)) {
+                        cFile.erro(parentTokens.get(i), "Incompatible method signature [" + pMW.getName() + "]");
+                        add = false;
+                        break;
                     }
+                }
 
-                    if (!isAbstract() && pMW.isAbstract() && !overriden) {
-                        cFile.erro(nameToken, "Abstract method not implemented [" + pMW.getName() + "]");
+                if (!isAbstract() && pMW.isAbstract() && !impl) {
+                    cFile.erro(parentTokens.get(i), "Abstract method not implemented [" + pMW.getName() + "]");
+                }
+                if (add) {
+                    methodView.put(pMW.getName(), pMW);
+                }
+            }
+            for (IndexerView pIW : pPtr.type.indexerView) {
+                pIW = new IndexerView(pPtr, pIW);
+
+                boolean implGet = !pIW.hasGet() || !pIW.isGetAbstract();
+                boolean implSet = !pIW.hasSet() || !pIW.isSetAbstract();
+                boolean implOwn = !pIW.hasOwn() || !pIW.isOwnAbstract();
+                boolean add = true;
+                for (IndexerView iw : indexerView) {
+                    if (iw.canOverride(pIW)) {
+                        iw.addOverriden(pIW);
+
+                        implGet = implGet || !iw.hasGet() || !iw.isGetAbstract();
+                        implSet = implSet || !iw.hasSet() || !iw.isSetAbstract();
+                        implOwn = implOwn || !iw.hasOwn() || !iw.isOwnAbstract();
+                        add = false;
+                        break;
+                    } else if (!iw.canOverload(pIW)) {
+                        cFile.erro(parentTokens.get(i), "Incompatible indexer signature [ " + pIW.getParams() + " ]");
+                        add = false;
+                        break;
                     }
-                    if (add && (!pMW.isAbstract() || isAbstract())) {
-                        methodView.put(pMW.getName(), pMW);
-                    }
+                }
+
+                if (!isAbstract() && pIW.isAbstract() && !implGet) {
+                    cFile.erro(parentTokens.get(i), "Abstract indexer 'GET' not implemented [" + pIW.getParams() + "]");
+                }
+                if (!isAbstract() && pIW.isAbstract() && !implSet) {
+                    cFile.erro(parentTokens.get(i), "Abstract indexer 'SET' not implemented [" + pIW.getParams() + "]");
+                }
+                if (!isAbstract() && pIW.isAbstract() && !implOwn) {
+                    cFile.erro(parentTokens.get(i), "Abstract indexer 'OWN' not implemented [" + pIW.getParams() + "]");
+                }
+                if (add) {
+                    indexerView.add(pIW);
                 }
             }
         }
@@ -248,6 +281,14 @@ public abstract class Type implements GenericOwner {
 
     public boolean isLangBase() {
         return false;
+    }
+
+    public boolean isAbsAllowed() {
+        return (isClass() && isAbstract()) || isInterface();
+    }
+
+    public boolean isFinalAllowed() {
+        return isClass();
     }
 
     @Override

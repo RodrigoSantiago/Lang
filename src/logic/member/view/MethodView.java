@@ -30,11 +30,7 @@ public class MethodView {
     }
 
     public boolean canOverload(MethodView other) {
-        if (getType().equals(other.getType())) {
-            return getParams().canOverload(other.getParams());
-        }
-
-        return false;
+        return getParams().canOverload(other.getParams());
     }
 
     public boolean canOverride(MethodView other) {

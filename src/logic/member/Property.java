@@ -31,7 +31,7 @@ public class Property extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, true, true, true, true, false);
+                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
@@ -70,7 +70,7 @@ public class Property extends Member {
     private void readBlocks(Token group) {
         boolean isPrivate = false, isPublic = false, isAbstract = false, isFinal = false;
         boolean getOwn = false;
-        int type = 0;
+        int t = 0;
 
         int state = 0;
         Token next;
@@ -86,7 +86,8 @@ public class Property extends Member {
                         isPublic = (token.key == Key.PUBLIC);
                         isPrivate = (token.key == Key.PRIVATE);
                     }
-                } else if (token.key == Key.FINAL || token.key == Key.ABSTRACT) {
+                } else if ((type.isFinalAllowed() && token.key == Key.FINAL) ||
+                        (type.isAbsAllowed() && token.key == Key.ABSTRACT)) {
                     if (isFinal || isAbstract) {
                         cFile.erro(token, "Repeated modifier");
                     } else {
@@ -97,18 +98,18 @@ public class Property extends Member {
                     cFile.erro(token, "Unexpected modifier");
                 }
             } else if (state == 0 && token.equals("get")) {
-                type = 0;
+                t = 0;
                 state = 1;
             } else if (state == 0 && token.equals("set")) {
-                type = 1;
+                t = 1;
                 state = 1;
             } else if (state == 0 && token.equals("own")) {
-                type = 2;
+                t = 2;
                 state = 1;
             } else if (state == 1 && token.key == Key.COMMA) {
                 state = 2;
             } else if (state == 2 && token.equals("get")) {
-                if (type == 0) {
+                if (t == 0) {
                     if (hasGet) {
                         cFile.erro(token, "Repeated get");
                     } else {
@@ -119,7 +120,7 @@ public class Property extends Member {
                 }
                 state = 3;
             } else if (state == 2 && token.equals("own")) {
-                if (type == 2) {
+                if (t == 2) {
                     if (hasOwn) {
                         cFile.erro(token, "Repeated own");
                     } else {
@@ -130,7 +131,7 @@ public class Property extends Member {
                 }
                 state = 3;
             } else if ((state == 1 || state == 3) && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
-                if (type == 0) {
+                if (t == 0) {
                     if (hasGet || isGetOwn) cFile.erro(token, "Repeated get");
                     hasGet = true;
                     getContentToken = token;
@@ -138,7 +139,7 @@ public class Property extends Member {
                     isGetPrivate = isPrivate;
                     isGetFinal = isFinal;
                     isGetAbstract = isAbstract;
-                } else if (type == 1) {
+                } else if (t == 1) {
                     if (hasSet) cFile.erro(token, "Repeated set");
                     hasSet = true;
                     setContentToken = token;
@@ -156,7 +157,7 @@ public class Property extends Member {
                     isOwnAbstract = isAbstract;
                 }
                 isGetOwn = getOwn;
-                type = 0;
+                t = 0;
                 isPublic = isPrivate = isAbstract = isFinal = getOwn = false;
                 state = 0;
             } else {
@@ -168,6 +169,13 @@ public class Property extends Member {
         if (state != 0 || (!hasGet && !hasSet && !hasOwn)) {
             cFile.erro(end != null ? end : group, "Unexpected end of tokens");
         }
+    }
+
+    public void toAbstract() {
+        isAbstract = true;
+        isGetAbstract = true;
+        isSetAbstract = true;
+        isOwnAbstract = true;
     }
 
     @Override

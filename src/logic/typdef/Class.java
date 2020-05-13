@@ -38,6 +38,7 @@ public class Class extends Type {
                         cFile.erro(pTypeToken.start, "The class parent must come before interfaces");
                     }
                     this.parent = parent;
+                    this.parents.add(0, parent);
                     this.parentTokens.add(0, pTypeToken.start);
                 } else {
                     cFile.erro(pTypeToken.start, "A class cannot have multiple class parents");
@@ -52,6 +53,7 @@ public class Class extends Type {
 
         if (this.parent == null && cFile.langObject().type != this) {
             this.parent = cFile.langObject();
+            this.parents.add(0, parent);
             this.parentTokens.add(0, nameToken);
         }
 

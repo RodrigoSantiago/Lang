@@ -10,6 +10,9 @@ public class IndexerView {
     public final Indexer indexer;
     public final ParamView paramView;
     private Pointer ptr;
+    private boolean hasGet, hasSet, hasOwn;
+    private boolean hasGetAbstract, hasSetAbstract, hasOwnAbstract;
+    private boolean hasGetImpl, hasSetImpl, hasOwnImpl;
 
     public IndexerView(Pointer caller, Indexer indexer) {
         this.caller = caller;
@@ -27,6 +30,27 @@ public class IndexerView {
             ptr = Pointer.byGeneric(indexerView.getType(), caller);
         }
         paramView = new ParamView(indexerView.getParams(), caller);
+    }
+
+    public boolean canOverload(IndexerView other) {
+        return getParams().canOverload(other.getParams());
+    }
+
+    public boolean canOverride(IndexerView other) {
+        if (getType().equals(other.getType())) {
+            return getParams().canOverride(other.getParams());
+        }
+
+        return false;
+    }
+
+    public void addOverriden(IndexerView indexerView) {
+        hasGet = hasGet || indexerView.hasGet();
+        hasSet = hasSet || indexerView.hasSet();
+        hasOwn = hasOwn || indexerView.hasOwn();
+        hasGetAbstract = hasGetAbstract && indexerView.isGetAbstract();
+        hasSetAbstract = hasSetAbstract && indexerView.isSetAbstract();
+        hasOwnAbstract = hasOwnAbstract && indexerView.isOwnAbstract();
     }
 
     public Pointer getType() {
@@ -62,7 +86,7 @@ public class IndexerView {
     }
 
     public boolean hasGet() {
-        return indexer.hasGet();
+        return indexer.hasGet() || hasGet;
     }
 
     public boolean isGetFinal() {
@@ -70,7 +94,7 @@ public class IndexerView {
     }
 
     public boolean isGetAbstract() {
-        return indexer.isGetAbstract();
+        return indexer.isGetAbstract() || hasGetAbstract;
     }
 
     public boolean isGetPublic() {
@@ -82,7 +106,7 @@ public class IndexerView {
     }
 
     public boolean hasSet() {
-        return indexer.hasSet();
+        return indexer.hasSet() || hasSet;
     }
 
     public boolean isSetFinal() {
@@ -90,7 +114,7 @@ public class IndexerView {
     }
 
     public boolean isSetAbstract() {
-        return indexer.isSetAbstract();
+        return indexer.isSetAbstract() || hasSetAbstract;
     }
 
     public boolean isSetPublic() {
@@ -102,7 +126,7 @@ public class IndexerView {
     }
 
     public boolean hasOwn() {
-        return indexer.hasOwn();
+        return indexer.hasOwn() || hasOwn;
     }
 
     public boolean isOwnFinal() {
@@ -110,7 +134,7 @@ public class IndexerView {
     }
 
     public boolean isOwnAbstract() {
-        return indexer.isOwnAbstract();
+        return indexer.isOwnAbstract() || hasOwnAbstract;
     }
 
     public boolean isOwnPublic() {

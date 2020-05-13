@@ -7,6 +7,9 @@ import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.Pointer;
+import logic.member.Indexer;
+import logic.member.Method;
+import logic.member.Property;
 
 public class Interface extends Type {
     public Interface(ContentFile cFile, Token start, Token end) {
@@ -31,12 +34,15 @@ public class Interface extends Type {
                 cFile.erro(pTypeToken.start, "A interface could not inherit from a Class");
             } else if (parent.type.isInterface()) {
                 this.parents.add(parent);
+                this.parentTokens.add(pTypeToken.start);
             } else {
                 cFile.erro(pTypeToken.start, "Undefined type");
             }
         }
 
         this.parent = cFile.langObject();
+        this.parents.add(0, parent);
+        this.parentTokens.add(0, nameToken);
 
         Pointer[] p = template == null ? null : new Pointer[template.generics.size()];
         if (p != null) {
@@ -77,5 +83,29 @@ public class Interface extends Type {
     @Override
     public final boolean isInterface() {
         return true;
+    }
+
+    @Override
+    public void add(Method method) {
+        if (!method.isStatic()) {
+            method.toAbstract();
+        }
+        super.add(method);
+    }
+
+    @Override
+    public void add(Indexer indexer) {
+        if (!indexer.isStatic()) {
+            indexer.toAbstract();
+        }
+        super.add(indexer);
+    }
+
+    @Override
+    public void add(Property property) {
+        if (!property.isStatic()) {
+            property.toAbstract();
+        }
+        super.add(property);
     }
 }

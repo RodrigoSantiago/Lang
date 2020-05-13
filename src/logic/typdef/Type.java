@@ -96,6 +96,9 @@ public abstract class Type implements GenericOwner {
                 }
             } else if (state == 1 && token.key == Key.WORD) {
                 nameToken = token;
+                if (token.startsWith('_')) {
+                    cFile.erro(nameToken, "Type names cannot start with underline (_)");
+                }
                 state = 2;
             } else if (state == 2 && token.key == Key.GENERIC) {
                 if (isEnum()) {
@@ -172,19 +175,24 @@ public abstract class Type implements GenericOwner {
         for (int i = 0; i < parents.size(); i++) {
             Pointer pPtr = parents.get(i);
             for (MethodView pMW : pPtr.type.methodView) {
+                if (pMW.isStatic()) continue;
                 pMW = new MethodView(pPtr, pMW);
 
                 boolean impl = false;
                 boolean add = true;
                 for (MethodView mw : methodView.get(pMW.getName())) {
+                    if (mw.isStatic()) continue;
+                    Token erro = mw.isFrom(this) ? mw.getName() : parentTokens.get(i);
+
                     if (mw.canOverride(pMW)) {
-                        if (!mw.isAbstract()) pMW.method.setOverriden(); // mark - for best code generation
+                        if (pMW.isFinal() || pMW.isPrivate()) cFile.erro(erro, "Incompatible onverride");
+                        if ((pMW.isPublic() && !mw.isPublic()) || mw.isPrivate()) cFile.erro(erro, "Incompatible acess");
 
                         impl = true;
                         add = false;
                         break;
                     } else if (!mw.canOverload(pMW)) {
-                        cFile.erro(parentTokens.get(i), "Incompatible method signature [" + pMW.getName() + "]");
+                        cFile.erro(erro, "Incompatible signature [" + pMW.getName() + "]");
                         add = false;
                         break;
                     }
@@ -193,11 +201,10 @@ public abstract class Type implements GenericOwner {
                 if (!isAbstract() && pMW.isAbstract() && !impl) {
                     cFile.erro(parentTokens.get(i), "Abstract method not implemented [" + pMW.getName() + "]");
                 }
-                if (add) {
-                    methodView.put(pMW.getName(), pMW);
-                }
+                if (add) methodView.put(pMW.getName(), pMW);
             }
             for (IndexerView pIW : pPtr.type.indexerView) {
+                if (pIW.isStatic()) continue;
                 pIW = new IndexerView(pPtr, pIW);
 
                 boolean implGet = !pIW.hasGet() || !pIW.isGetAbstract();
@@ -205,35 +212,95 @@ public abstract class Type implements GenericOwner {
                 boolean implOwn = !pIW.hasOwn() || !pIW.isOwnAbstract();
                 boolean add = true;
                 for (IndexerView iw : indexerView) {
+                    if (iw.isStatic()) continue;
+                    Token erro = iw.isFrom(this) ? iw.getToken() : parentTokens.get(i);
+
                     if (iw.canOverride(pIW)) {
                         iw.addOverriden(pIW);
+                        if (pIW.hasGet() && pIW.getAcess > iw.getAcess) {
+                            cFile.erro(erro, "Incompatible GET acess");
+                            iw.getAcess = pIW.getAcess;
+                        }
+                        if (pIW.hasSet() && pIW.setAcess > iw.setAcess) {
+                            cFile.erro(erro, "Incompatible SET acess");
+                            iw.setAcess = pIW.setAcess;
+                        }
+                        if (pIW.hasOwn() && pIW.ownAcess > iw.ownAcess) {
+                            cFile.erro(erro, "Incompatible OWN acess");
+                            iw.ownAcess = pIW.ownAcess;
+                        }
 
                         implGet = implGet || !iw.hasGet() || !iw.isGetAbstract();
                         implSet = implSet || !iw.hasSet() || !iw.isSetAbstract();
                         implOwn = implOwn || !iw.hasOwn() || !iw.isOwnAbstract();
                         add = false;
-                        break;
                     } else if (!iw.canOverload(pIW)) {
-                        cFile.erro(parentTokens.get(i), "Incompatible indexer signature [ " + pIW.getParams() + " ]");
+                        cFile.erro(erro, "Incompatible signature [ " + pIW.getParams() + " ]");
                         add = false;
                         break;
                     }
                 }
 
-                if (!isAbstract() && pIW.isAbstract() && !implGet) {
+                if (!isAbstract() && !implGet) {
                     cFile.erro(parentTokens.get(i), "Abstract indexer 'GET' not implemented [" + pIW.getParams() + "]");
                 }
-                if (!isAbstract() && pIW.isAbstract() && !implSet) {
+                if (!isAbstract() && !implSet) {
                     cFile.erro(parentTokens.get(i), "Abstract indexer 'SET' not implemented [" + pIW.getParams() + "]");
                 }
-                if (!isAbstract() && pIW.isAbstract() && !implOwn) {
+                if (!isAbstract() && !implOwn) {
                     cFile.erro(parentTokens.get(i), "Abstract indexer 'OWN' not implemented [" + pIW.getParams() + "]");
                 }
-                if (add) {
-                    indexerView.add(pIW);
+                if (add) indexerView.add(pIW);
+            }
+            for (FieldView pFW : pPtr.type.fields.values()) {
+                if (pFW.isStatic()) continue;
+                pFW = new FieldView(pPtr, pFW);
+
+                boolean implGet = !pFW.hasGet() || !pFW.isGetAbstract();
+                boolean implSet = !pFW.hasSet() || !pFW.isSetAbstract();
+                boolean implOwn = !pFW.hasOwn() || !pFW.isOwnAbstract();
+                boolean add = true;
+                FieldView fw = fields.get(pFW.getName());
+                if (fw != null && !fw.isStatic()) {
+                    Token erro = fw.isFrom(this) ? fw.getName() : parentTokens.get(i);
+                    add = false;
+                    if (fw.canOverride(pFW)) {
+                        fw.addOverriden(pFW);
+                        if (pFW.hasGet() && pFW.getAcess > fw.getAcess) {
+                            cFile.erro(erro, "Incompatible GET acess");
+                            fw.getAcess = pFW.getAcess;
+                        }
+                        if (pFW.hasSet() && pFW.setAcess > fw.setAcess) {
+                            cFile.erro(erro, "Incompatible SET acess");
+                            fw.setAcess = pFW.setAcess;
+                        }
+                        if (pFW.hasOwn() && pFW.ownAcess > fw.ownAcess) {
+                            cFile.erro(erro, "Incompatible OWN acess");
+                            fw.ownAcess = pFW.ownAcess;
+                        }
+
+                        implGet = implGet || !fw.hasGet() || !fw.isGetAbstract();
+                        implSet = implSet || !fw.hasSet() || !fw.isSetAbstract();
+                        implOwn = implOwn || !fw.hasOwn() || !fw.isOwnAbstract();
+                    } else if (!fw.canShadow(pFW)) {
+                        cFile.erro(erro, "Incompatible signature [ " + pFW.getName() + " ]");
+                    }
                 }
+
+                if (!isAbstract() && !implGet) {
+                    cFile.erro(parentTokens.get(i), "Abstract property 'GET' not implemented [" + pFW.getName() + "]");
+                }
+                if (!isAbstract() && !implSet) {
+                    cFile.erro(parentTokens.get(i), "Abstract property 'SET' not implemented [" + pFW.getName() + "]");
+                }
+                if (!isAbstract() && !implOwn) {
+                    cFile.erro(parentTokens.get(i), "Abstract property 'OWN' not implemented [" + pFW.getName() + "]");
+                }
+                if (add) fields.put(pFW.getName(), pFW);
             }
         }
+
+
     }
 
     public void build(CppBuilder cBuilder) {

@@ -60,10 +60,24 @@ public class Method extends Member implements GenericOwner {
         if (state != 5) {
             cFile.erro(last, "Unexpected end of tokens");
         }
+
+        if (isAbstract() && template != null) {
+            cFile.erro(template.token, "A abstract method cannot have templates");
+            isAbstract = false;
+            isFinal = true;
+        }
     }
 
-    public void toAbstract() {
-        isAbstract = true;
+    public boolean toAbstract() {
+        if (template != null) {
+            if (!isAbstract) {
+                cFile.erro(template.token, "A abstract method cannot have templates");
+            }
+            return false;
+        } else {
+            isAbstract = true;
+            return true;
+        }
     }
 
     @Override

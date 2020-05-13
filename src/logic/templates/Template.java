@@ -14,9 +14,11 @@ public class Template {
 
     private final ContentFile cFile;
     public ArrayList<Generic> generics = new ArrayList<>();
+    public Token token;
 
     public Template(ContentFile cFile, Token template) {
         this.cFile = cFile;
+        this.token = template;
         Token start = template.getChild();
         Token end = template.getLastChild();
 

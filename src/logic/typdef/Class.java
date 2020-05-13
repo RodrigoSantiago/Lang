@@ -24,7 +24,10 @@ public class Class extends Type {
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this);
-            if (parents.contains(parent)) {
+            if ((parent.type.isPrivate() && parent.type.cFile != cFile)
+                    || (!parent.type.isPublic() && parent.type.cFile.library != cFile.library)) {
+                cFile.erro(pTypeToken.start, "Invalid acess permisison");
+            } else if (parents.contains(parent)) {
                 cFile.erro(pTypeToken.start, "Repeated parent");
             } else if (parent.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined parent");

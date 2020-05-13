@@ -120,6 +120,11 @@ public class Token {
         return true;
     }
 
+    public boolean startsWith(int chr) {
+        if (length < 1) return false;
+        return source.charAt(start) == chr;
+    }
+
     public void addToBuilder(StringBuilder builder) {
         if (length > 0) {
             builder.append(source, start, end);

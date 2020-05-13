@@ -164,6 +164,13 @@ public class ContentFile {
             if (tokenName.endsWith("::")) {
                 name = null;
                 erro(tokenName, "Invalid Namespace : Invalid name");
+            } else {
+                String[] parts = name.split("::");
+                for (String part : parts) {
+                    if (part.startsWith("_")) {
+                        erro(tokenName, "A nmespace cannot start with underline (_)");
+                    }
+                }
             }
         }
 

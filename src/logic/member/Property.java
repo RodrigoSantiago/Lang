@@ -109,7 +109,7 @@ public class Property extends Member {
             } else if (state == 1 && token.key == Key.COMMA) {
                 state = 2;
             } else if (state == 2 && token.equals("get")) {
-                if (t == 0) {
+                if (t == 2) {
                     if (hasGet) {
                         cFile.erro(token, "Repeated get");
                     } else {
@@ -120,7 +120,7 @@ public class Property extends Member {
                 }
                 state = 3;
             } else if (state == 2 && token.equals("own")) {
-                if (t == 2) {
+                if (t == 0) {
                     if (hasOwn) {
                         cFile.erro(token, "Repeated own");
                     } else {
@@ -135,28 +135,31 @@ public class Property extends Member {
                     if (hasGet || isGetOwn) cFile.erro(token, "Repeated get");
                     hasGet = true;
                     getContentToken = token;
-                    isGetPublic = isPublic;
-                    isGetPrivate = isPrivate;
+                    isGetPublic = (this.isPublic && !isPrivate) || isPublic;
+                    isGetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isGetFinal = isFinal;
                     isGetAbstract = isAbstract;
                 } else if (t == 1) {
                     if (hasSet) cFile.erro(token, "Repeated set");
                     hasSet = true;
                     setContentToken = token;
-                    isSetPublic = isPublic;
-                    isSetPrivate = isPrivate;
+                    isSetPublic = (this.isPublic && !isPrivate) || isPublic;
+                    isSetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isSetFinal = isFinal;
                     isSetAbstract = isAbstract;
                 } else {
                     if (hasOwn || isGetOwn) cFile.erro(token, "Repeated own");
                     hasOwn = true;
                     ownContentToken = token;
-                    isOwnPublic = isPublic;
-                    isOwnPrivate = isPrivate;
+                    isOwnPublic = (this.isPublic && !isPrivate) || isPublic;
+                    isOwnPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isOwnFinal = isFinal;
                     isOwnAbstract = isAbstract;
                 }
-                isGetOwn = getOwn;
+                if (getOwn) {
+                    System.out.println("aki");
+                }
+                isGetOwn = isGetOwn || getOwn;
                 t = 0;
                 isPublic = isPrivate = isAbstract = isFinal = getOwn = false;
                 state = 0;
@@ -189,7 +192,7 @@ public class Property extends Member {
     }
 
     public FieldView getField() {
-        return new FieldView(nameToken, null, this);
+        return new FieldView(nameToken, typePtr, this);
     }
 
     public boolean hasGet() {

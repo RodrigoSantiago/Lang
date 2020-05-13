@@ -126,28 +126,28 @@ public class Indexer extends Member {
                     if (hasGet || isGetOwn) cFile.erro(token, "Repeated get");
                     hasGet = true;
                     getContentToken = token;
-                    isGetPublic = isPublic;
-                    isGetPrivate = isPrivate;
+                    isGetPublic = (this.isPublic && !isPrivate) || isPublic;
+                    isGetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isGetFinal = isFinal;
                     isGetAbstract = isAbstract;
                 } else if (t == 1) {
                     if (hasSet) cFile.erro(token, "Repeated set");
                     hasSet = true;
                     setContentToken = token;
-                    isSetPublic = isPublic;
-                    isSetPrivate = isPrivate;
+                    isSetPublic = (this.isPublic && !isPrivate) || isPublic;
+                    isSetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isSetFinal = isFinal;
                     isSetAbstract = isAbstract;
                 } else {
                     if (hasOwn || isGetOwn) cFile.erro(token, "Repeated own");
                     hasOwn = true;
                     ownContentToken = token;
-                    isOwnPublic = isPublic;
-                    isOwnPrivate = isPrivate;
+                    isOwnPublic = (this.isPublic && !isPrivate) || isPublic;
+                    isOwnPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isOwnFinal = isFinal;
                     isOwnAbstract = isAbstract;
                 }
-                isGetOwn = getOwn;
+                isGetOwn = isGetOwn || getOwn;
                 t = 0;
                 isPublic = isPrivate = isAbstract = isFinal = getOwn = false;
                 state = 0;
@@ -178,7 +178,7 @@ public class Indexer extends Member {
             if (params != null) {
                 params.load(isStatic() ? null : type);
 
-                return false;
+                return true;
             }
         }
         return false;

@@ -60,7 +60,7 @@ public class Num extends Member {
         ArrayList<FieldView> fields = new ArrayList<>();
         for (int i = 0; i < nameTokens.size(); i++) {
             Token nameToken = nameTokens.get(i);
-            fields.add(new FieldView(nameToken, null, this, i));
+            fields.add(new FieldView(nameToken, type.self, this, i));
         }
         return fields;
     }

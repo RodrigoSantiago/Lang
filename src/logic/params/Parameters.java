@@ -13,9 +13,11 @@ public class Parameters {
     public final ContentFile cFile;
     public ArrayList<Arg> args = new ArrayList<>();
     private boolean hasGeneric;
+    public Token token;
 
     public Parameters(ContentFile cFile, Token parameters) {
         this.cFile = cFile;
+        this.token = parameters;
         Token start = parameters.getChild();
         Token end = parameters.getLastChild();
 

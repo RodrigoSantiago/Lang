@@ -22,9 +22,9 @@ public class IndexerView {
             ptr = Pointer.byGeneric(indexer.typePtr, caller);
         }
         paramView = new ParamView(indexer.params, caller);
-        getAcess = !indexer.hasGet() || indexer.isGetPrivate() ? 0 : indexer.isGetPublic() ? 3 : 2;
-        setAcess = !indexer.hasSet() || indexer.isSetPrivate() ? 0 : indexer.isSetPublic() ? 3 : 2;
-        ownAcess = !indexer.hasOwn() || indexer.isOwnPrivate() ? 0 : indexer.isOwnPublic() ? 3 : 2;
+        getAcess = !indexer.hasGet() || indexer.isGetPrivate() ? 0 : indexer.isGetPublic() ? 2 : 1;
+        setAcess = !indexer.hasSet() || indexer.isSetPrivate() ? 0 : indexer.isSetPublic() ? 2 : 1;
+        ownAcess = !indexer.hasOwn() || indexer.isOwnPrivate() ? 0 : indexer.isOwnPublic() ? 2 : 1;
     }
 
     public IndexerView(Pointer caller, IndexerView indexerView) {
@@ -65,13 +65,19 @@ public class IndexerView {
         return false;
     }
 
-    public boolean canAcess(IndexerView other) {
-        return !((other.isGetPrivate() && indexer.cFile != other.indexer.cFile) ||
-                (!other.isGetPublic() && indexer.cFile.library != other.indexer.cFile.library));
+    public boolean canAcessGet(Type type) {
+        return (getAcess == 0 && indexer.cFile == type.cFile) ||
+                (getAcess == 1 && indexer.cFile.library == type.cFile.library) || (getAcess == 2);
     }
 
-    public boolean canOverrideAcess(IndexerView other) {
-        return !((isGetPrivate() && !other.isGetPrivate()) || (!isGetPublic() && other.isGetPublic()));
+    public boolean canAcessSet(Type type) {
+        return (setAcess == 0 && indexer.cFile == type.cFile) ||
+                (setAcess == 1 && indexer.cFile.library == type.cFile.library) || (setAcess == 2);
+    }
+
+    public boolean canAcessOwn(Type type) {
+        return (ownAcess == 0 && indexer.cFile == type.cFile) ||
+                (ownAcess == 1 && indexer.cFile.library == type.cFile.library) || (ownAcess == 2);
     }
 
     public void addOverriden(IndexerView other) {
@@ -138,7 +144,7 @@ public class IndexerView {
     }
 
     public boolean isGetPublic() {
-        return indexer.isGetPublic() || getAcess == 3;
+        return indexer.isGetPublic() || getAcess == 2;
     }
 
     public boolean isGetPrivate() {
@@ -158,7 +164,7 @@ public class IndexerView {
     }
 
     public boolean isSetPublic() {
-        return indexer.isSetPublic() || setAcess == 3;
+        return indexer.isSetPublic() || setAcess == 2;
     }
 
     public boolean isSetPrivate() {
@@ -178,7 +184,7 @@ public class IndexerView {
     }
 
     public boolean isOwnPublic() {
-        return indexer.isOwnPublic() || ownAcess == 3;
+        return indexer.isOwnPublic() || ownAcess == 2;
     }
 
     public boolean isOwnPrivate() {

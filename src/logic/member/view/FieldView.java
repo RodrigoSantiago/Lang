@@ -10,7 +10,7 @@ import logic.typdef.Type;
 public class FieldView {
 
     public Token nameToken;
-    public Pointer type;
+    public Pointer pointer;
     public Pointer caller;
 
     public Variable srcVar;
@@ -22,27 +22,27 @@ public class FieldView {
     private boolean hasGetImpl, hasSetImpl, hasOwnImpl;
     public int getAcess, setAcess, ownAcess;
 
-    public FieldView(Token nameToken, Pointer type, Variable variable, int index) {
+    public FieldView(Token nameToken, Pointer pointer, Variable variable, int index) {
         this.nameToken = nameToken;
-        this.type = type;
+        this.pointer = pointer;
         this.srcVar = variable;
         this.srcID = index;
     }
 
-    public FieldView(Token nameToken, Pointer type, Num num, int index) {
+    public FieldView(Token nameToken, Pointer pointer, Num num, int index) {
         this.nameToken = nameToken;
-        this.type = type;
+        this.pointer = pointer;
         this.srcNum = num;
         this.srcID = index;
     }
 
-    public FieldView(Token nameToken, Pointer type, Property property) {
+    public FieldView(Token nameToken, Pointer pointer, Property property) {
         this.nameToken = nameToken;
-        this.type = type;
+        this.pointer = pointer;
         this.srcPro = property;
-        getAcess = !property.hasGet() || property.isGetPrivate() ? 0 : property.isGetPublic() ? 3 : 2;
-        setAcess = !property.hasSet() || property.isSetPrivate() ? 0 : property.isSetPublic() ? 3 : 2;
-        ownAcess = !property.hasOwn() || property.isOwnPrivate() ? 0 : property.isOwnPublic() ? 3 : 2;
+        getAcess = !property.hasGet() || property.isGetPrivate() ? 0 : property.isGetPublic() ? 2 : 1;
+        setAcess = !property.hasSet() || property.isSetPrivate() ? 0 : property.isSetPublic() ? 2 : 1;
+        ownAcess = !property.hasOwn() || property.isOwnPrivate() ? 0 : property.isOwnPublic() ? 2 : 1;
     }
 
     public FieldView(Pointer caller, FieldView fieldView) {
@@ -52,10 +52,10 @@ public class FieldView {
         this.srcPro = fieldView.srcPro;
         this.srcID = fieldView.srcID;
         this.caller = caller;
-        if (Pointer.hasGeneric(fieldView.getType(), caller)) {
-            type = Pointer.byGeneric(fieldView.getType(), caller);
+        if (Pointer.hasGeneric(fieldView.getPointer(), caller)) {
+            pointer = Pointer.byGeneric(fieldView.getPointer(), caller);
         } else {
-            type = fieldView.getType();
+            pointer = fieldView.getPointer();
         }
         hasGetAbs = fieldView.hasGetAbs;
         hasSetAbs = fieldView.hasSetAbs;
@@ -72,8 +72,8 @@ public class FieldView {
         return nameToken;
     }
 
-    public Pointer getType() {
-        return type;
+    public Pointer getPointer() {
+        return pointer;
     }
 
     public boolean isFrom(Type type) {
@@ -86,7 +86,22 @@ public class FieldView {
     }
 
     public boolean canOverride(FieldView other) {
-        return isProperty() && other.isProperty() && getType().equals(other.getType());
+        return isProperty() && other.isProperty() && getPointer().equals(other.getPointer());
+    }
+
+    public boolean canAcessGet(Type type) {
+        return (getAcess == 0 && srcPro.cFile == type.cFile) ||
+                (getAcess == 1 && srcPro.cFile.library == type.cFile.library) || (getAcess == 2);
+    }
+
+    public boolean canAcessSet(Type type) {
+        return (setAcess == 0 && srcPro.cFile == type.cFile) ||
+                (setAcess == 1 && srcPro.cFile.library == type.cFile.library) || (setAcess == 2);
+    }
+
+    public boolean canAcessOwn(Type type) {
+        return (ownAcess == 0 && srcPro.cFile == type.cFile) ||
+                (ownAcess == 1 && srcPro.cFile.library == type.cFile.library) || (ownAcess == 2);
     }
 
     public void addOverriden(FieldView other) {
@@ -157,7 +172,7 @@ public class FieldView {
     }
 
     public boolean isGetPublic() {
-        return srcPro != null ? srcPro.isGetPublic() || getAcess == 3 : srcVar != null ? srcVar.isPublic() : true;
+        return srcPro != null ? srcPro.isGetPublic() || getAcess == 2 : srcVar != null ? srcVar.isPublic() : true;
     }
 
     public boolean isGetPrivate() {
@@ -177,7 +192,7 @@ public class FieldView {
     }
 
     public boolean isSetPublic() {
-        return srcPro != null ? srcPro.isSetPublic() || setAcess == 3 : srcVar != null ? srcVar.isPublic() : false;
+        return srcPro != null ? srcPro.isSetPublic() || setAcess == 2 : srcVar != null ? srcVar.isPublic() : false;
     }
 
     public boolean isSetPrivate() {
@@ -197,7 +212,7 @@ public class FieldView {
     }
 
     public boolean isOwnPublic() {
-        return srcPro != null ? srcPro.isOwnPublic() || ownAcess == 3 : srcVar != null ? srcVar.isPublic() : false;
+        return srcPro != null ? srcPro.isOwnPublic() || ownAcess == 2 : srcVar != null ? srcVar.isPublic() : false;
     }
 
     public boolean isOwnPrivate() {

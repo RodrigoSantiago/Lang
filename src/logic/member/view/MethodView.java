@@ -53,13 +53,9 @@ public class MethodView {
         return false;
     }
 
-    public boolean canAcess(MethodView other) {
-        return !((other.isPrivate() && method.cFile != other.method.cFile) ||
-                (!other.isPublic() && method.cFile.library != other.method.cFile.library));
-    }
-
-    public boolean canOverrideAcess(MethodView other) {
-        return !((isPrivate() && !other.isPrivate()) || (!isPublic() && other.isPublic()));
+    public boolean canAcess(Type type) {
+        return (isPrivate() && method.cFile == type.cFile) ||
+                (!isPublic() && !isPrivate() && method.cFile.library == type.cFile.library) || isPublic();
     }
 
     public Token getName() {

@@ -143,7 +143,7 @@ public class  Lexer {
                 Token prev = token.getPrev();
                 if (prev != null && prev.end == token.start && prev.key.isOperator) {
                     prev.end = token.end;
-                    prev.key = Key.getSimbol(cFile.content, token.start, token.end);
+                    prev.key = Key.getSimbol(cFile.content, prev.start, prev.end);
                     prev.setNext(token.getNext());
                     token = prev;
                 }

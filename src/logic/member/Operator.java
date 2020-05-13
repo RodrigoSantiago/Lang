@@ -3,19 +3,20 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import logic.params.Arg;
 import logic.params.Parameters;
 import logic.Pointer;
 import logic.typdef.Type;
 
 public class Operator extends Member {
 
-    Parameters params;
+    public Parameters params;
 
-    Token operator;
-    Key op = Key.NOONE;
-    Token contentToken;
-    TokenGroup typeToken;
-    Pointer typePtr;
+    public Token operator;
+    public Key op = Key.NOONE;
+    public Token contentToken;
+    public TokenGroup typeToken;
+    public Pointer typePtr;
 
     public Operator(Type type, Token start, Token end) {
         super(type);
@@ -64,6 +65,8 @@ public class Operator extends Member {
         }
     }
 
+    //ADD - SUB (PODEM TER 0 OU 1)
+    //INC - DEC - CAST - AUTO - NOT - BITNOT (SO PODEM TER 1)
     @Override
     public boolean load() {
         if (typeToken != null) {
@@ -71,6 +74,41 @@ public class Operator extends Member {
 
             if (params != null) {
                 params.load(type);
+
+                if (params.args.size() == 1) {
+                    if (!params.args.get(0).type.equals(type.self)) {
+                        cFile.erro(operator, "The first parameter must be the current Type");
+
+                        return false;
+                    } else if (op != Key.INC && op != Key.DEC &&
+                                op != Key.ADD && op != Key.SUB &&
+                                op != Key.CAST && op != Key.AUTO &&
+                                op != Key.NOT && op != Key.BITNOT && op != Key.SETVAL) {
+
+                        cFile.erro(operator, "The operator must have two parameters");
+                        return false;
+                    }
+                } else if (params.args.size() == 2) {
+                    if (!params.args.get(0).type.equals(type.self) && !params.args.get(1).type.equals(type.self)) {
+                        cFile.erro(operator, "The first or second parameter must be the current Type");
+                        return false;
+                    } else if (op == Key.INC || op == Key.DEC ||
+                            op == Key.CAST || op == Key.AUTO ||
+                            op == Key.NOT || op == Key.BITNOT || op == Key.SETVAL) {
+                        cFile.erro(operator, "The operator must have a single parameter");
+                        return false;
+                    }
+                }
+
+                if (typePtr.equals(type.self) && (op == Key.CAST || op == Key.AUTO)) {
+                    cFile.erro(params.token, "The casting operators cannot return the current type");
+                    return false;
+                }
+
+                if (typePtr.equals(type.parent) && (op == Key.CAST || op == Key.AUTO)) {
+                    cFile.erro(params.token, "The casting operators cannot return the Wrapper Parent");
+                    return false;
+                }
 
                 return true;
             }

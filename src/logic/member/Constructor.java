@@ -7,8 +7,8 @@ import logic.typdef.Type;
 
 public class Constructor extends Member {
 
-    private Parameters params;
-    private Token contentToken;
+    public Parameters params;
+    public Token contentToken;
 
     public Constructor(Type type, Token start, Token end) {
         super(type);

@@ -80,6 +80,11 @@ public class Method extends Member implements GenericOwner {
         }
     }
 
+    public void toPublic() {
+        isPrivate = false;
+        isPublic = true;
+    }
+
     @Override
     public boolean load() {
         if (typeToken != null) {

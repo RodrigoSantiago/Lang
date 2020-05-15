@@ -10,11 +10,11 @@ import logic.typdef.Type;
 
 public class Indexer extends Member {
 
-    public TokenGroup typeToken;
-    public Pointer typePtr;
+    private TokenGroup typeToken;
+    private Pointer typePtr;
 
-    public Parameters params;
-    public Token contentToken;
+    private Parameters params;
+    private Token contentToken;
     private Token getContentToken, setContentToken, ownContentToken;
 
     private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
@@ -32,7 +32,7 @@ public class Indexer extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, true, false);
+                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), false, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
@@ -174,10 +174,10 @@ public class Indexer extends Member {
     @Override
     public boolean load() {
         if (typeToken != null) {
-            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type);
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type);
 
             if (params != null) {
-                params.load(isStatic() ? null : type);
+                params.load(type);
 
                 return true;
             }
@@ -191,42 +191,71 @@ public class Indexer extends Member {
             cBuilder.toHeader();
 
             cBuilder.idt(1);
-            if (!isGetFinal() && !isStatic()) {
+            if (!isGetFinal()) {
                 cBuilder.add("virtual ");
-            } else if (isStatic()) {
-                cBuilder.add("static ");
             }
             cBuilder.add(typePtr)
                     .add(" get").add("(").add(params).add(")")
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
+
+            if (!isGetAbstract()) {
+                cBuilder.toSource();
+                cBuilder.add(type.template)
+                        .add(typePtr)
+                        .add(" ").path(type.self, false).add("::get").add("(").add(params).add(") {").ln()
+                        .add("}").ln()
+                        .ln();
+            }
         }
 
         if (hasOwn()) {
             cBuilder.toHeader();
 
             cBuilder.idt(1);
-            if (!isOwnFinal() && !isStatic()) {
+            if (!isOwnFinal()) {
                 cBuilder.add("virtual ");
-            } else if (isStatic()) {
-                cBuilder.add("static ");
             }
             cBuilder.add(typePtr)
                     .add(" own").add("(").add(params).add(")")
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
+
+            if (!isOwnAbstract()) {
+                cBuilder.toSource();
+                cBuilder.add(type.template)
+                        .add(typePtr)
+                        .add(" ").path(type.self, false).add("::own").add("(").add(params).add(") {").ln()
+                        .add("}").ln()
+                        .ln();
+            }
         }
 
         if (hasSet()) {
             cBuilder.toHeader();
 
             cBuilder.idt(1);
-            if (!isSetFinal() && !isStatic()) {
+            if (!isSetFinal()) {
                 cBuilder.add("virtual ");
-            } else if (isStatic()) {
-                cBuilder.add("static ");
             }
             cBuilder.add("void set").add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value)")
                     .add(isSetAbstract() ? " = 0;" : ";").ln();
+
+            if (!isSetAbstract()) {
+                cBuilder.toSource();
+                cBuilder.add(type.template)
+                        .add("void ").path(type.self, false).add("::set")
+                        .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) {").ln()
+                        .add("}").ln()
+                        .ln();
+            }
         }
+    }
+
+    public Parameters getParams() {
+        return params;
+    }
+
+    public Pointer getTypePtr() {
+        return typePtr;
     }
 
     public boolean hasGet() {

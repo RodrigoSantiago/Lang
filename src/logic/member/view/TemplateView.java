@@ -7,31 +7,28 @@ import logic.templates.Template;
 
 public class TemplateView {
 
-    Template template;
-    Pointer caller;
-    Pointer[] types;
+    private Template template;
+    private Pointer[] typePtrs;
 
-    public TemplateView(Template template, Pointer caller) {
+    public TemplateView(Pointer caller, Template template) {
         this.template = template;
-        this.caller = caller;
 
-        types = new Pointer[template.generics.size()];
+        typePtrs = new Pointer[template.generics.size()];
         for (int i = 0; i < template.generics.size(); i++) {
             Generic gen = template.generics.get(i);
-            if (Pointer.hasGeneric(gen.type, caller)) {
-                types[i] = Pointer.byGeneric(gen.type, caller);
+            if (Pointer.hasGeneric(gen.basePtr, caller)) {
+                typePtrs[i] = Pointer.byGeneric(gen.basePtr, caller);
             }
         }
     }
 
-    public TemplateView(TemplateView templateView, Pointer caller) {
+    public TemplateView(Pointer caller, TemplateView templateView) {
         this.template = templateView.template;
-        this.caller = caller;
 
-        types = new Pointer[templateView.getGenCount()];
+        typePtrs = new Pointer[templateView.getGenCount()];
         for (int i = 0; i < templateView.getGenCount(); i++) {
-            if (Pointer.hasGeneric(templateView.getGenType(i), caller)) {
-                types[i] = Pointer.byGeneric(templateView.getGenType(i), caller);
+            if (Pointer.hasGeneric(templateView.getGenTypePtr(i), caller)) {
+                typePtrs[i] = Pointer.byGeneric(templateView.getGenTypePtr(i), caller);
             }
         }
     }
@@ -40,11 +37,11 @@ public class TemplateView {
         return template.generics.size();
     }
 
-    public Pointer getGenType(int index) {
-        if (types == null || types[index] == null) {
-            return template.generics.get(index).type;
+    public Pointer getGenTypePtr(int index) {
+        if (typePtrs == null || typePtrs[index] == null) {
+            return template.generics.get(index).basePtr;
         }
-        return types[index];
+        return typePtrs[index];
     }
 
     public Token getGenName(int index) {

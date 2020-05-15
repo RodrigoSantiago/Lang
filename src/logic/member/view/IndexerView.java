@@ -3,37 +3,35 @@ package logic.member.view;
 import content.Token;
 import logic.Pointer;
 import logic.member.Indexer;
-import logic.templates.Template;
 import logic.typdef.Type;
 
 public class IndexerView {
-    public final Pointer caller;
-    public final Indexer indexer;
-    public final ParamView paramView;
-    private Pointer ptr;
+
+    private Indexer indexer;
+    private ParamView paramView;
+    private Pointer typePtr;
+
     private boolean hasGetAbs, hasSetAbs, hasOwnAbs;
     private boolean hasGetImpl, hasSetImpl, hasOwnImpl;
     public int getAcess, setAcess, ownAcess;
 
     public IndexerView(Pointer caller, Indexer indexer) {
-        this.caller = caller;
         this.indexer = indexer;
-        if (indexer.typePtr != null) {
-            ptr = Pointer.byGeneric(indexer.typePtr, caller);
+        if (indexer.getTypePtr() != null) {
+            typePtr = Pointer.byGeneric(indexer.getTypePtr(), caller);
         }
-        paramView = new ParamView(indexer.params, caller);
+        paramView = new ParamView(caller, indexer.getParams());
         getAcess = !indexer.hasGet() || indexer.isGetPrivate() ? 0 : indexer.isGetPublic() ? 2 : 1;
         setAcess = !indexer.hasSet() || indexer.isSetPrivate() ? 0 : indexer.isSetPublic() ? 2 : 1;
         ownAcess = !indexer.hasOwn() || indexer.isOwnPrivate() ? 0 : indexer.isOwnPublic() ? 2 : 1;
     }
 
     public IndexerView(Pointer caller, IndexerView indexerView) {
-        this.caller = caller;
         this.indexer = indexerView.indexer;
-        if (indexerView.ptr != null) {
-            ptr = Pointer.byGeneric(indexerView.getType(), caller);
+        if (indexerView.typePtr != null) {
+            typePtr = Pointer.byGeneric(indexerView.getTypePtr(), caller);
         }
-        paramView = new ParamView(indexerView.getParams(), caller);
+        paramView = new ParamView(caller, indexerView.getParams());
         hasGetAbs = indexerView.hasGetAbs;
         hasSetAbs = indexerView.hasSetAbs;
         hasOwnAbs = indexerView.hasOwnAbs;
@@ -58,7 +56,7 @@ public class IndexerView {
     }
 
     public boolean canOverride(IndexerView other) {
-        if (getType().equals(other.getType())) {
+        if (getTypePtr().equals(other.getTypePtr())) {
             return getParams().canOverride(other.getParams());
         }
 
@@ -115,16 +113,12 @@ public class IndexerView {
         }
     }
 
-    public Pointer getType() {
-        return ptr != null ? ptr : indexer.typePtr;
+    public Pointer getTypePtr() {
+        return typePtr != null ? typePtr : indexer.getTypePtr();
     }
 
     public ParamView getParams() {
         return paramView;
-    }
-
-    public boolean isStatic() {
-        return indexer.isStatic();
     }
 
     public boolean isLet() {

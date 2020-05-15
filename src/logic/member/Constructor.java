@@ -8,8 +8,8 @@ import logic.typdef.Type;
 
 public class Constructor extends Member {
 
-    public Parameters params;
-    public Token contentToken;
+    private Parameters params;
+    private Token contentToken;
 
     public Constructor(Type type, Token start, Token end) {
         super(type);
@@ -59,16 +59,16 @@ public class Constructor extends Member {
         return false;
     }
 
+    public void build(CppBuilder cBuilder) {
+
+    }
+
     public Parameters getParams() {
         return params;
     }
 
     @Override
     public String toString() {
-        return "this " + params;
-    }
-
-    public void build(CppBuilder cBuilder) {
-
+        return (isStatic() ? "static this (" : "this (") + params + ")";
     }
 }

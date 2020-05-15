@@ -3,7 +3,6 @@ package logic.typdef;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.Compiler;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.GenericOwner;
@@ -32,30 +31,31 @@ public abstract class Type implements GenericOwner {
 
     public Pointer self;
     public Pointer parent;
-    public ArrayList<Token> parentTokens = new ArrayList<>();
 
-    public ArrayList<Pointer> parents = new ArrayList<>();
-    public ArrayList<TokenGroup> parentTypeTokens = new ArrayList<>();
+    ArrayList<Token> parentTokens = new ArrayList<>();
 
-    public ArrayList<Property> properties = new ArrayList<>();
-    public ArrayList<Variable> variables = new ArrayList<>();
-    public ArrayList<Num> nums = new ArrayList<>();
+    ArrayList<Pointer> parents = new ArrayList<>();
+    ArrayList<TokenGroup> parentTypeTokens = new ArrayList<>();
 
-    public ArrayList<Method> methods = new ArrayList<>();
-    public ArrayList<Indexer> indexers = new ArrayList<>();
-    public ArrayList<Operator> operators = new ArrayList<>();
-    public ArrayList<Constructor> constructors = new ArrayList<>();
-    public ArrayList<Destructor> destructors = new ArrayList<>(1);
-    public ArrayList<MemberNative> memberNatives = new ArrayList<>();
-    public Constructor staticConstructor;
+    private ArrayList<Property> properties = new ArrayList<>();
+    private ArrayList<Variable> variables = new ArrayList<>();
+    private ArrayList<Num> nums = new ArrayList<>();
+
+    private ArrayList<Method> methods = new ArrayList<>();
+    private ArrayList<Indexer> indexers = new ArrayList<>();
+    private ArrayList<Operator> operators = new ArrayList<>();
+    private ArrayList<Constructor> constructors = new ArrayList<>();
+    private ArrayList<Destructor> destructors = new ArrayList<>(1);
+    private ArrayList<MemberNative> memberNatives = new ArrayList<>();
+    private Constructor staticConstructor;
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
     private boolean isCrossed, isBase;
 
-    public HashMap<Token, FieldView> fields = new HashMap<>();
-    public ViewList<MethodView> methodView = new ViewList<>();
-    public ArrayList<IndexerView> indexerView = new ArrayList<>();
+    private HashMap<Token, FieldView> fields = new HashMap<>();
+    private ViewList<MethodView> methodView = new ViewList<>();
+    private ArrayList<IndexerView> indexerView = new ArrayList<>();
 
     public Type(ContentFile cFile, Key key, Token start, Token end) {
         this.cFile = cFile;
@@ -146,24 +146,21 @@ public abstract class Type implements GenericOwner {
     }
 
     public void preload() {
-        String pathName = cFile.namespace.name + "::" + nameToken;
-        fileName = (isClass() ? "c_" : isStruct() ? "s_" : isEnum() ? "e_" : "i_")
-                + pathName.replace("_", "__").replace("::", "_");
+        String pathName = (cFile.namespace.name + "::" + nameToken).replace("_", "__").replace("::", "_");
+        fileName = (isClass() ? "c_" : isStruct() ? "s_" : isEnum() ? "e_" : "i_") + pathName;
+        pathToken = new Token(pathName);
+        staticPathToken = new Token("_"+pathName);
 
         if (cFile.library == cFile.library.getCompiler().getLangLibrary()) {
-            isBase = true;
-            if (nameToken.equals("bool")) pathName = "bool";
-            else if (nameToken.equals("byte")) pathName = "int8";
-            else if (nameToken.equals("short")) pathName = "int16";
-            else if (nameToken.equals("int")) pathName = "int32";
-            else if (nameToken.equals("long")) pathName = "int64";
-            else if (nameToken.equals("float")) pathName = "float";
-            else if (nameToken.equals("double")) pathName = "double";
-            else isBase = false;
+            isBase = nameToken.equals("bool")
+                    || nameToken.equals("byte")
+                    || nameToken.equals("short")
+                    || nameToken.equals("int")
+                    || nameToken.equals("long")
+                    || nameToken.equals("float")
+                    || nameToken.equals("double")
+                    || nameToken.equals("function");
         }
-
-        pathToken = new Token(pathName);
-        staticPathToken = new Token(cFile.namespace.name + "::_" + nameToken);
 
         for (TokenGroup parentTypeToken : parentTypeTokens) {
             inheritanceType(parentTypeToken.start, parentTypeToken.end);
@@ -227,7 +224,6 @@ public abstract class Type implements GenericOwner {
                 if (add) methodView.put(pMW.getName(), pMW);
             }
             for (IndexerView pIW : pPtr.type.indexerView) {
-                if (pIW.isStatic()) continue;
                 pIW = new IndexerView(pPtr, pIW);
 
                 boolean implGet = !pIW.hasGet() || !pIW.isGetAbstract();
@@ -235,7 +231,6 @@ public abstract class Type implements GenericOwner {
                 boolean implOwn = !pIW.hasOwn() || !pIW.isOwnAbstract();
                 boolean add = true;
                 for (IndexerView iw : indexerView) {
-                    if (iw.isStatic()) continue;
                     Token erro = iw.isFrom(this) ? iw.getToken() : parentTokens.get(i);
 
                     if (iw.canOverride(pIW)) {
@@ -350,31 +345,29 @@ public abstract class Type implements GenericOwner {
         }
     }
 
-    // TODO - MAKE ALL POINTER BE NAMED AS PTR, NOT TYPE !!!!
     public void build(CppBuilder cBuilder) {
 
         cBuilder.toHeader();
         cBuilder.add("//").add(fileName).add(".h").ln()
                 .add("#ifndef H_").add(fileName).ln()
                 .add("#define H_").add(fileName).ln()
-                .add("#include \"langCore.h\"").ln()
-                .ln()
-                .begin(cFile).ln()
-                .ln();
+                .add("#include \"langCore.h\"").ln();
+        cBuilder.markHeader();
+        cBuilder.ln();
 
         cBuilder.toSource();
-        cBuilder.add("//").add(fileName).add(".cpp").ln()
-                .add("#include \"").add(fileName).add(".h\"").ln()
-                .ln();
+        cBuilder.add("//").add(fileName).add(".cpp").ln();
+        cBuilder.markSource();
+        cBuilder.ln();
 
         cBuilder.toHeader();
         cBuilder.add(template)
-                .add("class ").add(nameToken).add(isClass() || isInterface(), " :");
+                .add("class ").add(pathToken).add(isClass() || isInterface(), " :");
         if (parent == null || isInterface()) {
-            cBuilder.add(" public _IObject");
+            cBuilder.add(" public IObject");
         }
         for (int i = 0; i < parents.size(); i++) {
-            cBuilder.add(i > 0 || isInterface(), ",").add(" public ").path(parents.get(i), false);
+            cBuilder.add(i > 0 || isInterface(), ",").add(" public ").parent(parents.get(i));
         }
         cBuilder.add(" {").ln()
                 .add("public :").ln();
@@ -385,21 +378,23 @@ public abstract class Type implements GenericOwner {
             }
         }
         for (Indexer indexer : indexers) {
-            if (!indexer.isStatic()) {
-                indexer.build(cBuilder);
-            }
+            indexer.build(cBuilder);
         }
         for (Method method : methods) {
             if (!method.isStatic()) {
                 method.build(cBuilder);
             }
         }
+        for (Operator operator : operators) {
+            operator.build(cBuilder);
+        }
 
+        cBuilder.toHeader();
         cBuilder.add("};").ln()
                 .ln();
 
         // Static Members
-        cBuilder.add("class _").add(nameToken).add(" {").ln()
+        cBuilder.add("class ").add(staticPathToken).add(" {").ln()
                 .add("public :").ln()
                 .idt(1).add("static void init();").ln()
                 .idt(1).add("static bool initBlock();").ln();
@@ -419,11 +414,6 @@ public abstract class Type implements GenericOwner {
                 property.build(cBuilder);
             }
         }
-        for (Indexer indexer : indexers) {
-            if (indexer.isStatic()) {
-                indexer.build(cBuilder);
-            }
-        }
         for (Method method : methods) {
             if (method.isStatic()) {
                 method.build(cBuilder);
@@ -432,11 +422,13 @@ public abstract class Type implements GenericOwner {
 
         cBuilder.toHeader();
 
-        cBuilder.add("};").ln()
-                .ln();
+        cBuilder.add("};").ln();
 
-        cBuilder.end(cFile).ln()
-                .add("#endif").ln();
+        cBuilder.headerDependence();
+        cBuilder.sourceDependence();
+        cBuilder.directDependence();
+
+        cBuilder.add("#endif");
     }
 
     public boolean isPrivate() {
@@ -618,19 +610,19 @@ public abstract class Type implements GenericOwner {
     public void add(Method method) {
         if (method.load()) {
             if (method.isAbstract() && ((method.isPrivate() && !isPrivate()) || (!method.isPublic() && isPublic()))) {
-                cFile.erro(method.nameToken, "A abstract method cannot have a strong acess modifier than the type");
+                cFile.erro(method.getName(), "A abstract method cannot have a strong acess modifier than the type");
             }
             for (Method methodB : methods) {
-                if (method.nameToken.equals(methodB.nameToken)) {
-                    if (!method.params.canOverload(methodB.params)) {
-                        cFile.erro(method.nameToken, "Invalid overloading");
+                if (method.getName().equals(methodB.getName())) {
+                    if (!method.getParams().canOverload(methodB.getParams())) {
+                        cFile.erro(method.getName(), "Invalid overloading");
                         return;
                     }
                 }
             }
 
             methods.add(method);
-            methodView.put(method.nameToken, new MethodView(self, method));
+            methodView.put(method.getName(), new MethodView(self, method));
         }
     }
 
@@ -649,7 +641,7 @@ public abstract class Type implements GenericOwner {
                 cFile.erro(indexer.token, "A abstract indexer OWN cannot have a strong acess modifier");
             }
             for (Indexer indexerB : indexers) {
-                if (!indexer.params.canOverload(indexerB.params)) {
+                if (!indexer.getParams().canOverload(indexerB.getParams())) {
                     cFile.erro(indexer.token, "Invalid overloading");
                     return;
                 }
@@ -702,7 +694,7 @@ public abstract class Type implements GenericOwner {
                 }
             } else {
                 for (Constructor constructorB : constructors) {
-                    if (!constructor.params.canOverload(constructorB.params)) {
+                    if (!constructor.getParams().canOverload(constructorB.getParams())) {
                         cFile.erro(constructor.token, "Invalid overloading");
                         return;
                     }

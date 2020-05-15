@@ -4,7 +4,6 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
-import logic.params.Arg;
 import logic.params.Parameters;
 import logic.Pointer;
 import logic.typdef.Type;
@@ -66,8 +65,6 @@ public class Operator extends Member {
         }
     }
 
-    //ADD - SUB (PODEM TER 0 OU 1)
-    //INC - DEC - CAST - AUTO - NOT - BITNOT (SO PODEM TER 1)
     @Override
     public boolean load() {
         if (typeToken != null) {
@@ -77,7 +74,7 @@ public class Operator extends Member {
                 params.load(type);
 
                 if (params.args.size() == 1) {
-                    if (!params.args.get(0).type.equals(type.self)) {
+                    if (!params.args.get(0).typePtr.equals(type.self)) {
                         cFile.erro(operator, "The first parameter must be the current Type");
 
                         return false;
@@ -90,7 +87,7 @@ public class Operator extends Member {
                         return false;
                     }
                 } else if (params.args.size() == 2) {
-                    if (!params.args.get(0).type.equals(type.self) && !params.args.get(1).type.equals(type.self)) {
+                    if (!params.args.get(0).typePtr.equals(type.self) && !params.args.get(1).typePtr.equals(type.self)) {
                         cFile.erro(operator, "The first or second parameter must be the current Type");
                         return false;
                     } else if (op == Key.INC || op == Key.DEC ||
@@ -119,10 +116,28 @@ public class Operator extends Member {
 
     public void build(CppBuilder cBuilder) {
 
+        cBuilder.toHeader();
+        cBuilder.idt(1).add(type.template, 1);
+
+        cBuilder.add("static ")
+                .add(typePtr)
+                .add(" ").add(op, typePtr).add("(").add(params).add(");").ln();
+
+        if (!isAbstract()) {
+            cBuilder.toSource();
+            cBuilder.add(type.template)
+                    .add(typePtr)
+                    .add(" ").path(type.self, false).add("::").add(op, typePtr)
+                    .add("(").add(params).add(") {").ln()
+                    .add("}").ln()
+                    .ln();
+        }
+
+        cBuilder.toHeader();
     }
 
     @Override
     public String toString() {
-        return "operator "+op+" "+params+" : "+ typePtr;
+        return "operator " + op + " (" + params + ") : " + typePtr;
     }
 }

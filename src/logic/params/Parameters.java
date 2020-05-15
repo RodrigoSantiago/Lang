@@ -60,8 +60,8 @@ public class Parameters {
 
     public boolean load(GenericOwner owner) {
         for (Arg arg : args) {
-            arg.type = cFile.getPointer(arg.typeToken.start, arg.typeToken.end, null, owner);
-            if (!hasGeneric && arg.type != null && arg.type.hasGeneric()) {
+            arg.typePtr = cFile.getPointer(arg.typeToken.start, arg.typeToken.end, null, owner);
+            if (!hasGeneric && arg.typePtr != null && arg.typePtr.hasGeneric()) {
                 hasGeneric = true;
             }
         }
@@ -76,6 +76,23 @@ public class Parameters {
         return args.size() == 0;
     }
 
+    public boolean canOverload(Parameters other) {
+        if (other.args.size() == args.size()) {
+            boolean dif = false;
+            for (int i = 0; i < args.size(); i++) {
+                Arg argA = args.get(i);
+                Arg argB = other.args.get(i);
+                if (!argA.typePtr.hasGeneric() && !argB.typePtr.hasGeneric() && !argA.typePtr.equals(argB.typePtr)) {
+                    dif = true;
+                    break;
+                }
+            }
+            return dif;
+        } else {
+            return true;
+        }
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
@@ -88,7 +105,7 @@ public class Parameters {
             for (int i = 0; i < args.size(); i++) {
                 Arg arg = args.get(i);
                 Arg otherArg = other.args.get(i);
-                if (!arg.type.equals(otherArg.type)) return false;
+                if (!arg.typePtr.equals(otherArg.typePtr)) return false;
                 if (arg.isLet != otherArg.isLet) return false;
             }
             return true;
@@ -106,29 +123,12 @@ public class Parameters {
         return str + ")";
     }
 
-    public boolean canOverload(Parameters other) {
-        if (other.args.size() == args.size()) {
-            boolean dif = false;
-            for (int i = 0; i < args.size(); i++) {
-                Arg argA = args.get(i);
-                Arg argB = other.args.get(i);
-                if (!argA.type.hasGeneric() && !argB.type.hasGeneric() && !argA.type.equals(argB.type)) {
-                    dif = true;
-                    break;
-                }
-            }
-            return dif;
-        } else {
-            return true;
-        }
-    }
-
     public boolean equals(Parameters other) {
         if (other.args.size() != args.size()) return false;
         for (int i = 0; i < args.size(); i++) {
             Arg argA = args.get(i);
             Arg argB = other.args.get(i);
-            if (!argA.type.equals(argB.type)) {
+            if (!argA.typePtr.equals(argB.typePtr)) {
                 return false;
             }
         }

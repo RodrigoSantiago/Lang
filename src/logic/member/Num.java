@@ -11,8 +11,8 @@ import java.util.ArrayList;
 
 public class Num extends Member {
 
-    ArrayList<Token> nameTokens = new ArrayList<>();
-    ArrayList<Token> initTokens = new ArrayList<>();
+    private ArrayList<Token> nameTokens = new ArrayList<>();
+    private ArrayList<Token> initTokens = new ArrayList<>();
 
     public Num(Type type, Token start, Token end) {
         super(type);

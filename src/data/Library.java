@@ -173,7 +173,7 @@ public class Library {
                 if (type.isLangBase()) {
                     continue;
                 }
-                cppBuilder.reset();
+                cppBuilder.reset(type);
                 type.build(cppBuilder);
 
                 File src = new File(srcDir, type.fileName + ".cpp");

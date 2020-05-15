@@ -8,33 +8,30 @@ import logic.params.Parameters;
 public class ParamView {
 
     private Parameters params;
-    private Pointer caller;
-    private Pointer[] types;
+    private Pointer[] typePtrs;
 
-    public ParamView(Parameters params, Pointer caller) {
+    public ParamView(Pointer caller, Parameters params) {
         this.params = params;
-        this.caller = caller;
 
         if (params.hasGeneric()) {
-            types = new Pointer[params.args.size()];
+            typePtrs = new Pointer[params.args.size()];
             for (int i = 0; i < params.args.size(); i++) {
                 Arg arg = params.args.get(i);
-                if (Pointer.hasGeneric(arg.type, caller)) {
-                    types[i] = Pointer.byGeneric(arg.type, caller);
+                if (Pointer.hasGeneric(arg.typePtr, caller)) {
+                    typePtrs[i] = Pointer.byGeneric(arg.typePtr, caller);
                 }
             }
         }
     }
 
-    public ParamView(ParamView paramView, Pointer caller) {
+    public ParamView(Pointer caller, ParamView paramView) {
         this.params = paramView.params;
-        this.caller = caller;
 
         if (params.hasGeneric()) {
-            types = new Pointer[paramView.getArgsCount()];
+            typePtrs = new Pointer[paramView.getArgsCount()];
             for (int i = 0; i < paramView.getArgsCount(); i++) {
-                if (Pointer.hasGeneric(paramView.getArgType(i), caller)) {
-                    types[i] = Pointer.byGeneric(paramView.getArgType(i), caller);
+                if (Pointer.hasGeneric(paramView.getArgTypePtr(i), caller)) {
+                    typePtrs[i] = Pointer.byGeneric(paramView.getArgTypePtr(i), caller);
                 }
             }
         }
@@ -44,8 +41,8 @@ public class ParamView {
         if (getArgsCount() == other.getArgsCount()) {
             boolean dif = false;
             for (int i = 0; i < getArgsCount(); i++) {
-                Pointer ptrA = getArgType(i);
-                Pointer ptrB = other.getArgType(i);
+                Pointer ptrA = getArgTypePtr(i);
+                Pointer ptrB = other.getArgTypePtr(i);
                 if (!ptrA.hasGeneric() && !ptrB.hasGeneric() && !ptrA.equals(ptrB)) {
                     dif = true;
                     break;
@@ -60,8 +57,8 @@ public class ParamView {
     public boolean canOverride(ParamView other) {
         if (getArgsCount() == other.getArgsCount()) {
             for (int i = 0; i < getArgsCount(); i++) {
-                Pointer ptrA = getArgType(i);
-                Pointer ptrB = other.getArgType(i);
+                Pointer ptrA = getArgTypePtr(i);
+                Pointer ptrB = other.getArgTypePtr(i);
                 if (!ptrA.equals(ptrB)) {
                     return false;
                 }
@@ -76,11 +73,11 @@ public class ParamView {
         return params.args.size();
     }
 
-    public Pointer getArgType(int index) {
-        if (types == null || types[index] == null) {
-            return params.args.get(index).type;
+    public Pointer getArgTypePtr(int index) {
+        if (typePtrs == null || typePtrs[index] == null) {
+            return params.args.get(index).typePtr;
         }
-        return types[index];
+        return typePtrs[index];
     }
 
     public Token getArgName(int index) {

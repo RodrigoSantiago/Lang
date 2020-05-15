@@ -13,8 +13,9 @@ import java.util.ArrayList;
 public class Template {
 
     private final ContentFile cFile;
-    public ArrayList<Generic> generics = new ArrayList<>();
+
     public Token token;
+    public ArrayList<Generic> generics = new ArrayList<>();
 
     public Template(ContentFile cFile, Token template) {
         this.cFile = cFile;
@@ -83,19 +84,19 @@ public class Template {
     public void load(Type cycleOwner, GenericOwner genericOwner) {
         for (Generic generic : generics) {
             if (generic.typeToken != null) {
-                generic.type = cFile.getPointer(generic.typeToken.start, generic.typeToken.end,
+                generic.basePtr = cFile.getPointer(generic.typeToken.start, generic.typeToken.end,
                         cycleOwner, genericOwner);
             } else {
-                generic.type = Pointer.openPointer;
+                generic.basePtr = Pointer.openPointer;
             }
-            generic.ptr = new Pointer(generic.type.type, null, generic);
+            generic.typePtr = new Pointer(generic.basePtr.type, null, generic);
         }
     }
 
     public Pointer findGeneric(Token genericName) {
         for (Generic generic : generics) {
             if (genericName.equals(generic.nameToken)) {
-                return generic.ptr;
+                return generic.typePtr;
             }
         }
         return null;

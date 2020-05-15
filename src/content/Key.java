@@ -1,105 +1,105 @@
 package content;
 
-public class Key {
-    public static final Key NOONE = new Key("");    // noone
-    public static final Key INVALID = new Key("");  // invalid character
-    public static final Key IOP = new Key("");      // invalid operator combination
+public enum Key {
+    NOONE(""),    // noone
+    INVALID(""),  // invalid character
+    IOP(""),      // invalid operator combination
 
-    public static final Key WORD = new Key("");
-    public static final Key NUMBER = new Key("");
-    public static final Key STRING = new Key("");
+    WORD(""),
+    NUMBER(""),
+    STRING(""),
 
-    public static final Key PARAM = new Key("(");
-    public static final Key BRACE = new Key("{");
-    public static final Key INDEX = new Key("[");
-    public static final Key GENERIC = new Key("<");
+    PARAM("("),
+    BRACE("{"),
+    INDEX("["),
+    GENERIC("<"),
 
-    public static final Key CPARAM = new Key(")");
-    public static final Key CBRACE = new Key("}");
-    public static final Key CINDEX = new Key("]");
-    public static final Key CGENERIC = new Key(">");
+    CPARAM(")"),
+    CBRACE("}"),
+    CINDEX("]"),
+    CGENERIC(">"),
 
-    public static final Key USING = new Key("using",            true, false);
-    public static final Key NAMESPACE = new Key("namespace",    true, false);
-    public static final Key CLASS = new Key("class",            true, false);
-    public static final Key STRUCT = new Key("struct",          true, false);
-    public static final Key INTERFACE = new Key("interface",    true, false);
-    public static final Key ENUM = new Key("enum",              true, false);
+    USING("using",            true, false),
+    NAMESPACE("namespace",    true, false),
+    CLASS("class",            true, false),
+    STRUCT("struct",          true, false),
+    INTERFACE("interface",    true, false),
+    ENUM("enum",              true, false),
 
-    public static final Key PUBLIC = new Key("public",          false, true);
-    public static final Key PRIVATE = new Key("private",        false, true);
-    public static final Key STATIC = new Key("static",          false, true);
-    public static final Key FINAL = new Key("final",            false, true);
-    public static final Key ABSTRACT = new Key("abstract",      false, true);
+    PUBLIC("public",          false, true),
+    PRIVATE("private",        false, true),
+    STATIC("static",          false, true),
+    FINAL("final",            false, true),
+    ABSTRACT("abstract",      false, true),
 
-    public static final Key OPERATOR = new Key("operator",      false, false);
+    OPERATOR("operator",      false, false),
 
-    public static final Key IF = new Key("if");
-    public static final Key ELSE = new Key("else");
-    public static final Key FOR = new Key("for");
-    public static final Key WHILE = new Key("while");
-    public static final Key DO = new Key("do");
-    public static final Key SWITCH = new Key("switch");
-    public static final Key LOCK = new Key("lock");
-    public static final Key NATIVE = new Key("native");
+    IF("if"),
+    ELSE("else"),
+    FOR("for"),
+    WHILE("while"),
+    DO("do"),
+    SWITCH("switch"),
+    LOCK("lock"),
+    NATIVE("native"),
 
-    public static final Key YIELD = new Key("yield");
-    public static final Key BREAK = new Key("break");
-    public static final Key CONTINUE = new Key("continue");
-    public static final Key CASE = new Key("case");
-    public static final Key RETURN = new Key("return");
-    public static final Key VAR = new Key("var");
-    public static final Key LET = new Key("let",                false, true);
-    public static final Key NEW = new Key("new");
-    public static final Key THIS = new Key("this",              false, false);
-    public static final Key SUPER = new Key("super");
-    public static final Key DEFAULT = new Key("default",        false, true);
-    public static final Key VOID = new Key("void");
+    YIELD("yield"),
+    BREAK("break"),
+    CONTINUE("continue"),
+    CASE("case"),
+    RETURN("return"),
+    VAR("var"),
+    LET("let",                false, true),
+    NEW("new"),
+    THIS("this",              false, false),
+    SUPER("super"),
+    DEFAULT("default",        false, true),
+    VOID("void"),
 
-    public static final Key SEMICOLON = new Key(";");
-    public static final Key COLON = new Key(":");
-    public static final Key DOT = new Key(".");
-    public static final Key COMMA = new Key(",");
-    public static final Key QUEST = new Key("?");
-    public static final Key LAMBDA = new Key("->");
-    public static final Key ADD = new Key("+",                  false, false, true);
-    public static final Key SUB = new Key("-",                  false, false, true);
-    public static final Key MUL = new Key("*",                  false, false, true);
-    public static final Key DIV = new Key("/",                  false, false, true);
-    public static final Key MOD = new Key("%",                  false, false, true);
-    public static final Key RSHIFT = new Key(">>",              false, false, true);
-    public static final Key LSHIFT = new Key("<<",              false, false, true);
-    public static final Key INC = new Key("++",                 false, false, true);
-    public static final Key DEC = new Key("--",                 false, false, true);
-    public static final Key SETVAL = new Key("=",               false, false, true);
-    public static final Key SETADD = new Key("+=",              false, false, false);
-    public static final Key SETSUB = new Key("-=",              false, false, false);
-    public static final Key SETDIV = new Key("/=",              false, false, false);
-    public static final Key SETMOD = new Key("%=",              false, false, false);
-    public static final Key SETRSHIFT = new Key(">>=",          false, false, false);
-    public static final Key SETLSHIFT = new Key("<<=",          false, false, false);
-    public static final Key BITAND = new Key("&",               false, false, true);
-    public static final Key BITOR = new Key("|",                false, false, true);
-    public static final Key BITNOT = new Key("~",               false, false, true);
-    public static final Key BITXOR = new Key("^",               false, false, true);
-    public static final Key SETAND = new Key("&=",              false, false, false);
-    public static final Key SETOR = new Key("|=",               false, false, false);
-    public static final Key SETNOT = new Key("~=",              false, false, false);
-    public static final Key SETXOR = new Key("^=",              false, false, false);
-    public static final Key EQUAL = new Key("==",               false, false, true);
-    public static final Key MORE = new Key(">",                 false, false, true);
-    public static final Key LESS = new Key("<",                 false, false, true);
-    public static final Key EMORE = new Key(">=",               false, false, true);
-    public static final Key ELESS = new Key("<=",               false, false, true);
-    public static final Key DIF = new Key("!=",                 false, false, true);
-    public static final Key AND = new Key("&&",                 false, false, true);
-    public static final Key OR = new Key("||",                  false, false, true);
-    public static final Key NOT = new Key("!",                  false, false, true);
+    SEMICOLON(";"),
+    COLON(":"),
+    DOT("."),
+    COMMA(","),
+    QUEST("?"),
+    LAMBDA("->"),
+    ADD("+",                  false, false, true),
+    SUB("-",                  false, false, true),
+    MUL("*",                  false, false, true),
+    DIV("/",                  false, false, true),
+    MOD("%",                  false, false, true),
+    RSHIFT(">>",              false, false, true),
+    LSHIFT("<<",              false, false, true),
+    INC("++",                 false, false, true),
+    DEC("--",                 false, false, true),
+    SETVAL("=",               false, false, true),
+    SETADD("+=",              false, false, false),
+    SETSUB("-=",              false, false, false),
+    SETDIV("/=",              false, false, false),
+    SETMOD("%=",              false, false, false),
+    SETRSHIFT(">>=",          false, false, false),
+    SETLSHIFT("<<=",          false, false, false),
+    BITAND("&",               false, false, true),
+    BITOR("|",                false, false, true),
+    BITNOT("~",               false, false, true),
+    BITXOR("^",               false, false, true),
+    SETAND("&=",              false, false, false),
+    SETOR("|=",               false, false, false),
+    SETNOT("~=",              false, false, false),
+    SETXOR("^=",              false, false, false),
+    EQUAL("==",               false, false, true),
+    MORE(">",                 false, false, true),
+    LESS("<",                 false, false, true),
+    EMORE(">=",               false, false, true),
+    ELESS("<=",               false, false, true),
+    DIF("!=",                 false, false, true),
+    AND("&&",                 false, false, true),
+    OR("||",                  false, false, true),
+    NOT("!",                  false, false, true),
 
-    // public static final Key GET = new Key("get");
-    // public static final Key SET = new Key("set");
-    public static final Key CAST = new Key("cast",              false, false, true);
-    public static final Key AUTO = new Key("auto",              false, false, true);
+    // GET("get"),
+    // SET("set"),
+    CAST("cast",              false, false, true),
+    AUTO("auto",              false, false, true);
 
     public final String string;
     public final boolean isNamespace;

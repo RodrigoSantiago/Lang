@@ -13,13 +13,14 @@ import logic.typdef.Type;
 
 public class Method extends Member implements GenericOwner {
 
-    public Token nameToken;
-    public Token contentToken;
-    public Parameters params;
-    public Template template;
+    private Token nameToken;
+    private Parameters params;
+    private Template template;
 
-    public Pointer typePtr;
-    public TokenGroup typeToken;
+    private Pointer typePtr;
+    private TokenGroup typeToken;
+
+    private Token contentToken;
 
     public Method(Type type, Token start, Token end) {
         super(type);
@@ -125,9 +126,8 @@ public class Method extends Member implements GenericOwner {
     }
 
     public void build(CppBuilder cBuilder) {
-
         cBuilder.toHeader();
-        cBuilder.idt(1).add(template, 1);
+        cBuilder.idt(1).add(type.template, 1).add(template, 1);
 
         if (!isFinal() && !isStatic()) {
             cBuilder.add("virtual ");
@@ -140,22 +140,17 @@ public class Method extends Member implements GenericOwner {
         if (!isAbstract()) {
             cBuilder.toSource();
             if (!isStatic()) {
-                cBuilder.add(template);
+                cBuilder.add(type.template);
             }
-            cBuilder.add(typePtr)
+            cBuilder.add(template)
+                    .add(typePtr)
                     .add(" ").path(type.self, isStatic()).add("::m_").add(nameToken)
                     .add("(").add(params).add(") {").ln()
-                    .add(isStatic(), "    init();").ln()
                     .add("}").ln()
                     .ln();
         }
 
         cBuilder.toHeader();
-    }
-
-    @Override
-    public String toString() {
-        return nameToken+" (" + params+") : "+ typePtr;
     }
 
     @Override
@@ -170,7 +165,24 @@ public class Method extends Member implements GenericOwner {
         return pointer;
     }
 
-    public void setOverriden() {
+    public Parameters getParams() {
+        return params;
+    }
 
+    public Template getTemplate() {
+        return template;
+    }
+
+    public Token getName() {
+        return nameToken;
+    }
+
+    public Pointer getTypePtr() {
+        return typePtr;
+    }
+
+    @Override
+    public String toString() {
+        return nameToken+" (" + params+") : "+ typePtr;
     }
 }

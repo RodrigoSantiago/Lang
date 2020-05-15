@@ -1,19 +1,36 @@
 package data;
 
+import content.Key;
 import content.Token;
 import logic.params.Parameters;
+import logic.templates.Generic;
 import logic.templates.Template;
 import logic.Pointer;
 import logic.typdef.Type;
 
+import java.util.ArrayList;
+
 public class CppBuilder {
 
-    private static String[] indents;
+    private String[] indents;
 
-    private int indent = 0;
-    private StringBuilder sBuilder, hBuilder, tBuilder;
+    private int indent = 0, sourcePos, headerPos;
+    private StringBuilder sBuilder, hBuilder, tBuilder, dBuilder;
+    private ArrayList<Type> tDependences, sDependences, hDependences, dDependences;
+    private Type type;
+    private boolean useTemplates;
 
-    static {
+    public CppBuilder() {
+        sBuilder = new StringBuilder();
+        hBuilder = new StringBuilder();
+        dBuilder = new StringBuilder();
+        tBuilder = sBuilder;
+
+        sDependences = new ArrayList<>();
+        hDependences = new ArrayList<>();
+        dDependences = new ArrayList<>();
+        tDependences = sDependences;
+
         indents = new String[10];
         for (int i = 0; i < indents.length; i++) {
             indents[i] = "";
@@ -23,26 +40,91 @@ public class CppBuilder {
         }
     }
 
-    public CppBuilder() {
-        sBuilder = new StringBuilder();
-        hBuilder = new StringBuilder();
-        tBuilder = sBuilder;
-    }
-
     public CppBuilder toSource() {
         tBuilder = sBuilder;
+        tDependences = sDependences;
         return this;
     }
 
     public CppBuilder toHeader() {
         tBuilder = hBuilder;
+        tDependences = hDependences;
         return this;
     }
 
-    public void reset() {
+    public void reset(Type type) {
         sBuilder.setLength(0);
         hBuilder.setLength(0);
-        tBuilder = sBuilder;
+        sDependences.clear();
+        hDependences.clear();
+        dDependences.clear();
+        toHeader();
+
+        this.type = type;
+        this.useTemplates = false;
+    }
+
+    public void markHeader() {
+        headerPos = hBuilder.length();
+    }
+
+    public void markSource() {
+        sourcePos = sBuilder.length();
+    }
+
+    public void dependence(Pointer pointer) {
+        if (pointer.typeSource == null && pointer.type != null) {
+            if (!pointer.type.isLangBase() && !dDependences.contains(pointer.type)) {
+                dDependences.add(pointer.type);
+                hDependences.remove(pointer.type);
+                sDependences.remove(pointer.type);
+            }
+            if (pointer.pointers != null) {
+                for (Pointer p : pointer.pointers) {
+                    dependence(p);
+                }
+            }
+        }
+    }
+
+    public void headerDependence() {
+        for (Type type : sDependences) {
+            if (type.template != null) {
+                dBuilder.append("template<");
+                ArrayList<Generic> generics = type.template.generics;
+                for (int i = 0; i < generics.size(); i++) {
+                    dBuilder.append(i > 0 ? ", typename g_" : "typename g_").append(generics.get(i).nameToken);
+                }
+                dBuilder.append(">\n");
+            }
+            dBuilder.append("class ").append(type.pathToken).append(";\n");
+        }
+        hBuilder.insert(headerPos, dBuilder);
+        dBuilder.setLength(0);
+    }
+
+    public void sourceDependence() {
+        dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
+
+        for (Type type : sDependences) {
+            if (type != this.type) {
+                dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
+            }
+        }
+        sBuilder.insert(sourcePos, dBuilder);
+        dBuilder.setLength(0);
+    }
+
+    public void directDependence() {
+        for (Type type : dDependences) {
+            dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
+        }
+        hBuilder.insert(headerPos, dBuilder);
+        dBuilder.setLength(0);
+
+        if (useTemplates) {
+            hBuilder.append("#include \"").append(type.fileName).append(".cpp\"\n");
+        }
     }
 
     public CppBuilder add(boolean addIf, String str) {
@@ -57,8 +139,22 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder add(boolean addIf, int number) {
+        if (addIf) {
+            tBuilder.append(number);
+        }
+        return this;
+    }
+
     public CppBuilder add(int number) {
         tBuilder.append(number);
+        return this;
+    }
+
+    public CppBuilder add(boolean addIf, Token token) {
+        if (addIf) {
+            token.addToBuilder(tBuilder);
+        }
         return this;
     }
 
@@ -67,13 +163,26 @@ public class CppBuilder {
         return this;
     }
 
-    public CppBuilder name(String name) {
-        tBuilder.append(name);
+    public CppBuilder add(Key operator, Pointer typePtr) {
+        if (operator == Key.CAST) {
+            add("cast_")._namePtr(typePtr);
+        } else if (operator == Key.AUTO) {
+            add("auto_")._namePtr(typePtr);
+        } else {
+            add(operator.name().toLowerCase());
+        }
         return this;
     }
 
-    public CppBuilder nameClass(Token token) {
-        token.addToBuilder(tBuilder);
+    private CppBuilder _namePtr(Pointer typePtr) {
+        if (typePtr == Pointer.voidPointer) return add("void");
+        add(typePtr.type.pathToken);
+        if (typePtr.pointers != null) {
+            for (Pointer pointer : typePtr.pointers) {
+                _namePtr(pointer);
+            }
+            add("_cast");
+        }
         return this;
     }
 
@@ -83,39 +192,22 @@ public class CppBuilder {
         return this;
     }
 
-    public CppBuilder begin(ContentFile cFile) {
-        String[] names = cFile.namespace.name.split("::");
-        add("NAMESPACE_BEGIN(");
-        for (int i = 0; i < names.length; i++) {
-            add(i > 0, ", ").add(names[i]);
-        }
-        return add(")");
-    }
-
-    public CppBuilder end(ContentFile cFile) {
-        String[] names = cFile.namespace.name.split("::");
-        add("NAMESPACE_END(");
-        for (int i = 0; i < names.length; i++) {
-            add(i > 0, ", ").add(names[i]);
-        }
-        return add(")");
-    }
-
     public CppBuilder add(Pointer pointer) {
         if (pointer == Pointer.nullPointer) return add("nullptr");
         if (pointer == Pointer.voidPointer) return add("void");
         if (pointer.typeSource != null) {
             nameGeneric(pointer.typeSource.nameToken);
         } else {
-            try {
-                if (pointer.type.isClass() || pointer.type.isInterface()) {
-                    // Ptr<
-                    add(pointer.type.pathToken);
-                } else {
-                    add(pointer.type.pathToken);
-                }
-            }catch ( Exception e) {
-                System.out.println();
+            if (!pointer.type.isLangBase()
+                    && !dDependences.contains(pointer.type)
+                    && !tDependences.contains(pointer.type)) {
+                tDependences.add(pointer.type);
+            }
+
+            if (pointer.type.isClass() || pointer.type.isInterface()) {
+                add(pointer.type.pathToken);
+            } else {
+                add(pointer.type.pathToken);
             }
 
             if (pointer.pointers != null) {
@@ -127,7 +219,6 @@ public class CppBuilder {
                 tBuilder.append(">");
             }
             if (pointer.type.isClass() || pointer.type.isInterface()) {
-                // >
                 add("*");
             }
         }
@@ -157,12 +248,18 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder parent(Pointer pointer) {
+        dependence(pointer);
+        return path(pointer, false);
+    }
+
     public CppBuilder add(Template template) {
         return add(template, 0);
     }
 
     public CppBuilder add(Template template, int indent) {
         if (template != null) {
+            useTemplates = true;
             add("template<");
             for (int i = 0; i < template.generics.size(); i++) {
                 if (i != 0) add(", ");
@@ -176,7 +273,7 @@ public class CppBuilder {
     public CppBuilder add(Parameters params) {
         for (int i = 0; i < params.args.size(); i++) {
             if (i > 0) add(", ");
-            add(params.args.get(i).type).add(" v_").add(params.args.get(i).nameToken);
+            add(params.args.get(i).typePtr).add(" v_").add(params.args.get(i).nameToken);
         }
         return this;
     }
@@ -198,11 +295,6 @@ public class CppBuilder {
 
     public CppBuilder ln() {
         tBuilder.append("\n");
-        return this;
-    }
-
-    public CppBuilder file(Type type, String ext) {
-        tBuilder.append(type.fileName).append(ext);
         return this;
     }
 

@@ -89,4 +89,8 @@ public class Variable extends Member {
         }
         return fields;
     }
+
+    public Pointer getTypePtr() {
+        return typePtr;
+    }
 }

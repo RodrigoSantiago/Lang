@@ -10,8 +10,8 @@ public class Generic {
     public int index;
 
     public Token nameToken;
-    public Pointer type;
-    public Pointer ptr;
+    public Pointer basePtr;
+    public Pointer typePtr;
 
     public TokenGroup typeToken;
 

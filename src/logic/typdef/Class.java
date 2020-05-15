@@ -5,11 +5,7 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
-import data.CppBuilder;
 import logic.Pointer;
-import logic.member.Indexer;
-import logic.member.Method;
-import logic.member.Property;
 
 public class Class extends Type {
     public Class(ContentFile cFile, Token start, Token end) {
@@ -61,7 +57,7 @@ public class Class extends Type {
         Pointer[] p = template == null ? null : new Pointer[template.generics.size()];
         if (p != null) {
             for (int i = 0; i < p.length; i++) {
-                p[i] = template.generics.get(i).ptr;
+                p[i] = template.generics.get(i).typePtr;
             }
         }
         self = new Pointer(this, p);

@@ -2,7 +2,6 @@ package logic.member.view;
 
 import content.Token;
 import logic.Pointer;
-import logic.templates.Template;
 import logic.member.Method;
 import logic.typdef.Type;
 
@@ -10,24 +9,27 @@ public class MethodView {
     public final Pointer caller;
     public final Method method;
     public final ParamView paramView;
-    private Pointer ptr;
+    public final TemplateView templateView;
+    private Pointer typePtr;
 
     public MethodView(Pointer caller, Method method) {
         this.caller = caller;
         this.method = method;
-        if (method.typePtr != null) {
-            ptr = Pointer.byGeneric(method.typePtr, caller);
+        if (method.getTypePtr() != null) {
+            typePtr = Pointer.byGeneric(method.getTypePtr(), caller);
         }
-        paramView = new ParamView(method.params, caller);
+        paramView = new ParamView(caller, method.getParams());
+        templateView = method.getTemplate() != null ? new TemplateView(caller, method.getTemplate()) : null;
     }
 
     public MethodView(Pointer caller, MethodView methodView) {
         this.caller = caller;
         this.method = methodView.method;
-        if (methodView.ptr != null) {
-            ptr = Pointer.byGeneric(methodView.getType(), caller);
+        if (methodView.typePtr != null) {
+            typePtr = Pointer.byGeneric(methodView.getTypePtr(), caller);
         }
-        paramView = new ParamView(methodView.getParams(), caller);
+        paramView = new ParamView(caller, methodView.getParams());
+        templateView = method.getTemplate() != null ? new TemplateView(caller, method.getTemplate()) : null;
     }
 
     public boolean isFrom(Type type) {
@@ -35,7 +37,7 @@ public class MethodView {
     }
 
     public boolean canOverload(MethodView other) {
-        if ((method.template != null || other.method.template != null) &&
+        if ((method.getTemplate() != null || other.method.getTemplate() != null) &&
                 getParams().getArgsCount() == other.getParams().getArgsCount()) {
             return false;
         }
@@ -43,10 +45,10 @@ public class MethodView {
     }
 
     public boolean canOverride(MethodView other) {
-        if (method.template != null || other.method.template != null) {
+        if (method.getTemplate() != null || other.method.getTemplate() != null) {
             return false;
         }
-        if (getType().equals(other.getType())) {
+        if (getTypePtr().equals(other.getTypePtr())) {
             return getParams().canOverride(other.getParams());
         }
 
@@ -59,19 +61,19 @@ public class MethodView {
     }
 
     public Token getName() {
-        return method.nameToken;
+        return method.getName();
     }
 
-    public Pointer getType() {
-        return ptr != null ? ptr : method.typePtr;
+    public Pointer getTypePtr() {
+        return typePtr != null ? typePtr : method.getTypePtr();
     }
 
     public ParamView getParams() {
         return paramView;
     }
 
-    public Template getTemplate() {
-        return method.template;
+    public TemplateView getTemplate() {
+        return templateView;
     }
 
     public boolean isPrivate() {

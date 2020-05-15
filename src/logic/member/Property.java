@@ -10,11 +10,12 @@ import logic.typdef.Type;
 
 public class Property extends Member {
 
-    Token nameToken;
-    Token contentToken;
-    TokenGroup initToken;
-    TokenGroup typeToken;
-    Pointer typePtr;
+    private Token nameToken;
+    private TokenGroup typeToken;
+    private Pointer typePtr;
+
+    private Token contentToken;
+    private TokenGroup initToken;
     private Token getContentToken, setContentToken, ownContentToken;
 
     private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
@@ -208,9 +209,12 @@ public class Property extends Member {
 
             if (!isGetAbstract()) {
                 cBuilder.toSource();
+
+                if (!isStatic()) {
+                    cBuilder.add(type.template);
+                }
                 cBuilder.add(typePtr)
                         .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() {").ln()
-                        .add(isStatic(), "    init();").ln()
                         .add("}").ln()
                         .ln();
             }
@@ -234,9 +238,11 @@ public class Property extends Member {
             if (!isOwnAbstract()) {
                 cBuilder.toSource();
 
+                if (!isStatic()) {
+                    cBuilder.add(type.template);
+                }
                 cBuilder.add(typePtr)
                         .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() {").ln()
-                        .add(isStatic(), "    init();").ln()
                         .add("}").ln()
                         .ln();
             }
@@ -257,9 +263,11 @@ public class Property extends Member {
             if (!isSetAbstract()) {
                 cBuilder.toSource();
 
+                if (!isStatic()) {
+                    cBuilder.add(type.template);
+                }
                 cBuilder.add("void ").path(type.self, isStatic()).add("::set_").add(nameToken)
                         .add("(").add(typePtr).add(" v_value) {").ln()
-                        .add(isStatic(), "    init();").ln()
                         .add("}").ln()
                         .ln();
             }
@@ -268,6 +276,14 @@ public class Property extends Member {
 
     public FieldView getField() {
         return new FieldView(nameToken, typePtr, this);
+    }
+
+    public Token getName() {
+        return nameToken;
+    }
+
+    public Pointer getTypePtr() {
+        return typePtr;
     }
 
     public boolean hasGet() {

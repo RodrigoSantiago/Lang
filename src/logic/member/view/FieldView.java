@@ -10,35 +10,34 @@ import logic.typdef.Type;
 public class FieldView {
 
     public Token nameToken;
-    public Pointer pointer;
-    public Pointer caller;
+    public Pointer typePtr;
 
-    public Variable srcVar;
-    public Num srcNum;
-    public Property srcPro;
-    public int srcID;
+    private Variable srcVar;
+    private Num srcNum;
+    private Property srcPro;
+    private int srcID;
 
     private boolean hasGetAbs, hasSetAbs, hasOwnAbs;
     private boolean hasGetImpl, hasSetImpl, hasOwnImpl;
     public int getAcess, setAcess, ownAcess;
 
-    public FieldView(Token nameToken, Pointer pointer, Variable variable, int index) {
+    public FieldView(Token nameToken, Pointer typePtr, Variable variable, int index) {
         this.nameToken = nameToken;
-        this.pointer = pointer;
+        this.typePtr = typePtr;
         this.srcVar = variable;
         this.srcID = index;
     }
 
-    public FieldView(Token nameToken, Pointer pointer, Num num, int index) {
+    public FieldView(Token nameToken, Pointer typePtr, Num num, int index) {
         this.nameToken = nameToken;
-        this.pointer = pointer;
+        this.typePtr = typePtr;
         this.srcNum = num;
         this.srcID = index;
     }
 
-    public FieldView(Token nameToken, Pointer pointer, Property property) {
+    public FieldView(Token nameToken, Pointer typePtr, Property property) {
         this.nameToken = nameToken;
-        this.pointer = pointer;
+        this.typePtr = typePtr;
         this.srcPro = property;
         getAcess = !property.hasGet() || property.isGetPrivate() ? 0 : property.isGetPublic() ? 2 : 1;
         setAcess = !property.hasSet() || property.isSetPrivate() ? 0 : property.isSetPublic() ? 2 : 1;
@@ -51,11 +50,10 @@ public class FieldView {
         this.srcNum = fieldView.srcNum;
         this.srcPro = fieldView.srcPro;
         this.srcID = fieldView.srcID;
-        this.caller = caller;
-        if (Pointer.hasGeneric(fieldView.getPointer(), caller)) {
-            pointer = Pointer.byGeneric(fieldView.getPointer(), caller);
+        if (Pointer.hasGeneric(fieldView.getTypePtr(), caller)) {
+            typePtr = Pointer.byGeneric(fieldView.getTypePtr(), caller);
         } else {
-            pointer = fieldView.getPointer();
+            typePtr = fieldView.getTypePtr();
         }
         hasGetAbs = fieldView.hasGetAbs;
         hasSetAbs = fieldView.hasSetAbs;
@@ -72,8 +70,8 @@ public class FieldView {
         return nameToken;
     }
 
-    public Pointer getPointer() {
-        return pointer;
+    public Pointer getTypePtr() {
+        return typePtr;
     }
 
     public boolean isFrom(Type type) {
@@ -86,7 +84,7 @@ public class FieldView {
     }
 
     public boolean canOverride(FieldView other) {
-        return isProperty() && other.isProperty() && getPointer().equals(other.getPointer());
+        return isProperty() && other.isProperty() && getTypePtr().equals(other.getTypePtr());
     }
 
     public boolean canAcessGet(Type type) {

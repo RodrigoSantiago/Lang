@@ -2,6 +2,7 @@ package logic.member;
 
 import content.Key;
 import content.Token;
+import data.CppBuilder;
 import logic.typdef.Type;
 
 public class Destructor extends Member {
@@ -48,6 +49,10 @@ public class Destructor extends Member {
     @Override
     public boolean load() {
         return contentToken != null;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
     }
 
     @Override

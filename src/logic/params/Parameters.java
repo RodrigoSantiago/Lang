@@ -72,6 +72,10 @@ public class Parameters {
         return hasGeneric;
     }
 
+    public boolean isEmpty() {
+        return args.size() == 0;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;

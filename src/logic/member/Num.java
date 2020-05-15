@@ -3,6 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import data.ContentFile;
+import data.CppBuilder;
 import logic.member.view.FieldView;
 import logic.typdef.Type;
 
@@ -54,6 +55,10 @@ public class Num extends Member {
     @Override
     public boolean load() {
         return nameTokens.size() > 0;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
     }
 
     public ArrayList<FieldView> getFields() {

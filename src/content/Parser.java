@@ -50,7 +50,9 @@ public class Parser {
                 state = 0;
             } else if (state == 0 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == null)) {
                 // undefined scope
-                cFile.add(new Class(cFile, start, next));
+                if (start.getNext() != next || token.key != Key.SEMICOLON) {
+                    cFile.add(new Class(cFile, start, next));
+                }
                 start = next;
                 state = 0;
             }

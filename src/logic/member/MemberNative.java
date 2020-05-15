@@ -3,6 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import data.ContentFile;
+import data.CppBuilder;
 import logic.typdef.Type;
 
 public class MemberNative extends Member {
@@ -72,5 +73,9 @@ public class MemberNative extends Member {
     @Override
     public boolean load() {
         return true;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
     }
 }

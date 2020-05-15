@@ -3,6 +3,7 @@ package logic.typdef;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.Compiler;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.GenericOwner;
@@ -23,6 +24,7 @@ public abstract class Type implements GenericOwner {
 
     public Token nameToken;
     public Token pathToken;
+    public Token staticPathToken;
     public String fileName;
 
     public Template template;
@@ -49,7 +51,7 @@ public abstract class Type implements GenericOwner {
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
-    private boolean isCrossed;
+    private boolean isCrossed, isBase;
 
     public HashMap<Token, FieldView> fields = new HashMap<>();
     public ViewList<MethodView> methodView = new ViewList<>();
@@ -147,7 +149,21 @@ public abstract class Type implements GenericOwner {
         String pathName = cFile.namespace.name + "::" + nameToken;
         fileName = (isClass() ? "c_" : isStruct() ? "s_" : isEnum() ? "e_" : "i_")
                 + pathName.replace("_", "__").replace("::", "_");
+
+        if (cFile.library == cFile.library.getCompiler().getLangLibrary()) {
+            isBase = true;
+            if (nameToken.equals("bool")) pathName = "bool";
+            else if (nameToken.equals("byte")) pathName = "int8";
+            else if (nameToken.equals("short")) pathName = "int16";
+            else if (nameToken.equals("int")) pathName = "int32";
+            else if (nameToken.equals("long")) pathName = "int64";
+            else if (nameToken.equals("float")) pathName = "float";
+            else if (nameToken.equals("double")) pathName = "double";
+            else isBase = false;
+        }
+
         pathToken = new Token(pathName);
+        staticPathToken = new Token(cFile.namespace.name + "::_" + nameToken);
 
         for (TokenGroup parentTypeToken : parentTypeTokens) {
             inheritanceType(parentTypeToken.start, parentTypeToken.end);
@@ -334,7 +350,93 @@ public abstract class Type implements GenericOwner {
         }
     }
 
+    // TODO - MAKE ALL POINTER BE NAMED AS PTR, NOT TYPE !!!!
     public void build(CppBuilder cBuilder) {
+
+        cBuilder.toHeader();
+        cBuilder.add("//").add(fileName).add(".h").ln()
+                .add("#ifndef H_").add(fileName).ln()
+                .add("#define H_").add(fileName).ln()
+                .add("#include \"langCore.h\"").ln()
+                .ln()
+                .begin(cFile).ln()
+                .ln();
+
+        cBuilder.toSource();
+        cBuilder.add("//").add(fileName).add(".cpp").ln()
+                .add("#include \"").add(fileName).add(".h\"").ln()
+                .ln();
+
+        cBuilder.toHeader();
+        cBuilder.add(template)
+                .add("class ").add(nameToken).add(isClass() || isInterface(), " :");
+        if (parent == null || isInterface()) {
+            cBuilder.add(" public _IObject");
+        }
+        for (int i = 0; i < parents.size(); i++) {
+            cBuilder.add(i > 0 || isInterface(), ",").add(" public ").path(parents.get(i), false);
+        }
+        cBuilder.add(" {").ln()
+                .add("public :").ln();
+
+        for (Property property : properties) {
+            if (!property.isStatic()) {
+                property.build(cBuilder);
+            }
+        }
+        for (Indexer indexer : indexers) {
+            if (!indexer.isStatic()) {
+                indexer.build(cBuilder);
+            }
+        }
+        for (Method method : methods) {
+            if (!method.isStatic()) {
+                method.build(cBuilder);
+            }
+        }
+
+        cBuilder.add("};").ln()
+                .ln();
+
+        // Static Members
+        cBuilder.add("class _").add(nameToken).add(" {").ln()
+                .add("public :").ln()
+                .idt(1).add("static void init();").ln()
+                .idt(1).add("static bool initBlock();").ln();
+
+        cBuilder.toSource();
+        cBuilder.add("void ").path(self, true).add("::init() {").ln()
+                .idt(1).add("static bool _init = initBlock();").ln()
+                .add("}").ln()
+                .ln();
+        cBuilder.add("bool ").path(self, true).add("::initBlock() {").ln()
+                .idt(1).add("return true;").ln()
+                .add("}").ln()
+                .ln();
+
+        for (Property property : properties) {
+            if (property.isStatic()) {
+                property.build(cBuilder);
+            }
+        }
+        for (Indexer indexer : indexers) {
+            if (indexer.isStatic()) {
+                indexer.build(cBuilder);
+            }
+        }
+        for (Method method : methods) {
+            if (method.isStatic()) {
+                method.build(cBuilder);
+            }
+        }
+
+        cBuilder.toHeader();
+
+        cBuilder.add("};").ln()
+                .ln();
+
+        cBuilder.end(cFile).ln()
+                .add("#endif").ln();
     }
 
     public boolean isPrivate() {
@@ -378,7 +480,7 @@ public abstract class Type implements GenericOwner {
     }
 
     public boolean isLangBase() {
-        return false;
+        return isBase;
     }
 
     public boolean isAbsAllowed() {

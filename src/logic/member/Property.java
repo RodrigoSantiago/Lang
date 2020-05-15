@@ -3,6 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
 import logic.typdef.Type;
@@ -189,6 +190,80 @@ public class Property extends Member {
             return hasGet || hasSet || hasOwn;
         }
         return false;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
+        if (hasGet()) {
+            cBuilder.toHeader();
+            cBuilder.idt(1);
+            if (!isGetFinal() && !isStatic()) {
+                cBuilder.add("virtual ");
+            } else if (isStatic()) {
+                cBuilder.add("static ");
+            }
+            cBuilder.add(typePtr)
+                    .add(" get_").add(nameToken).add("()")
+                    .add(isGetAbstract() ? " = 0;" : ";").ln();
+
+            if (!isGetAbstract()) {
+                cBuilder.toSource();
+                cBuilder.add(typePtr)
+                        .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() {").ln()
+                        .add(isStatic(), "    init();").ln()
+                        .add("}").ln()
+                        .ln();
+            }
+
+
+        }
+
+        if (hasOwn()) {
+            cBuilder.toHeader();
+
+            cBuilder.idt(1);
+            if (!isOwnFinal() && !isStatic()) {
+                cBuilder.add("virtual ");
+            } else if (isStatic()) {
+                cBuilder.add("static ");
+            }
+            cBuilder.add(typePtr)
+                    .add(" own_").add(nameToken).add("()")
+                    .add(isOwnAbstract() ? " = 0;" : ";").ln();
+
+            if (!isOwnAbstract()) {
+                cBuilder.toSource();
+
+                cBuilder.add(typePtr)
+                        .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() {").ln()
+                        .add(isStatic(), "    init();").ln()
+                        .add("}").ln()
+                        .ln();
+            }
+        }
+
+        if (hasSet()) {
+            cBuilder.toHeader();
+
+            cBuilder.idt(1);
+            if (!isSetFinal() && !isStatic()) {
+                cBuilder.add("virtual ");
+            } else if (isStatic()) {
+                cBuilder.add("static ");
+            }
+            cBuilder.add("void set_").add(nameToken).add("(").add(typePtr).add(" v_value)")
+                    .add(isSetAbstract() ? " = 0;" : ";").ln();
+
+            if (!isSetAbstract()) {
+                cBuilder.toSource();
+
+                cBuilder.add("void ").path(type.self, isStatic()).add("::set_").add(nameToken)
+                        .add("(").add(typePtr).add(" v_value) {").ln()
+                        .add(isStatic(), "    init();").ln()
+                        .add("}").ln()
+                        .ln();
+            }
+        }
     }
 
     public FieldView getField() {

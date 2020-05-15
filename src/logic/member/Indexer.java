@@ -3,6 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.params.Parameters;
 import logic.typdef.Type;
@@ -182,6 +183,50 @@ public class Indexer extends Member {
             }
         }
         return false;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
+        if (hasGet()) {
+            cBuilder.toHeader();
+
+            cBuilder.idt(1);
+            if (!isGetFinal() && !isStatic()) {
+                cBuilder.add("virtual ");
+            } else if (isStatic()) {
+                cBuilder.add("static ");
+            }
+            cBuilder.add(typePtr)
+                    .add(" get").add("(").add(params).add(")")
+                    .add(isGetAbstract() ? " = 0;" : ";").ln();
+        }
+
+        if (hasOwn()) {
+            cBuilder.toHeader();
+
+            cBuilder.idt(1);
+            if (!isOwnFinal() && !isStatic()) {
+                cBuilder.add("virtual ");
+            } else if (isStatic()) {
+                cBuilder.add("static ");
+            }
+            cBuilder.add(typePtr)
+                    .add(" own").add("(").add(params).add(")")
+                    .add(isGetAbstract() ? " = 0;" : ";").ln();
+        }
+
+        if (hasSet()) {
+            cBuilder.toHeader();
+
+            cBuilder.idt(1);
+            if (!isSetFinal() && !isStatic()) {
+                cBuilder.add("virtual ");
+            } else if (isStatic()) {
+                cBuilder.add("static ");
+            }
+            cBuilder.add("void set").add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value)")
+                    .add(isSetAbstract() ? " = 0;" : ";").ln();
+        }
     }
 
     public boolean hasGet() {

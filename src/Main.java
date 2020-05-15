@@ -20,7 +20,7 @@ public class Main {
                 lang.fileAdd(file.getName(), read(file));
             }
         }
-        lang.setSrcDir(new File(System.getProperty("user.dir"), "test/output/lang/src"));
+        lang.setSrcDir(new File("C:/Dropbox/Cpp/Lang/lang"));
         lang.setObjDir(new File(System.getProperty("user.dir"), "test/output/lang/obj"));
 
         Compiler compiler = new Compiler();

@@ -3,6 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
 import logic.typdef.Type;
@@ -75,6 +76,10 @@ public class Variable extends Member {
             return nameTokens.size() > 0 ;
         }
         return false;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
     }
 
     public ArrayList<FieldView> getFields() {

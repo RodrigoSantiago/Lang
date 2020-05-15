@@ -3,7 +3,9 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.GenericOwner;
+import logic.templates.Generic;
 import logic.templates.Template;
 import logic.params.Parameters;
 import logic.Pointer;
@@ -96,6 +98,20 @@ public class Method extends Member implements GenericOwner {
 
             if (template != null) {
                 template.load(null, isStatic() ? null : type);
+                if (!isStatic()) {
+                    boolean templateMiss = false;
+                    if (type.template != null) {
+                        for (Generic gen : template.generics) {
+                            if (type.template.findGeneric(gen.nameToken) != null) {
+                                cFile.erro(gen.nameToken, "Generic name conflict");
+                                templateMiss = true;
+                            }
+                        }
+                        if (templateMiss) {
+                            return false;
+                        }
+                    }
+                }
             }
 
             if (params != null) {
@@ -106,6 +122,35 @@ public class Method extends Member implements GenericOwner {
 
         }
         return false;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
+        cBuilder.toHeader();
+        cBuilder.idt(1).add(template, 1);
+
+        if (!isFinal() && !isStatic()) {
+            cBuilder.add("virtual ");
+        } else if (isStatic()) {
+            cBuilder.add("static ");
+        }
+        cBuilder.add(typePtr)
+                .add(" m_").add(nameToken).add("(").add(params).add(")").add(isAbstract() ? " = 0;" : ";").ln();
+
+        if (!isAbstract()) {
+            cBuilder.toSource();
+            if (!isStatic()) {
+                cBuilder.add(template);
+            }
+            cBuilder.add(typePtr)
+                    .add(" ").path(type.self, isStatic()).add("::m_").add(nameToken)
+                    .add("(").add(params).add(") {").ln()
+                    .add(isStatic(), "    init();").ln()
+                    .add("}").ln()
+                    .ln();
+        }
+
+        cBuilder.toHeader();
     }
 
     @Override

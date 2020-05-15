@@ -7,11 +7,9 @@ import content.TokenGroup;
 import data.ContentFile;
 import data.CppBuilder;
 import logic.Pointer;
-import logic.ViewList;
-import logic.member.view.MethodView;
-
-import java.util.ArrayList;
-import java.util.List;
+import logic.member.Indexer;
+import logic.member.Method;
+import logic.member.Property;
 
 public class Class extends Type {
     public Class(ContentFile cFile, Token start, Token end) {
@@ -74,27 +72,6 @@ public class Class extends Type {
         }
     }
 
-    @Override
-    public void build(CppBuilder cBuilder) {
-        cBuilder.toHeader();
-        cBuilder.add("\\\\").add(fileName).add(".h").ln();
-
-        cBuilder.add("")
-                .add("#ifndef H_").add(fileName).ln()
-                .add("#define H_").add(fileName).ln()
-                .add("#include \"langCore.h\"").ln()
-                .ln();
-
-        cBuilder.add(template)
-                .add("class ").add(nameToken).add(" : public ").parent(parent);
-        for (Pointer parent : parents) {
-            cBuilder.add(", public ").parent(parent);
-        }
-        cBuilder.add(" {").ln()
-                .add("public :").ln();
-        cBuilder.add("};").ln();
-        cBuilder.add("#endif").ln();
-    }
 
     @Override
     public final boolean isClass() {

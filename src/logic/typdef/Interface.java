@@ -62,28 +62,6 @@ public class Interface extends Type {
     }
 
     @Override
-    public void build(CppBuilder cBuilder) {
-        cBuilder.toHeader();
-        cBuilder.add("\\\\").add(fileName).add(".h").ln();
-
-        cBuilder.add("")
-                .add("#ifndef H_").add(fileName).ln()
-                .add("#define H_").add(fileName).ln()
-                .add("#include \"langCore.h\"").ln()
-                .ln();
-
-        cBuilder.add(template)
-                .add("class ").add(nameToken).add(" : public ").parent(null);
-        for (Pointer parent : parents) {
-            cBuilder.add(", public ").parent(parent);
-        }
-        cBuilder.add(" {").ln()
-                .add("public :").ln();
-        cBuilder.add("};").ln();
-        cBuilder.add("#endif").ln();
-    }
-
-    @Override
     public final boolean isInterface() {
         return true;
     }

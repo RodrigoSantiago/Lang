@@ -3,6 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.params.Arg;
 import logic.params.Parameters;
 import logic.Pointer;
@@ -114,6 +115,10 @@ public class Operator extends Member {
             }
         }
         return false;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
     }
 
     @Override

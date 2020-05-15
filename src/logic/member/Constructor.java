@@ -2,6 +2,7 @@ package logic.member;
 
 import content.Key;
 import content.Token;
+import data.CppBuilder;
 import logic.params.Parameters;
 import logic.typdef.Type;
 
@@ -65,5 +66,9 @@ public class Constructor extends Member {
     @Override
     public String toString() {
         return "this " + params;
+    }
+
+    public void build(CppBuilder cBuilder) {
+
     }
 }

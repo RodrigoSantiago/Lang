@@ -56,8 +56,6 @@ public static struct double : Double {
 
     byte operator cast(double value) {
     }
-    char operator cast(double value) {
-    }
     short operator cast(double value) {
     }
     int operator cast(double value) {

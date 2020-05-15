@@ -44,8 +44,6 @@ public static struct long : Long {
 
     byte operator cast(long value) {
     }
-    char operator cast(long value) {
-    }
     short operator cast(long value) {
     }
     int operator cast(long value) {

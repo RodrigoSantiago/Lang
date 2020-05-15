@@ -36,8 +36,6 @@ public static struct short : Short {
 
     byte operator cast(short value) {
     }
-    char operator cast(short value) {
-    }
     int operator auto(short value) {
     }
 

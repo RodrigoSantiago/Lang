@@ -64,8 +64,6 @@ public static struct float : Float {
 
     byte operator cast(float value) {
     }
-    char operator cast(float value) {
-    }
     short operator cast(float value) {
     }
     int operator cast(float value) {

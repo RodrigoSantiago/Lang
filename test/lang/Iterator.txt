@@ -2,9 +2,9 @@ namespace lang;
 
 public interface Iterator<T> {
 
-    let T next();
+    public let T next();
 
-    bool hasNext();
+    public bool hasNext();
 
-    bool remove();
+    public bool remove();
 }

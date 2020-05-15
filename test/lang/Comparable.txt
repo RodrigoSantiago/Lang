@@ -2,5 +2,5 @@ namespace lang;
 
 public interface Comparable<T> {
 
-    int compareTo(let T other);
+    public int compareTo(let T other);
 }

@@ -6,8 +6,8 @@ public class Function {
         lang_long[] typeList;
     }
 
-    public final function<?> value; // automatic cast to any function type (null if is not valid)
-    public this(function<?> value) {
+    public final function<> value; // automatic cast to any function type (null if is not valid)
+    public this(function<> value) {
         // copy to a NEW STD::FUNCTION
     }
 

@@ -93,4 +93,8 @@ public class Variable extends Member {
     public Pointer getTypePtr() {
         return typePtr;
     }
+
+    public TokenGroup getTypeToken() {
+        return typeToken;
+    }
 }

@@ -34,7 +34,7 @@ public class Method extends Member implements GenericOwner {
             if (state == 0 && token.key.isAttribute) {
                 readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, true, false);
             } else if (state == 0 && token.key == Key.GENERIC) {
-                template = new Template(cFile, token);
+                template = new Template(cFile, token, true);
                 state = 1;
             } else if ((state == 0 || state == 1) && token.key == Key.VOID) {
                 typeToken = new TokenGroup(token, next);
@@ -127,7 +127,7 @@ public class Method extends Member implements GenericOwner {
 
     public void build(CppBuilder cBuilder) {
         cBuilder.toHeader();
-        cBuilder.idt(1).add(type.template, 1).add(template, 1);
+        cBuilder.idt(1).add(template, 1);
 
         if (!isFinal() && !isStatic()) {
             cBuilder.add("virtual ");

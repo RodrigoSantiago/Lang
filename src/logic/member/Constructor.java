@@ -60,7 +60,23 @@ public class Constructor extends Member {
     }
 
     public void build(CppBuilder cBuilder) {
+        cBuilder.toHeader();
+        cBuilder.idt(1);
 
+        if (isStatic()) {
+
+        } else {
+            cBuilder.add(type.self).add(" create(").add(params).add(");").ln();
+
+            cBuilder.toSource();
+            cBuilder.add(type.template)
+                    .add(type.self)
+                    .add(" ").path(type.self, false).add("::create(").add(params).add(") {").ln()
+                    .add("}").ln()
+                    .ln();
+        }
+
+        cBuilder.toHeader();
     }
 
     public Parameters getParams() {

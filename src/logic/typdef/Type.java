@@ -9,6 +9,7 @@ import logic.GenericOwner;
 import logic.ViewList;
 import logic.member.view.IndexerView;
 import logic.member.view.MethodView;
+import logic.member.view.ParamView;
 import logic.templates.Template;
 import logic.Pointer;
 import logic.member.*;
@@ -37,16 +38,16 @@ public abstract class Type implements GenericOwner {
     ArrayList<Pointer> parents = new ArrayList<>();
     ArrayList<TokenGroup> parentTypeTokens = new ArrayList<>();
 
-    private ArrayList<Property> properties = new ArrayList<>();
-    private ArrayList<Variable> variables = new ArrayList<>();
-    private ArrayList<Num> nums = new ArrayList<>();
+    ArrayList<Property> properties = new ArrayList<>();
+    ArrayList<Variable> variables = new ArrayList<>();
+    ArrayList<Num> nums = new ArrayList<>();
 
     private ArrayList<Method> methods = new ArrayList<>();
     private ArrayList<Indexer> indexers = new ArrayList<>();
     private ArrayList<Operator> operators = new ArrayList<>();
     private ArrayList<Constructor> constructors = new ArrayList<>();
     private ArrayList<Destructor> destructors = new ArrayList<>(1);
-    private ArrayList<MemberNative> memberNatives = new ArrayList<>();
+    private ArrayList<Native> natives = new ArrayList<>();
     private Constructor staticConstructor;
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
@@ -107,7 +108,7 @@ public abstract class Type implements GenericOwner {
                 if (isEnum()) {
                     cFile.erro(token, "A enum cannot have genrics");
                 } else {
-                    template = new Template(cFile, token);
+                    template = new Template(cFile, token, !isStruct());
                 }
                 state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.COLON) {
@@ -343,6 +344,27 @@ public abstract class Type implements GenericOwner {
                 if (add) fields.put(pFW.getName(), pFW);
             }
         }
+
+        if (parent != null && isClass()) {
+            for (Constructor pC : parent.type.constructors) {
+                if (pC.isDefault() && pC.isPublic()) {
+                    boolean isImplemented = false;
+                    ParamView pCW = new ParamView(parent, pC.getParams());
+                    for (Constructor cC : constructors) {
+                        if (cC.getParams().canOverride(pCW)) {
+                            if (!cC.isPublic()) {
+                                cFile.erro(cC.token, "A Default constructor implementation must be public");
+                            }
+                            isImplemented = true;
+                            break;
+                        }
+                    }
+                    if (!isImplemented) {
+                        cFile.erro(nameToken, "Default constructor not implemented");
+                    }
+                }
+            }
+        }
     }
 
     public void build(CppBuilder cBuilder) {
@@ -372,6 +394,10 @@ public abstract class Type implements GenericOwner {
         cBuilder.add(" {").ln()
                 .add("public :").ln();
 
+        for (Native nat : natives) {
+            nat.build(cBuilder);
+        }
+
         for (Property property : properties) {
             if (!property.isStatic()) {
                 property.build(cBuilder);
@@ -379,6 +405,14 @@ public abstract class Type implements GenericOwner {
         }
         for (Indexer indexer : indexers) {
             indexer.build(cBuilder);
+        }
+        for (Constructor constructor : constructors) {
+            if (!constructor.isStatic()) {
+                constructor.build(cBuilder);
+            }
+        }
+        for (Destructor destructor : destructors) {
+            destructor.build(cBuilder);
         }
         for (Method method : methods) {
             if (!method.isStatic()) {
@@ -502,6 +536,20 @@ public abstract class Type implements GenericOwner {
         return false;
     }
 
+    public boolean cyclicVariableVerify(Type type) {
+        if (type == this) return true;
+
+        for (Variable variable : variables) {
+            if (variable.getTypePtr().type != null && variable.getTypePtr().type.isStruct()) {
+                if (variable.getTypePtr().type.cyclicVariableVerify(type)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public void inheritanceType(Token typeToken, Token end) {
         Type type = cFile.findType(typeToken);
         if (type != null) {
@@ -553,7 +601,13 @@ public abstract class Type implements GenericOwner {
         if (variable.load()) {
             if (isInterface() && !variable.isStatic()) {
                 cFile.erro(variable.token, "Instance variables not allowed");
+            } else if (isStruct()
+                    && variable.getTypePtr().type != null
+                    && variable.getTypePtr().type.isStruct()
+                    && variable.getTypePtr().type.cyclicVariableVerify(this)) {
+                cFile.erro(variable.getTypeToken().start, "Cyclic variable type reference");
             } else {
+
                 for (FieldView field : variable.getFields()) {
                     if (fields.containsKey(field.nameToken)) {
                         cFile.erro(field.nameToken, "Repeated field name");
@@ -686,6 +740,8 @@ public abstract class Type implements GenericOwner {
             } else if (constructor.isStatic()) {
                 if (staticConstructor != null) {
                     cFile.erro(constructor.token, "Repeated static constructor");
+                } else if (constructor.isDefault()) {
+                    cFile.erro(constructor.token, "A Default constructor cannot be static");
                 } else {
                     if (constructor.isPrivate()) {
                         cFile.erro(constructor.token, "Static constructors are always public");
@@ -693,6 +749,9 @@ public abstract class Type implements GenericOwner {
                     staticConstructor = constructor;
                 }
             } else {
+                if (constructor.isDefault() && !constructor.isPublic()) {
+                    cFile.erro(constructor.token, "A Default constructor must be public");
+                }
                 for (Constructor constructorB : constructors) {
                     if (!constructor.getParams().canOverload(constructorB.getParams())) {
                         cFile.erro(constructor.token, "Invalid overloading");
@@ -717,9 +776,9 @@ public abstract class Type implements GenericOwner {
         }
     }
 
-    public void add(MemberNative memberNative) {
-        if (memberNative.load()) {
-            memberNatives.add(memberNative);
+    public void add(Native nat) {
+        if (nat.load()) {
+            natives.add(nat);
         }
     }
 
@@ -729,6 +788,18 @@ public abstract class Type implements GenericOwner {
             return parent.type.getField(nameToken);
         } else {
             return null;
+        }
+    }
+
+    public int getVariablesCount() {
+        return variables.size() + (parent != null && parent.type != null ? parent.type.getVariablesCount() : 0);
+    }
+
+    public Variable getVariable(int index) {
+        if (index < variables.size()) {
+            return variables.get(index);
+        } else {
+            return parent.type.getVariable(index - variables.size());
         }
     }
 

@@ -19,7 +19,7 @@ public class Destructor extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, false, false, true, false, true);
+                readModifier(cFile, token, false, true, false, false, false, false, false);
             } else if (state == 0 && token.key == Key.BITNOT) {
                 state = 1;
             } else if (state == 1 && token.key == Key.THIS) {
@@ -44,6 +44,8 @@ public class Destructor extends Member {
         if (state != 4) {
             cFile.erro(last, "Unexpected end of tokens");
         }
+
+        isPublic = true;
     }
 
     @Override
@@ -52,7 +54,17 @@ public class Destructor extends Member {
     }
 
     public void build(CppBuilder cBuilder) {
+        cBuilder.idt(1).add("virtual void destroy();").ln();
 
+        cBuilder.toSource();
+        cBuilder.add(type.template)
+                .add("void ").path(type.self, false).add("::destroy() {").ln();
+
+        if (type.parent != null && type.isClass()) {
+            cBuilder.idt(1).path(type.parent, false).add("::destroy();").ln();
+        }
+        cBuilder.add("}").ln()
+                .ln();
     }
 
     @Override

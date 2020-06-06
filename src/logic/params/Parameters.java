@@ -5,6 +5,8 @@ import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
 import logic.GenericOwner;
+import logic.Pointer;
+import logic.member.view.ParamView;
 
 import java.util.ArrayList;
 
@@ -90,6 +92,36 @@ public class Parameters {
             return dif;
         } else {
             return true;
+        }
+    }
+
+    public boolean canOverride(Parameters other) {
+        if (args.size() == other.args.size()) {
+            for (int i = 0; i < other.args.size(); i++) {
+                Pointer ptrA = args.get(i).typePtr;
+                Pointer ptrB = other.args.get(i).typePtr;
+                if (!ptrA.equals(ptrB)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean canOverride(ParamView other) {
+        if (args.size() == other.getArgsCount()) {
+            for (int i = 0; i < args.size(); i++) {
+                Pointer ptrA = args.get(i).typePtr;
+                Pointer ptrB = other.getArgTypePtr(i);
+                if (!ptrA.equals(ptrB)) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
         }
     }
 

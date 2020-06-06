@@ -87,7 +87,8 @@ public class Operator extends Member {
                         return false;
                     }
                 } else if (params.args.size() == 2) {
-                    if (!params.args.get(0).typePtr.equals(type.self) && !params.args.get(1).typePtr.equals(type.self)) {
+                    if (!params.args.get(0).typePtr.equals(type.self) &&
+                            !params.args.get(1).typePtr.equals(type.self)) {
                         cFile.erro(operator, "The first or second parameter must be the current Type");
                         return false;
                     } else if (op == Key.INC || op == Key.DEC ||
@@ -125,6 +126,7 @@ public class Operator extends Member {
 
         if (!isAbstract()) {
             cBuilder.toSource();
+
             cBuilder.add(type.template)
                     .add(typePtr)
                     .add(" ").path(type.self, false).add("::").add(op, typePtr)

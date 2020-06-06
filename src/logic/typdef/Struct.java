@@ -6,8 +6,12 @@ import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
 import logic.Pointer;
+import logic.member.Variable;
+
+import java.util.ArrayList;
 
 public class Struct extends Type {
+
     public Struct(ContentFile cFile, Token start, Token end) {
         super(cFile, Key.STRUCT, start, end);
     }
@@ -55,5 +59,4 @@ public class Struct extends Type {
     public final boolean isStruct() {
         return true;
     }
-
 }

@@ -13,13 +13,15 @@ import java.util.ArrayList;
 public class Template {
 
     private final ContentFile cFile;
+    private boolean openPointer;
 
     public Token token;
     public ArrayList<Generic> generics = new ArrayList<>();
 
-    public Template(ContentFile cFile, Token template) {
+    public Template(ContentFile cFile, Token template, boolean openPointer) {
         this.cFile = cFile;
         this.token = template;
+        this.openPointer = openPointer;
         Token start = template.getChild();
         Token end = template.getLastChild();
 
@@ -86,8 +88,12 @@ public class Template {
             if (generic.typeToken != null) {
                 generic.basePtr = cFile.getPointer(generic.typeToken.start, generic.typeToken.end,
                         cycleOwner, genericOwner);
+                if (generic.basePtr.type != null && generic.basePtr.type.isFinal()) {
+                    generic.basePtr = cFile.langObject();
+                    cFile.erro(generic.typeToken.start, "A Generic cannot be a final Type");
+                }
             } else {
-                generic.basePtr = Pointer.openPointer;
+                generic.basePtr = openPointer ? Pointer.openPointer : cFile.langObject();
             }
             generic.typePtr = new Pointer(generic.basePtr.type, null, generic);
         }

@@ -135,7 +135,7 @@ public class Parser {
                 type.add(new Num(type, start, next));
 
             } else if (state == 7 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == end)) {
-                type.add(new MemberNative(type, start, next));
+                type.add(new Native(type, start, next));
 
             } else {
                 reset = false;

@@ -9,6 +9,7 @@ import logic.typdef.Type;
 
 public class FieldView {
 
+    Pointer caller;
     public Token nameToken;
     public Pointer typePtr;
 
@@ -45,6 +46,7 @@ public class FieldView {
     }
 
     public FieldView(Pointer caller, FieldView fieldView) {
+        this.caller = caller;
         this.nameToken = fieldView.nameToken;
         this.srcVar = fieldView.srcVar;
         this.srcNum = fieldView.srcNum;

@@ -6,7 +6,7 @@ import data.ContentFile;
 import data.CppBuilder;
 import logic.typdef.Type;
 
-public class MemberNative extends Member {
+public class Native extends Member {
 
     private boolean isHeader;   // in Header Implementation
     private boolean isSource;   // in Source Implementation OR internal non returning block
@@ -15,7 +15,7 @@ public class MemberNative extends Member {
     private Token sourceToken;
     private Token contentToken;
 
-    public MemberNative(Type type, Token start, Token end) {
+    public Native(Type type, Token start, Token end) {
         super(type);
 
         int state = 0;
@@ -33,7 +33,11 @@ public class MemberNative extends Member {
                 readSourceToken(token.getChild(), token.getLastChild());
                 state = 3;
             } else if (state == 3 && token.key == Key.BRACE) {
-                contentToken = token;
+                if (token.getChild() == null) {
+                    cFile.erro(token, "Unexpected token");
+                } else {
+                    contentToken = token;
+                }
                 state = 4;
             } else {
                 cFile.erro(token, "Unexpected token");
@@ -86,11 +90,58 @@ public class MemberNative extends Member {
         if (sourceToken != null && isReturn) {
             cFile.erro(sourceToken, "Returning block are not allowed here");
         }
-        return sourceToken != null && !isReturn;
+        return contentToken != null && sourceToken != null && !isReturn;
     }
 
     public void build(CppBuilder cBuilder) {
 
+        if (isHeader()) {
+            cBuilder.toHeader();
+        } else if (isSource()) {
+            cBuilder.toSource();
+        }
+        int start = contentToken.end;
+        int end = contentToken.getLastChild().start;
+
+        boolean text = false;
+        String in = cFile.content.substring(start, end);
+        for (int i = 0; i < in.length(); i++) {
+            char chr = in.charAt(i);
+            if (chr != ' ' && chr != '\t' && chr != '\n' && chr != '\r') {
+                text = true;
+            }
+        }
+        if (text) {
+            String[] lines = in.split("\\r?\\n");
+            if (lines.length == 1) {
+                cBuilder.add(lines[0]).ln();
+            } else if (lines.length > 1) {
+                int first = 0;
+                String firstLine = cFile.content.substring(contentToken.end, contentToken.getChild().start);
+                if (firstLine.contains("\n")) {
+                    first = 1;
+                }
+                int sub = 0;
+                for (int i = 0; i < lines[first].length(); i++) {
+                    if (!Character.isSpaceChar(lines[first].charAt(i))) {
+                        sub = i;
+                        break;
+                    }
+                }
+                for (String line : lines) {
+                    int s = 0;
+                    for (int j = 0; j < line.length() && j < sub; j++) {
+                        if (Character.isSpaceChar(line.charAt(j))) {
+                            s = j + 1;
+                        }
+                    }
+                    line = line.substring(s);
+                    cBuilder.idt(isHeader() ? 1 : 0).add(line).ln();
+                }
+            }
+        }
+
+        cBuilder.toHeader();
     }
 
     public boolean isHeader() {

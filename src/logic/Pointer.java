@@ -42,6 +42,16 @@ public class Pointer {
         return false;
     }
 
+    public boolean contains(Type type) {
+        if (this.type == type) return true;
+        if (pointers != null) {
+            for (Pointer pointer : pointers) {
+                if (pointer.contains(type)) return true;
+            }
+        }
+        return false;
+    }
+
     public int isChildOf(Pointer other) {
         // List<int> isChildOf (Obj)
         // Array<T> isChildOf(List<T>) = 1

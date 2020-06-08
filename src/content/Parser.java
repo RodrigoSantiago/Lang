@@ -10,7 +10,6 @@ import logic.typdef.Interface;
 import logic.typdef.Struct;
 import logic.typdef.Type;
 
-
 public class Parser {
 
     public Parser() {

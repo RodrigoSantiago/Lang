@@ -3,7 +3,7 @@ namespace lang;
 public class Function {
     native (header) {
         lang_int length;
-        lang_long[] typeList;
+        lang_long* typeList;
     }
 
     public final function<> value; // automatic cast to any function type (null if is not valid)

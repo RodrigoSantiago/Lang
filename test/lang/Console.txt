@@ -2,41 +2,35 @@ namespace lang;
 
 public final class Console {
 
-    public static void print(string value) {
+    public static void Write(string value) {
         native (source) {
-            system::console::print(f_value.data);
+            system::console::write(f_value.data);
         }
     }
 
-    public static void println(string value) {
-        native (source) {
-            system::console::println(f_value.data);
-        }
-    }
-
-    public static void print(let Object value) {
+    public static void Write(let Object value) {
         print(value == null ? "null" : value.toString());
     }
 
-    public static void println(let Object value) {
+    public static void WriteLine(string value) {
+        native (source) {
+            system::console::writeline(f_value.data);
+        }
+    }
+
+    public static void WriteLine(let Object value) {
         println(value == null ? "null" : value.toString());
     }
 
-    public static string readChar() {
+    public static string ReadChar() {
         native (return) {
-            return lang::string(system::console::readchar());
+            return lang_string(system::console::readchar());
         }
     }
 
-    public static string readLine() {
+    public static string ReadLine() {
         native (return) {
-            return lang::string(system::console::readline());
-        }
-    }
-
-    public static void clear() {
-        native (source) {
-            system::console::clear();
+            return lang_string(system::console::readline());
         }
     }
 }

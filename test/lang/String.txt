@@ -12,7 +12,7 @@ public final class String {
     }
 
     public int hash() {
-        return value.hash;
+        return value.hash();
     }
 
     public bool equals(let Object other) {
@@ -50,33 +50,35 @@ public static struct string : String {
     native (header) {
         system::string * data;
 
-        string (system::string* data);
-        string (const char* str);
+        lang_string(const lang_string& str);
+        lang_string(system::string* data);
+        lang_string(const char* str);
     }
 
     native (source) {
-        lang::string (system::string* data) {
-            this->data = data;
-            data->count ++;
+        lang_string::lang_string(const lang_string& str) {
+            this->data = str.data;
+            system::text::asg(data);
         }
-        lang::string (const char* str) {
-            this->data = system::memory::cstr(str);
-            data->count ++;
+        lang_string::lang_string(system::string* data) {
+            this->data = data;
+            system::text::asg(data);
+        }
+        lang_string::lang_string(const char* str) {
+            this->data = system::text::cstr(str);
         }
     }
 
-    public default this() {
+    public this() {
         native (source) {
-            this->data = system::memory::str(nullptr, 0, 0);
+            this->data = system::text::str(nullptr, 0, 0);
         }
     }
 
     public this(string copy) {
         native (source) {
             this->data = v_copy.data;
-            if (this->data.chars != nullptr) {
-                data->count ++;
-            }
+            system::text::asg(data);
         }
     }
 
@@ -89,11 +91,12 @@ public static struct string : String {
     }
 
     public this(let byte[] chars, int start, int length, int charSet) {
-        charSet = charSet == 32 ? 32 : charSet == 16 ? 16 : 8;
+        if (start < 0) start = 0;
+        if (start > chars.Length) start = chars.Length;
+        if (length > chars.Length) length = chars.Length;
 
         native (source) {
-            this->data = system::memory::str(v_chars->data[v_start], v_length, v_charSet);
-            data->count ++;
+            this->data = system::text::str(&v_chars->data[v_start], v_length, v_charSet);
         }
     }
 
@@ -102,9 +105,12 @@ public static struct string : String {
     }
 
     public this(let short[] chars, int start, int length) {
+        if (start < 0) start = 0;
+        if (start > chars.Length) start = chars.Length;
+        if (length > chars.Length) length = chars.Length;
+
         native (source) {
-            this->data = system::memory::str(v_chars->data[v_start], v_length, 16);
-            data->count ++;
+            this->data = system::text::str(&v_chars->data[v_start], v_length, 16);
         }
     }
 
@@ -113,24 +119,27 @@ public static struct string : String {
     }
 
     public this(let int[] chars, int start, int length) {
+        if (start < 0) start = 0;
+        if (start > chars.Length) start = chars.Length;
+        if (length > chars.Length) length = chars.Length;
+
         native (source) {
-            this->data = system::memory::str(v_chars->data[v_start], v_length, 32);
-            data->count ++;
+            this->data = system::text::str(&v_chars->data[v_start], v_length, 32);
         }
     }
 
     public ~this() {
         native (source) {
-            if (data->chars != nullptr) {
-                if (-- data->count == 0) {
-                    system::memory::de_str(data);
-                }
-            }
+            system::text::dsg(data);
         }
     }
 
     public bool equalsIgnoreCase(string other) {
-        if (other.Length != Length) return false;
+        native (return) {
+            if (this->data == v_other->data) return true;
+        }
+
+        if (other.CodePoints != CodePoints) return false;
 
         var it = iterateUTF32();
         var itOther = other.iterateUTF32();
@@ -147,10 +156,7 @@ public static struct string : String {
 
     public int hash() {
         native (return) {
-            if (data->hash == 0) {
-                // calculate hash
-            }
-            return data->hash;
+            return system::text::hash(data);
         }
     }
 
@@ -159,7 +165,7 @@ public static struct string : String {
     }
 
     public string toUpperCase(Locale locale) {
-        final Text text = new Text(Length);
+        final Text text = new Text(CodePoints);
         for (int i : this) {
             text.addCodePoint(locale.toUpperCase(i));
         }
@@ -171,7 +177,7 @@ public static struct string : String {
     }
 
     public string toLowerCase(Locale locale) {
-        final Text text = new Text(Length);
+        final Text text = new Text(CodePoints);
         for (int i : this) {
             text.addCodePoint(locale.toLowerCase(i));
         }
@@ -191,15 +197,28 @@ public static struct string : String {
     }
 
     bool operator ==(string value, string other) {
+        native (return) {
+            if (this->data == v_other->data) return true;
+            if (this->data.length != v_other.data.length) return false;
+
+            for (int i = 0, len = this->data.length; i < len; i++) {
+                if (this->data[i] != v_other->data[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
     }
-    bool operator !=(string value, string other) {
-    }
+
     bool operator >(string value, string other) {
     }
+
     bool operator <(string value, string other) {
     }
+
     bool operator >=(string value, string other) {
     }
+
     bool operator <=(string value, string other) {
     }
 
@@ -207,6 +226,13 @@ public static struct string : String {
     }
 
     string operator =(string other) {
+        native (source) {
+            if (this->Data != other->data) {
+                system::text::dsg(data);
+                this->data = other->data;
+                system::text::asg(data);
+            }
+        }
     }
 }
 

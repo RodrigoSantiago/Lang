@@ -208,8 +208,7 @@ public class Property extends Member {
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isGetAbstract()) {
-                cBuilder.toSource();
-
+                cBuilder.toSource(type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
@@ -224,7 +223,6 @@ public class Property extends Member {
 
         if (hasOwn()) {
             cBuilder.toHeader();
-
             cBuilder.idt(1);
             if (!isOwnFinal() && !isStatic()) {
                 cBuilder.add("virtual ");
@@ -236,8 +234,7 @@ public class Property extends Member {
                     .add(isOwnAbstract() ? " = 0;" : ";").ln();
 
             if (!isOwnAbstract()) {
-                cBuilder.toSource();
-
+                cBuilder.toSource(type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
@@ -250,7 +247,6 @@ public class Property extends Member {
 
         if (hasSet()) {
             cBuilder.toHeader();
-
             cBuilder.idt(1);
             if (!isSetFinal() && !isStatic()) {
                 cBuilder.add("virtual ");
@@ -261,8 +257,7 @@ public class Property extends Member {
                     .add(isSetAbstract() ? " = 0;" : ";").ln();
 
             if (!isSetAbstract()) {
-                cBuilder.toSource();
-
+                cBuilder.toSource(type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }

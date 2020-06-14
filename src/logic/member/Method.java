@@ -126,9 +126,9 @@ public class Method extends Member implements GenericOwner {
     }
 
     public void build(CppBuilder cBuilder) {
+
         cBuilder.toHeader();
         cBuilder.idt(1).add(template, 1);
-
         if (!isFinal() && !isStatic()) {
             cBuilder.add("virtual ");
         } else if (isStatic()) {
@@ -138,7 +138,7 @@ public class Method extends Member implements GenericOwner {
                 .add(" m_").add(nameToken).add("(").add(params).add(")").add(isAbstract() ? " = 0;" : ";").ln();
 
         if (!isAbstract()) {
-            cBuilder.toSource();
+            cBuilder.toSource(type.template != null || template != null);
             if (!isStatic()) {
                 cBuilder.add(type.template);
             }

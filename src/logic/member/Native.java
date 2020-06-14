@@ -25,7 +25,7 @@ public class Native extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                cFile.erro(token, "Unexpected modifier");
+                readModifier(cFile, token, false, false, false, false, true, false, false);
             } else if (state == 0 && token.key == Key.NATIVE) {
                 this.token = token;
                 state = 2;
@@ -98,7 +98,7 @@ public class Native extends Member {
         if (isHeader()) {
             cBuilder.toHeader();
         } else if (isSource()) {
-            cBuilder.toSource();
+            cBuilder.toSource(type.template != null);
         }
         int start = contentToken.end;
         int end = contentToken.getLastChild().start;

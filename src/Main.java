@@ -26,9 +26,14 @@ public class Main {
         Compiler compiler = new Compiler();
         compiler.libAdd(lang);
 
+        // The compiler should pass all libs in each state
         lang.read();
+        lang.preload();
         lang.load();
+        lang.internal();
         lang.cross();
+
+        // The compiler can choose wich one will make
         lang.make();
 
         boolean erros = false;

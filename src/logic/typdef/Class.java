@@ -14,6 +14,8 @@ public class Class extends Type {
 
     @Override
     public void load() {
+        if (isLoaded) return;
+        isLoaded = true;
         super.load();
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
@@ -53,21 +55,7 @@ public class Class extends Type {
             this.parents.add(0, parent);
             this.parentTokens.add(0, nameToken);
         }
-
-        Pointer[] p = template == null ? null : new Pointer[template.generics.size()];
-        if (p != null) {
-            for (int i = 0; i < p.length; i++) {
-                p[i] = template.generics.get(i).typePtr;
-            }
-        }
-        self = new Pointer(this, p);
-
-        if (contentToken != null && contentToken.getChild() != null) {
-            Parser parser = new Parser();
-            parser.parseMembers(this, contentToken.getChild(), contentToken.getLastChild());
-        }
     }
-
 
     @Override
     public final boolean isClass() {

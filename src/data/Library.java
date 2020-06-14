@@ -1,11 +1,9 @@
 package data;
 
-import content.Token;
 import logic.Namespace;
 import logic.typdef.Type;
 
 import java.io.File;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -132,13 +130,38 @@ public class Library {
         }
     }
 
-    /** Load : Prepare inheritences
+    /**
+     * preload : Prepare Templates
+     *
+     * */
+    public void preload() {
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.getState() == 1) {
+                cFile.preload();
+            }
+        }
+    }
+
+    /**
+     * Load : Prepare inheritences
      *
      * */
     public void load() {
         for (ContentFile cFile : cFiles.values()) {
-            if (cFile.getState() == 1) {
+            if (cFile.getState() == 2) {
                 cFile.load();
+            }
+        }
+    }
+
+    /**
+     * Internal : Read members
+     *
+     * */
+    public void internal() {
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.getState() == 3) {
+                cFile.internal();
             }
         }
     }
@@ -149,7 +172,7 @@ public class Library {
      * */
     public void cross() {
         for (ContentFile cFile : cFiles.values()) {
-            if (cFile.getState() == 2) {
+            if (cFile.getState() == 4) {
                 cFile.cross();
             }
         }
@@ -176,17 +199,27 @@ public class Library {
                 cppBuilder.reset(type);
                 type.build(cppBuilder);
 
-                File src = new File(srcDir, type.fileName + ".cpp");
                 File header = new File(srcDir, type.fileName + ".h");
-                try (PrintWriter pw = new PrintWriter(src)) {
-                    pw.print(cppBuilder.getSource());
-                } catch (Exception e) {
-                    cFile.erro(0, 0, "Unable to write to file[" + src + "]");
-                }
                 try (PrintWriter pw = new PrintWriter(header)) {
                     pw.print(cppBuilder.getHeader());
                 } catch (Exception e) {
                     cFile.erro(0, 0, "Unable to write to file[" + header + "]");
+                }
+
+                File source = new File(srcDir, type.fileName + ".cpp");
+                try (PrintWriter pw = new PrintWriter(source)) {
+                    pw.print(cppBuilder.getSource());
+                } catch (Exception e) {
+                    cFile.erro(0, 0, "Unable to write to file[" + source + "]");
+                }
+
+                if (type.hasGeneric()) {
+                    File generic = new File(srcDir, type.fileName + ".hpp");
+                    try (PrintWriter pw = new PrintWriter(generic)) {
+                        pw.print(cppBuilder.getGeneric());
+                    } catch (Exception e) {
+                        cFile.erro(0, 0, "Unable to write to file[" + generic + "]");
+                    }
                 }
             }
         }

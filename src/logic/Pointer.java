@@ -52,10 +52,19 @@ public class Pointer {
         return false;
     }
 
-    public int isChildOf(Pointer other) {
-        // List<int> isChildOf (Obj)
-        // Array<T> isChildOf(List<T>) = 1
-        // T isChildOf(Object?????????????????????)
+    public int isDerivedFrom(Pointer other) {
+        if (other == openPointer) return 0;
+        if (other == nullPointer) throw new RuntimeException("null é valor");
+        if (other.type == null) throw new RuntimeException("other nao pode ter type null");
+        if (this.type == other.type) return 1;
+        if (other.type.isValue()) return -1;
+        for (Pointer p : type.parents) {
+            int d = p.isDerivedFrom(other);
+            if (d >= 0) {
+                return d;
+            }
+        }
+
         return -1;
     }
 

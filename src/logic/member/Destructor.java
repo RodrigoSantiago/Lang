@@ -54,15 +54,17 @@ public class Destructor extends Member {
     }
 
     public void build(CppBuilder cBuilder) {
+        cBuilder.toHeader();
         cBuilder.idt(1).add("virtual void destroy();").ln();
 
-        cBuilder.toSource();
+        cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add("void ").path(type.self, false).add("::destroy() {").ln();
 
         if (type.parent != null && type.isClass()) {
             cBuilder.idt(1).path(type.parent, false).add("::destroy();").ln();
         }
+
         cBuilder.add("}").ln()
                 .ln();
     }

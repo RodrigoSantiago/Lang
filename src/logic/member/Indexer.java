@@ -189,7 +189,6 @@ public class Indexer extends Member {
 
         if (hasGet()) {
             cBuilder.toHeader();
-
             cBuilder.idt(1);
             if (!isGetFinal()) {
                 cBuilder.add("virtual ");
@@ -199,7 +198,7 @@ public class Indexer extends Member {
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isGetAbstract()) {
-                cBuilder.toSource();
+                cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(typePtr)
                         .add(" ").path(type.self, false).add("::get").add("(").add(params).add(") {").ln()
@@ -210,7 +209,6 @@ public class Indexer extends Member {
 
         if (hasOwn()) {
             cBuilder.toHeader();
-
             cBuilder.idt(1);
             if (!isOwnFinal()) {
                 cBuilder.add("virtual ");
@@ -220,7 +218,7 @@ public class Indexer extends Member {
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isOwnAbstract()) {
-                cBuilder.toSource();
+                cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(typePtr)
                         .add(" ").path(type.self, false).add("::own").add("(").add(params).add(") {").ln()
@@ -231,7 +229,6 @@ public class Indexer extends Member {
 
         if (hasSet()) {
             cBuilder.toHeader();
-
             cBuilder.idt(1);
             if (!isSetFinal()) {
                 cBuilder.add("virtual ");
@@ -240,7 +237,7 @@ public class Indexer extends Member {
                     .add(isSetAbstract() ? " = 0;" : ";").ln();
 
             if (!isSetAbstract()) {
-                cBuilder.toSource();
+                cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add("void ").path(type.self, false).add("::set")
                         .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) {").ln()

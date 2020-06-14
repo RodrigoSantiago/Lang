@@ -119,14 +119,12 @@ public class Operator extends Member {
 
         cBuilder.toHeader();
         cBuilder.idt(1).add(type.template, 1);
-
         cBuilder.add("static ")
                 .add(typePtr)
                 .add(" ").add(op, typePtr).add("(").add(params).add(");").ln();
 
         if (!isAbstract()) {
-            cBuilder.toSource();
-
+            cBuilder.toSource(type.template != null);
             cBuilder.add(type.template)
                     .add(typePtr)
                     .add(" ").path(type.self, false).add("::").add(op, typePtr)

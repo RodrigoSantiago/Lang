@@ -14,6 +14,8 @@ public class Enum extends Type {
 
     @Override
     public void load() {
+        if (isLoaded) return;
+        isLoaded = true;
         super.load();
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
@@ -26,12 +28,6 @@ public class Enum extends Type {
         }
 
         parent = cFile.langWrapper(this);
-        self = new Pointer(this, null);
-
-        if (contentToken != null && contentToken.getChild() != null) {
-            Parser parser = new Parser();
-            parser.parseMembers(this, contentToken.getChild(), contentToken.getLastChild());
-        }
     }
 
     @Override

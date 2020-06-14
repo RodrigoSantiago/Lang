@@ -14,20 +14,22 @@ public class CppBuilder {
 
     private String[] indents;
 
-    private int indent = 0, sourcePos, headerPos;
-    private StringBuilder sBuilder, hBuilder, tBuilder, dBuilder;
-    private ArrayList<Type> tDependences, sDependences, hDependences, dDependences;
+    private int indent = 0, sourcePos, headerPos, genericPos;
+    private StringBuilder sBuilder, hBuilder, gBuilder, tBuilder, dBuilder;
+    private ArrayList<Type> tDependences, sDependences, hDependences, gDependences, dDependences;
     private Type type;
     private boolean useTemplates;
 
     public CppBuilder() {
         sBuilder = new StringBuilder();
         hBuilder = new StringBuilder();
+        gBuilder = new StringBuilder();
         dBuilder = new StringBuilder();
         tBuilder = sBuilder;
 
         sDependences = new ArrayList<>();
         hDependences = new ArrayList<>();
+        gDependences = new ArrayList<>();
         dDependences = new ArrayList<>();
         tDependences = sDependences;
 
@@ -38,6 +40,10 @@ public class CppBuilder {
                 indents[i] += "    ";
             }
         }
+    }
+
+    public CppBuilder toSource(boolean hasGeneric) {
+        return hasGeneric ? toGeneric() : toSource();
     }
 
     public CppBuilder toSource() {
@@ -52,11 +58,22 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder toGeneric() {
+        tBuilder = gBuilder;
+        tDependences = gDependences;
+        return this;
+    }
+
     public void reset(Type type) {
+        sourcePos = headerPos = genericPos = 0;
+
         sBuilder.setLength(0);
         hBuilder.setLength(0);
+        gBuilder.setLength(0);
+        dBuilder.setLength(0);
         sDependences.clear();
         hDependences.clear();
+        gDependences.clear();
         dDependences.clear();
         toHeader();
 
@@ -72,12 +89,15 @@ public class CppBuilder {
         sourcePos = sBuilder.length();
     }
 
+    public void markGeneric() {
+        genericPos = gBuilder.length();
+    }
+
     public void dependence(Pointer pointer) {
         if (pointer.typeSource == null && pointer.type != null) {
             if (!pointer.type.isLangBase() && !dDependences.contains(pointer.type)) {
                 dDependences.add(pointer.type);
                 hDependences.remove(pointer.type);
-                sDependences.remove(pointer.type);
             }
             if (pointer.pointers != null) {
                 for (Pointer p : pointer.pointers) {
@@ -87,8 +107,9 @@ public class CppBuilder {
         }
     }
 
+    // Header indirect Dependencies (Forward Declaration)
     public void headerDependence() {
-        for (Type type : sDependences) {
+        for (Type type : hDependences) {
             if (type.template != null) {
                 dBuilder.append("template<");
                 ArrayList<Generic> generics = type.template.generics;
@@ -103,28 +124,39 @@ public class CppBuilder {
         dBuilder.setLength(0);
     }
 
+    // Source Dependencies (Include Generic Sources)
     public void sourceDependence() {
-        dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
+        dBuilder.append("#include \"").append(type.fileName).append(type.hasGeneric() ? ".hpp\"\n" : ".h\"\n");
 
         for (Type type : sDependences) {
             if (type != this.type) {
-                dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
+                dBuilder.append("#include \"").append(type.fileName).append(type.hasGeneric() ? ".hpp\"\n" : ".h\"\n");
             }
         }
         sBuilder.insert(sourcePos, dBuilder);
         dBuilder.setLength(0);
     }
 
+    // Generic Source Dependencies (Include Target Header + Any other include, inclusive Generics Sources)
+    public void genericDependence() {
+        dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
+
+        for (Type type : gDependences) {
+            if (type != this.type) {
+                dBuilder.append("#include \"").append(type.fileName).append(type.hasGeneric() ? ".hpp\"\n" : ".h\"\n");
+            }
+        }
+        gBuilder.insert(genericPos, dBuilder);
+        dBuilder.setLength(0);
+    }
+
+    // Header direct Dependencies (Inheritance and Struct and Enum Variables)
     public void directDependence() {
         for (Type type : dDependences) {
             dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
         }
         hBuilder.insert(headerPos, dBuilder);
         dBuilder.setLength(0);
-
-        if (useTemplates) {
-            hBuilder.append("#include \"").append(type.fileName).append(".cpp\"\n");
-        }
     }
 
     public CppBuilder add(boolean addIf, String str) {
@@ -198,13 +230,13 @@ public class CppBuilder {
         if (pointer.typeSource != null) {
             nameGeneric(pointer.typeSource.nameToken);
         } else {
-            if (!pointer.type.isLangBase()
-                    && !dDependences.contains(pointer.type)
-                    && !tDependences.contains(pointer.type)) {
-                tDependences.add(pointer.type);
+            if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
+                if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
+                    tDependences.add(pointer.type);
+                }
             }
 
-            if (pointer.type.isClass() || pointer.type.isInterface()) {
+            if (pointer.type.isPointer()) {
                 add(pointer.type.pathToken);
             } else {
                 add(pointer.type.pathToken);
@@ -218,7 +250,7 @@ public class CppBuilder {
                 }
                 tBuilder.append(">");
             }
-            if (pointer.type.isClass() || pointer.type.isInterface()) {
+            if (pointer.type.isPointer()) {
                 add("*");
             }
         }
@@ -304,5 +336,9 @@ public class CppBuilder {
 
     public String getSource() {
         return sBuilder.toString();
+    }
+
+    public String getGeneric() {
+        return gBuilder.toString();
     }
 }

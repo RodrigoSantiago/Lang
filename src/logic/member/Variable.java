@@ -79,7 +79,42 @@ public class Variable extends Member {
     }
 
     public void build(CppBuilder cBuilder) {
+        if (typePtr.type != null && typePtr.typeSource == null && typePtr.type.isStruct()) {
+            cBuilder.dependence(typePtr);
+        } else {
+            System.out.printf("");
+        }
 
+        cBuilder.toHeader();
+        cBuilder.idt(1);
+        if (isStatic()) {
+            cBuilder.add("static ");
+        }
+        for (Token name : nameTokens) {
+            cBuilder.add(typePtr)
+                    .add(" f_").add(name).add(";").ln();
+        }
+
+        if (isStatic()) {
+            for (Token name : nameTokens) {
+                cBuilder.toSource(type.template != null);
+                if (!isStatic()) {
+                    cBuilder.add(type.template);
+                }
+                cBuilder.add(typePtr)
+                        .add(" ").path(type.self, isStatic()).add("::f_").add(name);
+                if (typePtr.typeSource != null ||
+                        (typePtr.type != null && typePtr.type.isStruct() && !typePtr.type.isLangBase())) {
+                    cBuilder.add(" = lang::generic<").add(typePtr).add(">::def();").ln();
+                } else if (typePtr.type != null && (typePtr.type.isClass() || typePtr.type.isInterface())) {
+                    cBuilder.add(" = nullptr;").ln();
+                } else {
+                    cBuilder.add(" = 0;").ln();
+                }
+
+                // Static Init Values should be on Constructors. Always start with 0
+            }
+        }
     }
 
     public ArrayList<FieldView> getFields() {

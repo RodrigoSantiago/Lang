@@ -95,7 +95,8 @@ public class Template {
             } else {
                 generic.basePtr = openPointer ? Pointer.openPointer : cFile.langObject();
             }
-            generic.typePtr = new Pointer(generic.basePtr.type, null, generic);
+            generic.typePtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers, generic);
+            generic.defaultPtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers);
         }
     }
 

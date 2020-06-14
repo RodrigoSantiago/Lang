@@ -12,6 +12,7 @@ public class Generic {
     public Token nameToken;
     public Pointer basePtr;
     public Pointer typePtr;
+    public Pointer defaultPtr;
 
     public TokenGroup typeToken;
 

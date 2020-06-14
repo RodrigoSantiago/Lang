@@ -8,6 +8,7 @@ import logic.GenericOwner;
 import logic.Namespace;
 import logic.Pointer;
 import logic.Using;
+import logic.templates.Generic;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
@@ -55,18 +56,22 @@ public class ContentFile {
                 namespace = library.getNamespace(null);
                 namespace.mark(this);
             }
-
-            for (Using using : usings) {
-                using.preload();
-            }
-
-            for (Type type : types) {
-                type.preload();
-            }
         }
 
         invalid = false;
         state = 1;
+    }
+
+    public void preload() {
+        for (Using using : usings) {
+            using.preload();
+        }
+
+        for (Type type : types) {
+            type.preload();
+        }
+
+        state = 2;
     }
 
     public void load() {
@@ -74,7 +79,15 @@ public class ContentFile {
             type.load();
         }
 
-        state = 2;
+        state = 3;
+    }
+
+    public void internal() {
+        for (Type type : types) {
+            type.internal();
+        }
+
+        state = 4;
     }
 
     public void cross() {
@@ -82,7 +95,7 @@ public class ContentFile {
             type.cross();
         }
 
-        state = 3;
+        state = 5;
     }
 
     public void unload() {
@@ -299,11 +312,16 @@ public class ContentFile {
         while (token != end) {
             Token next = token.getNext();
 
-            if (ptr != null && state == 0 && token.key == Key.GENERIC) {
+            if (state == 0 && ptr != null && token.key == Key.GENERIC) {
                 erro(token, "Generic types could not apply generic variance");
-            } else if (state == 0 && token.key == Key.GENERIC) {
+            } else if (state == 0 && token.key == Key.GENERIC && type != null && type.template == null) {
+                erro(token, "Unexpected generic variance");
+            } else if (state == 0 && token.key == Key.GENERIC && type != null) {
+                ArrayList<Generic> generics =  type.template.generics;
+
                 iPointers = new ArrayList<>();
 
+                int index = 0;
                 int iState = 0;
                 Token iToken = token.getChild();
                 Token iEnd = token.getLastChild();
@@ -317,7 +335,17 @@ public class ContentFile {
                         while (iNext != null && iNext.key == Key.INDEX) {
                             iNext = iNext.getNext();
                         }
-                        iPointers.add(getPointer(iToken, iNext, cycleOwner, genericOwner));
+                        Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner);
+                        if (index >= generics.size() && !type.isFunction()) {
+                            erro(iToken, iNext, "Unexpected generic");
+                        } else {
+                            if (!type.isFunction() && genPtr.isDerivedFrom(generics.get(index).basePtr) == -1) {
+                                genPtr = generics.get(index).defaultPtr;
+                                erro(iToken, iNext, "Invalid generic");
+                            }
+                            index++;
+                            iPointers.add(genPtr);
+                        }
                         iState = 1;
                     } else if (iState == 1 && iToken.key == Key.COMMA) {
                         iState = 0;
@@ -338,9 +366,16 @@ public class ContentFile {
             token = next;
         }
 
-        // Todo - validate generic pointer
-
         if (ptr == null) {
+            if (iPointers != null) {
+                if (type.template != null && !type.isFunction()) {
+                    if (iPointers.size() < type.template.generics.size()) {
+                        type = getCompiler().getLangObject();
+                        iPointers = null;
+                        erro(token, "Missing generics");
+                    }
+                }
+            }
             ptr = new Pointer(type, iPointers == null ? null : iPointers.toArray(new Pointer[0]));
         }
         for (int i = 0; i < arr; i++) {
@@ -356,6 +391,16 @@ public class ContentFile {
 
     public void erro(Token token, String message) {
         erros.add(new Error(Error.ERROR, token.start, token.end, message));
+    }
+
+    public void erro(Token token, Token tokenEnd, String message) {
+        int start = token.start;
+        int end = start;
+        while (token != null && token != tokenEnd) {
+            end = token.end;
+            token = token.getNext();
+        }
+        erros.add(new Error(Error.ERROR, start, end, message));
     }
 
     public void warning(int start, int end, String message) {

@@ -97,6 +97,9 @@ public class CppBuilder {
         if (pointer.typeSource == null && pointer.type != null) {
             if (!pointer.type.isLangBase() && !dDependences.contains(pointer.type)) {
                 dDependences.add(pointer.type);
+                if (pointer.type.hasGeneric()) {
+                    sDependences.add(pointer.type);
+                }
                 hDependences.remove(pointer.type);
             }
             if (pointer.pointers != null) {
@@ -228,7 +231,17 @@ public class CppBuilder {
         if (pointer == Pointer.nullPointer) return add("nullptr");
         if (pointer == Pointer.voidPointer) return add("void");
         if (pointer.typeSource != null) {
-            nameGeneric(pointer.typeSource.nameToken);
+            if (pointer.typeSource.basePtr == Pointer.openPointer) {
+                if (pointer.let) {
+                    add("GLet<").nameGeneric(pointer.typeSource.nameToken).add(">");
+                } else {
+                    add("GPtr<").nameGeneric(pointer.typeSource.nameToken).add(">");
+                }
+            } else if (pointer.let) {
+                add("Let<").nameGeneric(pointer.typeSource.nameToken).add(">");
+            } else {
+                add("Ptr<").nameGeneric(pointer.typeSource.nameToken).add(">");
+            }
         } else {
             if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
                 if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
@@ -236,22 +249,28 @@ public class CppBuilder {
                 }
             }
 
-            if (pointer.type.isPointer()) {
+            if (pointer.type.isValue()) {
                 add(pointer.type.pathToken);
+            } else if (pointer.let) {
+                add("Let<").add(pointer.type.pathToken);
             } else {
-                add(pointer.type.pathToken);
+                add("Ptr<").add(pointer.type.pathToken);
             }
 
             if (pointer.pointers != null) {
                 tBuilder.append("<");
                 for (int i = 0; i < pointer.pointers.length; i++) {
                     if (i > 0) tBuilder.append(", ");
-                    add(pointer.pointers[i]);
+                    if (pointer.type.isFunction()) {
+                        add(pointer.pointers[i]);
+                    } else {
+                        gen(pointer.pointers[i]);
+                    }
                 }
                 tBuilder.append(">");
             }
             if (pointer.type.isPointer()) {
-                add("*");
+                add(">");
             }
         }
         return this;
@@ -271,10 +290,40 @@ public class CppBuilder {
                     tBuilder.append("<");
                     for (int i = 0; i < pointer.pointers.length; i++) {
                         if (i > 0) tBuilder.append(", ");
-                        add(pointer.pointers[i]);
+                        path(pointer.pointers[i], false);
                     }
                     tBuilder.append(">");
                 }
+            }
+        }
+        return this;
+    }
+
+    public CppBuilder gen(Pointer pointer) {
+        if (pointer == Pointer.nullPointer) return add("nullptr");
+        if (pointer == Pointer.voidPointer) return add("void");
+        if (pointer.typeSource != null) {
+            nameGeneric(pointer.typeSource.nameToken);
+        } else {
+            if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
+                if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
+                    tDependences.add(pointer.type);
+                }
+            }
+
+            add(pointer.type.pathToken);
+
+            if (pointer.pointers != null) {
+                tBuilder.append("<");
+                for (int i = 0; i < pointer.pointers.length; i++) {
+                    if (i > 0) tBuilder.append(", ");
+                    if (pointer.type.isFunction()) {
+                        add(pointer.pointers[i]);
+                    } else {
+                        gen(pointer.pointers[i]);
+                    }
+                }
+                tBuilder.append(">");
             }
         }
         return this;

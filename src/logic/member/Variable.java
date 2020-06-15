@@ -71,7 +71,7 @@ public class Variable extends Member {
     @Override
     public boolean load() {
         if (typeToken != null) {
-            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type);
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type, isLet());
 
             return nameTokens.size() > 0 ;
         }
@@ -81,8 +81,6 @@ public class Variable extends Member {
     public void build(CppBuilder cBuilder) {
         if (typePtr.type != null && typePtr.typeSource == null && typePtr.type.isStruct()) {
             cBuilder.dependence(typePtr);
-        } else {
-            System.out.printf("");
         }
 
         cBuilder.toHeader();
@@ -102,17 +100,42 @@ public class Variable extends Member {
                     cBuilder.add(type.template);
                 }
                 cBuilder.add(typePtr)
-                        .add(" ").path(type.self, isStatic()).add("::f_").add(name);
-                if (typePtr.typeSource != null ||
-                        (typePtr.type != null && typePtr.type.isStruct() && !typePtr.type.isLangBase())) {
-                    cBuilder.add(" = lang::generic<").add(typePtr).add(">::def();").ln();
-                } else if (typePtr.type != null && (typePtr.type.isClass() || typePtr.type.isInterface())) {
-                    cBuilder.add(" = nullptr;").ln();
+                        .add(" ").path(type.self, isStatic()).add("::f_").add(name).add(" = ");
+                if (typePtr.typeSource != null) {
+                    cBuilder.add("lang::generic<").add(typePtr).add(">::def();").ln();
+                } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
+                    cBuilder.add("nullptr;").ln();
+                } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
+                    cBuilder.add(typePtr).add("();").ln();
                 } else {
-                    cBuilder.add(" = 0;").ln();
+                    cBuilder.add("0;").ln();
                 }
 
                 // Static Init Values should be on Constructors. Always start with 0
+            }
+        }
+    }
+    public void buildInit(CppBuilder cBuilder) {
+        if (isStatic()) {
+
+        } else {
+            for (int i = 0; i < nameTokens.size(); i++) {
+                Token name = nameTokens.get(i);
+                if (i > 0) {
+                    cBuilder.add(", ").ln();
+                }
+
+                cBuilder.idt(1).add("f_").add(name).add("(");
+                if (typePtr.typeSource != null) {
+                    cBuilder.add("lang::generic<").add(typePtr).add(">::def()");
+                } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
+                    cBuilder.add("nullptr");
+                } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
+
+                } else {
+                    cBuilder.add("0");
+                }
+                cBuilder.add(")");
             }
         }
     }

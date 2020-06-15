@@ -186,7 +186,7 @@ public class Property extends Member {
     @Override
     public boolean load() {
         if (typeToken != null) {
-            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type);
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type, isLet());
 
             return hasGet || hasSet || hasOwn;
         }
@@ -198,12 +198,13 @@ public class Property extends Member {
         if (hasGet()) {
             cBuilder.toHeader();
             cBuilder.idt(1);
-            if (!isGetFinal() && !isStatic()) {
+            if (!isGetFinal() && !isStatic() && type.isPointer()) {
                 cBuilder.add("virtual ");
             } else if (isStatic()) {
                 cBuilder.add("static ");
             }
-            cBuilder.add(typePtr)
+            Pointer getPtr = typePtr.toLet();
+            cBuilder.add(getPtr)
                     .add(" get_").add(nameToken).add("()")
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
 
@@ -212,7 +213,7 @@ public class Property extends Member {
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
-                cBuilder.add(typePtr)
+                cBuilder.add(getPtr)
                         .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() {").ln()
                         .add("}").ln()
                         .ln();
@@ -224,7 +225,7 @@ public class Property extends Member {
         if (hasOwn()) {
             cBuilder.toHeader();
             cBuilder.idt(1);
-            if (!isOwnFinal() && !isStatic()) {
+            if (!isOwnFinal() && !isStatic() && type.isPointer()) {
                 cBuilder.add("virtual ");
             } else if (isStatic()) {
                 cBuilder.add("static ");
@@ -248,7 +249,7 @@ public class Property extends Member {
         if (hasSet()) {
             cBuilder.toHeader();
             cBuilder.idt(1);
-            if (!isSetFinal() && !isStatic()) {
+            if (!isSetFinal() && !isStatic() && type.isPointer()) {
                 cBuilder.add("virtual ");
             } else if (isStatic()) {
                 cBuilder.add("static ");

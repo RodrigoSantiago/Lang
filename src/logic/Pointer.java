@@ -10,26 +10,37 @@ public class Pointer {
     public static final Pointer openPointer = new Pointer(null); // Empty generic
 
     public Type type;
+    public boolean let;
     public Generic typeSource;
     public Pointer[] pointers;
 
     public Pointer(Type type) {
-        this(type, null);
+        this(type, false);
     }
 
-    public Pointer(Type type, Pointer[] pointers) {
-        this(type, pointers, null);
+    public Pointer(Type type, boolean let) {
+        this(type, null, let);
     }
 
-    public Pointer(Type type, Pointer[] pointers, Generic typeSource) {
+    public Pointer(Type type, Pointer[] pointers, boolean let) {
+        this(type, pointers, null, let);
+    }
+
+    public Pointer(Type type, Pointer[] pointers, Generic typeSource, boolean let) {
         this.type = type;
         this.pointers = pointers;
         this.typeSource = typeSource;
+        this.let = let;
     }
 
     public boolean isDefault() {
         return this == nullPointer || this == voidPointer || this == openPointer ||
                 (typeSource != null && typeSource.basePtr == openPointer);
+    }
+
+    public Pointer toLet() {
+        if (let) return this;
+        return new Pointer(type, pointers == null ? null : pointers.clone(), typeSource, true);
     }
 
     public boolean hasGeneric() {
@@ -80,7 +91,7 @@ public class Pointer {
             for (int i = 0; i < source.pointers.length; i++) {
                 inner[i] = byGeneric(source.pointers[i], caller);
             }
-            return new Pointer(source.type, inner, source.typeSource);
+            return new Pointer(source.type, inner, source.typeSource, source.let);
         }
 
         return source;

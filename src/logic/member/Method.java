@@ -37,6 +37,9 @@ public class Method extends Member implements GenericOwner {
                 template = new Template(cFile, token, true);
                 state = 1;
             } else if ((state == 0 || state == 1) && token.key == Key.VOID) {
+                if (isLet()) {
+                    cFile.erro(token, "A Let method cannot return void");
+                }
                 typeToken = new TokenGroup(token, next);
                 state = 2;
             } else if ((state == 0 || state == 1) && token.key == Key.WORD) {
@@ -94,7 +97,7 @@ public class Method extends Member implements GenericOwner {
             if (typeToken.start.key == Key.VOID) {
                 typePtr = Pointer.voidPointer;
             } else {
-                typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, this);
+                typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, this, isLet());
             }
 
             if (template != null) {
@@ -129,7 +132,7 @@ public class Method extends Member implements GenericOwner {
 
         cBuilder.toHeader();
         cBuilder.idt(1).add(template, 1);
-        if (!isFinal() && !isStatic()) {
+        if (!isFinal() && !isStatic() && type.isPointer()) {
             cBuilder.add("virtual ");
         } else if (isStatic()) {
             cBuilder.add("static ");

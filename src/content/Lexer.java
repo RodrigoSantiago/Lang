@@ -113,7 +113,8 @@ public class  Lexer {
                             return null;
                         }
                     }
-                } else if (token.key != Key.WORD && tk != ',' && tk != ':') {
+                } else if (token.key != Key.WORD && token.key != Key.VOID && token.key != Key.LET &&
+                        tk != ',' && tk != ':') {
                     parent.setNext(parent.getChild());
                     parent.setChild(null);
                     return null;

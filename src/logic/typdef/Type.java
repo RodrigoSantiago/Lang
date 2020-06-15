@@ -190,7 +190,7 @@ public abstract class Type implements GenericOwner {
                 p[i] = template.generics.get(i).typePtr;
             }
         }
-        self = new Pointer(this, p);
+        self = new Pointer(this, p, false);
     }
 
     public void internal() {
@@ -392,34 +392,41 @@ public abstract class Type implements GenericOwner {
         }
     }
 
-    /*ArrayList<Pointer> recursiveGetParent(Pointer caller, ArrayList<Pointer> pointers) {
-        if (pointers == null) pointers = new ArrayList<>();
+    private void recursiveGetParent(Pointer caller, ArrayList<Pointer> pointers) {
         for (Pointer pointer : parents) {
-            pointers.add(pointer);
-
-            pointer.byGeneric(pointer, caller)
+            Pointer p = Pointer.byGeneric(pointer, caller);
+            if (!pointers.contains(p)) {
+                pointers.add(p);
+            }
+            p.type.recursiveGetParent(p, pointers);
         }
-    }*/
+    }
 
     public void build(CppBuilder cBuilder) {
 
         cBuilder.toHeader();
         cBuilder.add("// ").add(fileName).add(".h").ln()
                 .ln()
-                .add("#ifndef H_").add(fileName).ln()
-                .add("#define H_").add(fileName).ln()
+                .add("#ifndef H_").add(fileName.toUpperCase()).ln()
+                .add("#define H_").add(fileName.toUpperCase()).ln()
                 .ln()
-                .add("#include \"langCore.h\"").ln()
-                .ln()
-                .add("#define TYPES");
-
-        cBuilder.add(self);
-        for (int i = 0; i < parents.size(); i++) {
-            cBuilder.add(",").parent(parents.get(i));
-        }
-
+                .add("#include \"langCore.h\"").ln();
         cBuilder.markHeader();
         cBuilder.ln();
+
+        // cBuild.toSource() || cBuilder.toGeneric()
+        cBuilder.add("#define T_").add(fileName.toUpperCase()).add(" ");
+        ArrayList<Pointer> allParents = new ArrayList<>(parents.size() * 2);
+        cBuilder.path(self, false);
+        if (!isInterface()) {
+            recursiveGetParent(self, allParents);
+            for (Pointer p : allParents) {
+                cBuilder.add(", ").path(p, false);
+            }
+        }
+        cBuilder.ln()
+                .ln();
+        allParents = null;
 
         cBuilder.toSource();
         cBuilder.add("// ").add(fileName).add(".cpp").ln();
@@ -447,20 +454,10 @@ public abstract class Type implements GenericOwner {
         cBuilder.add(" {").ln()
                 .add("public :").ln();
 
-        if (isValue() || (parent == null && isClass())) {
-            cBuilder.idt(1).add(pathToken).add("() {};").ln();
-        }
-        if (isPointer()) {
-            cBuilder.toHeader();
-            cBuilder.idt(1).add("virtual lang::type* getType();").ln();
-
-            cBuilder.toSource(template != null);
-            cBuilder.add("lang::type*").path(self, false).add("::getType() {").ln()
-                    .idt(1).add("static lang::type type = lang::type(lang::templates<TYPES>::list());").ln()
-                    .idt(1).add("return &type;").ln()
-                    .add("}").ln()
-                    .ln();
-        }
+        cBuilder.toHeader();
+        cBuilder.idt(1).add("static lang::type* typeOf() { return getType<T_").add(fileName.toUpperCase()).add(">(); }").ln();
+        cBuilder.idt(1).add(isPointer(), "virtual ")
+                .add("lang::type* getTypeOf() { return typeOf(); }").ln();
 
         for (Native nat : natives) {
             if (!nat.isStatic()) {
@@ -479,6 +476,31 @@ public abstract class Type implements GenericOwner {
             if (!variable.isStatic()) {
                 variable.build(cBuilder);
             }
+        }
+
+        if (isValue()) {
+            cBuilder.toHeader();
+            cBuilder.idt(1).add(pathToken).add("();").ln();
+            if (nameToken.equals("date")) {
+                System.out.println("");
+            }
+            cBuilder.toSource(hasGeneric());
+            cBuilder.path(self, false).add("::").add(pathToken).add("()");
+            boolean first = false;
+            for (int i = 0; i < variables.size(); i++) {
+                Variable variable = variables.get(i);
+                if (!variable.isStatic()) {
+                    if (!first) {
+                        first = true;
+                        cBuilder.add(" : ").ln();
+                    } else {
+                        cBuilder.add(", ").ln();
+                    }
+                    variable.buildInit(cBuilder);
+                }
+            }
+            cBuilder.add(" {\n}").ln()
+                    .ln();
         }
         for (Constructor constructor : constructors) {
             if (!constructor.isStatic()) {

@@ -68,7 +68,7 @@ public class Operator extends Member {
     @Override
     public boolean load() {
         if (typeToken != null) {
-            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type);
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type, isLet());
 
             if (params != null) {
                 params.load(type);

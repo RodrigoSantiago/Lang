@@ -1,7 +1,6 @@
 package logic.typdef;
 
 import content.Key;
-import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
@@ -19,7 +18,7 @@ public class Class extends Type {
         super.load();
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
-            Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this);
+            Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
             if ((parent.type.isPrivate() && parent.type.cFile != cFile)
                     || (!parent.type.isPublic() && parent.type.cFile.library != cFile.library)) {
                 cFile.erro(pTypeToken.start, "Invalid acess permisison");

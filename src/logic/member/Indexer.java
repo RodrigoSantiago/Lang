@@ -174,7 +174,7 @@ public class Indexer extends Member {
     @Override
     public boolean load() {
         if (typeToken != null) {
-            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type);
+            typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type, isLet());
 
             if (params != null) {
                 params.load(type);
@@ -190,17 +190,18 @@ public class Indexer extends Member {
         if (hasGet()) {
             cBuilder.toHeader();
             cBuilder.idt(1);
-            if (!isGetFinal()) {
+            if (!isGetFinal() && type.isPointer()) {
                 cBuilder.add("virtual ");
             }
-            cBuilder.add(typePtr)
+            Pointer getPtr = typePtr.toLet();
+            cBuilder.add(getPtr)
                     .add(" get").add("(").add(params).add(")")
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isGetAbstract()) {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
-                        .add(typePtr)
+                        .add(getPtr)
                         .add(" ").path(type.self, false).add("::get").add("(").add(params).add(") {").ln()
                         .add("}").ln()
                         .ln();
@@ -210,7 +211,7 @@ public class Indexer extends Member {
         if (hasOwn()) {
             cBuilder.toHeader();
             cBuilder.idt(1);
-            if (!isOwnFinal()) {
+            if (!isOwnFinal() && type.isPointer()) {
                 cBuilder.add("virtual ");
             }
             cBuilder.add(typePtr)
@@ -230,7 +231,7 @@ public class Indexer extends Member {
         if (hasSet()) {
             cBuilder.toHeader();
             cBuilder.idt(1);
-            if (!isSetFinal()) {
+            if (!isSetFinal() && type.isPointer()) {
                 cBuilder.add("virtual ");
             }
             cBuilder.add("void set").add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value)")

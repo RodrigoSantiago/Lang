@@ -87,7 +87,7 @@ public class Template {
         for (Generic generic : generics) {
             if (generic.typeToken != null) {
                 generic.basePtr = cFile.getPointer(generic.typeToken.start, generic.typeToken.end,
-                        cycleOwner, genericOwner);
+                        cycleOwner, genericOwner, false);
                 if (generic.basePtr.type != null && generic.basePtr.type.isFinal()) {
                     generic.basePtr = cFile.langObject();
                     cFile.erro(generic.typeToken.start, "A Generic cannot be a final Type");
@@ -95,8 +95,8 @@ public class Template {
             } else {
                 generic.basePtr = openPointer ? Pointer.openPointer : cFile.langObject();
             }
-            generic.typePtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers, generic);
-            generic.defaultPtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers);
+            generic.typePtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers, generic, false);
+            generic.defaultPtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers, false);
         }
     }
 

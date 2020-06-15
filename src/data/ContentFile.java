@@ -207,11 +207,11 @@ public class ContentFile {
     }
 
     public Pointer langArray(Pointer pointer) {
-        return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer});
+        return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer}, false);
     }
 
     public Pointer langWrapper(Type type) {
-        return new Pointer(mark(getCompiler().getLangWrapper()), new Pointer[]{new Pointer(type)});
+        return new Pointer(mark(getCompiler().getLangWrapper()), new Pointer[]{new Pointer(type)}, false);
     }
 
     public Compiler getCompiler() {
@@ -276,11 +276,11 @@ public class ContentFile {
         return mark(type);
     }
 
-    public Pointer getPointer(Token typeToken, Token end) {
-        return getPointer(typeToken, end, null, null);
+    public Pointer getPointer(Token typeToken, Token end, boolean isLet) {
+        return getPointer(typeToken, end, null, null, isLet);
     }
 
-    public Pointer getPointer(Token typeToken, Token end, Type cycleOwner, GenericOwner genericOwner) {
+    public Pointer getPointer(Token typeToken, Token end, Type cycleOwner, GenericOwner genericOwner, boolean isLet) {
         Pointer ptr = null;
         Type type = null;
 
@@ -317,10 +317,11 @@ public class ContentFile {
             } else if (state == 0 && token.key == Key.GENERIC && type != null && type.template == null) {
                 erro(token, "Unexpected generic variance");
             } else if (state == 0 && token.key == Key.GENERIC && type != null) {
-                ArrayList<Generic> generics =  type.template.generics;
+                ArrayList<Generic> generics = type.template.generics;
 
                 iPointers = new ArrayList<>();
 
+                boolean hasLet = false;
                 int index = 0;
                 int iState = 0;
                 Token iToken = token.getChild();
@@ -328,14 +329,16 @@ public class ContentFile {
                 while (iToken != null && iToken != iEnd) {
                     Token iNext = iToken.getNext();
 
-                    if (iState == 0 && iToken.key == Key.WORD) {
+                    if (iState == 0 && iToken.key == Key.LET) {
+                        iState = 1;
+                    } else if ((iState == 0 || iState == 1) && iToken.key == Key.WORD) {
                         if (iNext != null && (iNext.key == Key.GENERIC)) {
                             iNext = iNext.getNext();
                         }
                         while (iNext != null && iNext.key == Key.INDEX) {
                             iNext = iNext.getNext();
                         }
-                        Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner);
+                        Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner, false);
                         if (index >= generics.size() && !type.isFunction()) {
                             erro(iToken, iNext, "Unexpected generic");
                         } else {
@@ -346,8 +349,15 @@ public class ContentFile {
                             index++;
                             iPointers.add(genPtr);
                         }
-                        iState = 1;
-                    } else if (iState == 1 && iToken.key == Key.COMMA) {
+                        iState = 2;
+                    } else if (iState == 0 && iToken.key == Key.VOID) {
+                        if (type.isFunction() && index == 0) {
+                            iPointers.add(Pointer.voidPointer);
+                            index++;
+                        } else {
+                            erro(iToken, "Void not allowed here");
+                        }
+                    } else if (iState == 2 && iToken.key == Key.COMMA) {
                         iState = 0;
                     } else {
                         erro(iToken, "Unexpected token");
@@ -376,10 +386,10 @@ public class ContentFile {
                     }
                 }
             }
-            ptr = new Pointer(type, iPointers == null ? null : iPointers.toArray(new Pointer[0]));
+            ptr = new Pointer(type, iPointers == null ? null : iPointers.toArray(new Pointer[0]), arr == 0 && isLet);
         }
         for (int i = 0; i < arr; i++) {
-            ptr = new Pointer(getCompiler().getLangArray(), new Pointer[]{ptr});
+            ptr = new Pointer(getCompiler().getLangArray(), new Pointer[]{ptr}, i == arr - 1 && isLet);
         }
 
         return ptr;

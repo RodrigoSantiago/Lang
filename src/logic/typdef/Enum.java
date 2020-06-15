@@ -1,7 +1,6 @@
 package logic.typdef;
 
 import content.Key;
-import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
@@ -19,7 +18,7 @@ public class Enum extends Type {
         super.load();
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
-            Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this);
+            Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
             if (parent.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined type");
             } else {

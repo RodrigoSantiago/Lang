@@ -63,15 +63,41 @@ public class Constructor extends Member {
         if (isStatic()) {
 
         } else {
-            cBuilder.toHeader();
-            cBuilder.idt(1).add(type.self).add(" create(").add(params).add(");").ln();
+            if (type.isPointer()) {
+                cBuilder.toHeader();
+                cBuilder.idt(1).path(type.self, false).add("*").add(" create(").add(params).add(");").ln();
 
-            cBuilder.toSource(type.template != null);
-            cBuilder.add(type.template)
-                    .add(type.self)
-                    .add(" ").path(type.self, false).add("::create(").add(params).add(") {").ln()
-                    .add("}").ln()
-                    .ln();
+                cBuilder.toSource(type.template != null);
+                cBuilder.add(type.template)
+                        .path(type.self, false).add("*")
+                        .add(" ").path(type.self, false).add("::create(").add(params).add(") {").ln()
+                        .idt(1).add("return this;").ln()
+                        .add("}").ln()
+                        .ln();
+            } else {
+                cBuilder.toHeader();
+                if (params.isEmpty()) {
+                    cBuilder.idt(1).add(type.pathToken).add("(empty e);").ln();
+                } else if (params.args.size() == 1 && params.args.get(0).typePtr.equals(type.self)) {
+                    cBuilder.idt(1).add(type.pathToken).add("(empty e, ").add(type.self).add(" v_").add(params.args.get(0).nameToken).add(");").ln();
+                } else{
+                    cBuilder.idt(1).add(type.pathToken).add("(").add(params).add(");").ln();
+                }
+
+                cBuilder.toSource(type.template != null);
+                cBuilder.add(type.template)
+                        .path(type.self, false).add("::").add(type.pathToken);
+                if (params.isEmpty()) {
+                    cBuilder.add("(empty e) : ").add(type.pathToken).add("() {").ln();
+                } else if (params.args.size() == 1 && params.args.get(0).typePtr.equals(type.self)) {
+                    cBuilder.add("(empty e, ").add(type.self)
+                            .add(" v_").add(params.args.get(0).nameToken).add(") : ").add(type.pathToken).add("() {").ln();
+                } else {
+                    cBuilder.add("(").add(params).add(") : ").add(type.pathToken).add("() {").ln();
+                }
+                cBuilder.add("}").ln()
+                        .ln();
+            }
         }
 
         cBuilder.toHeader();

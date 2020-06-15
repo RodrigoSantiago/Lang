@@ -24,13 +24,13 @@ public class Array<T> : List<T> {
 
     native (header) {
         g_T* data;
-        lang_Array<g_T>* create(g_T* list, lang_long size);
+        lang_Array<g_T>* create(g_T* list, lang_int size);
     }
 
     native (source) {
         template <typename g_T>
-        lang_Array<g_T>* lang_Array<g_T>::create(g_T* list, lang_long size) {
-            this->data = sCast(g_T*, system::memory::array(sizeof(g_T), size));
+        lang_Array<g_T>* lang_Array<g_T>::create(g_T* list, lang_int size) {
+            this->data = sCast(g_T*, lang::memory::array(sizeof(g_T), size));
 
             if (this->data == nullptr) {
                 this->f_length = 0;
@@ -40,6 +40,7 @@ public class Array<T> : List<T> {
                     this->data[i] = list[i];
                 }
             }
+            return this;
         }
     }
 
@@ -53,14 +54,14 @@ public class Array<T> : List<T> {
 
     public this(int length) {
         native (source) {
-            this->data = sCast(g_T*, system::memory::array(sizeof(g_T), v_length));
+            this->data = sCast(g_T*, lang::memory::array(sizeof(g_T), v_length));
 
             if (this->data == nullptr) {
                 this->f_length = 0;
             } else {
                 this->f_length = v_length;
                 for (long i = 0; i < v_length; i++) {
-                    this->data[i] = generic<g_T>::def();
+                    this->data[i] = lang::generic<g_T>::def();
                 }
             }
         }
@@ -68,7 +69,7 @@ public class Array<T> : List<T> {
 
     public ~this() {
         native (source) {
-            system::memory::dearray(this->data);
+            lang::memory::dearray(this->data);
         }
     }
 }

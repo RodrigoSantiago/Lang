@@ -48,37 +48,37 @@ public static struct string : String {
     }
 
     native (header) {
-        system::string * data;
+        lang::string * data;
 
         lang_string(const lang_string& str);
-        lang_string(system::string* data);
+        lang_string(lang::string* data);
         lang_string(const char* str);
     }
 
     native (source) {
         lang_string::lang_string(const lang_string& str) {
             this->data = str.data;
-            system::text::asg(data);
+            lang::text::asg(data);
         }
-        lang_string::lang_string(system::string* data) {
+        lang_string::lang_string(lang::string* data) {
             this->data = data;
-            system::text::asg(data);
+            lang::text::asg(data);
         }
         lang_string::lang_string(const char* str) {
-            this->data = system::text::cstr(str);
+            this->data = lang::text::cstr(str);
         }
     }
 
     public this() {
         native (source) {
-            this->data = system::text::str(nullptr, 0, 0);
+            this->data = lang::text::str(nullptr, 0, 0);
         }
     }
 
     public this(string copy) {
         native (source) {
             this->data = v_copy.data;
-            system::text::asg(data);
+            lang::text::asg(data);
         }
     }
 
@@ -96,7 +96,7 @@ public static struct string : String {
         if (length > chars.Length) length = chars.Length;
 
         native (source) {
-            this->data = system::text::str(&v_chars->data[v_start], v_length, v_charSet);
+            this->data = lang::text::str(&v_chars->data[v_start], v_length, v_charSet);
         }
     }
 
@@ -110,7 +110,7 @@ public static struct string : String {
         if (length > chars.Length) length = chars.Length;
 
         native (source) {
-            this->data = system::text::str(&v_chars->data[v_start], v_length, 16);
+            this->data = lang::text::str(&v_chars->data[v_start], v_length, 16);
         }
     }
 
@@ -124,13 +124,13 @@ public static struct string : String {
         if (length > chars.Length) length = chars.Length;
 
         native (source) {
-            this->data = system::text::str(&v_chars->data[v_start], v_length, 32);
+            this->data = lang::text::str(&v_chars->data[v_start], v_length, 32);
         }
     }
 
     public ~this() {
         native (source) {
-            system::text::dsg(data);
+            lang::text::dsg(data);
         }
     }
 
@@ -156,7 +156,7 @@ public static struct string : String {
 
     public int hash() {
         native (return) {
-            return system::text::hash(data);
+            return lang::text::hash(data);
         }
     }
 
@@ -228,9 +228,9 @@ public static struct string : String {
     string operator =(string other) {
         native (source) {
             if (this->Data != other->data) {
-                system::text::dsg(data);
+                lang::text::dsg(data);
                 this->data = other->data;
-                system::text::asg(data);
+                lang::text::asg(data);
             }
         }
     }

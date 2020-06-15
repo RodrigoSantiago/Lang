@@ -4,7 +4,7 @@ public final class Console {
 
     public static void Write(string value) {
         native (source) {
-            system::console::write(f_value.data);
+            lang::console::write(f_value->data);
         }
     }
 
@@ -14,7 +14,7 @@ public final class Console {
 
     public static void WriteLine(string value) {
         native (source) {
-            system::console::writeline(f_value.data);
+            lang::console::writeline(f_value->data);
         }
     }
 
@@ -24,13 +24,13 @@ public final class Console {
 
     public static string ReadChar() {
         native (return) {
-            return lang_string(system::console::readchar());
+            return lang_string(lang::console::readchar());
         }
     }
 
     public static string ReadLine() {
         native (return) {
-            return lang_string(system::console::readline());
+            return lang_string(lang::console::readline());
         }
     }
 }

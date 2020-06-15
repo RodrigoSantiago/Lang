@@ -10,7 +10,7 @@ public final class Date {
     public static date Current {
         get {
             native (return) {
-                return lang::date(system::date::millis());
+                return lang::date(lang::date::millis());
             }
         }
     }
@@ -18,7 +18,7 @@ public final class Date {
     public static long Nano {
         get {
             native (return) {
-                return system::date::nano();
+                return lang::date::nano();
             }
         }
     }

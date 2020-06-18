@@ -202,15 +202,35 @@ public class ContentFile {
         namespace.link(this);
     }
 
-    public Pointer langObject() {
+    public Type langObject() {
+        return getCompiler().getLangObject();
+    }
+
+    public Type langString() {
+        return getCompiler().getLangString();
+    }
+
+    public Type langArray() {
+        return getCompiler().getLangArray();
+    }
+
+    public Type langWrapper() {
+        return getCompiler().getLangWrapper();
+    }
+
+    public Pointer langObjectPtr() {
         return new Pointer(mark(getCompiler().getLangObject()));
     }
 
-    public Pointer langArray(Pointer pointer) {
+    public Pointer langStringPtr() {
+        return new Pointer(mark(getCompiler().getLangString()));
+    }
+
+    public Pointer langArrayPtr(Pointer pointer) {
         return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer}, false);
     }
 
-    public Pointer langWrapper(Type type) {
+    public Pointer langWrapperPtr(Type type) {
         return new Pointer(mark(getCompiler().getLangWrapper()), new Pointer[]{new Pointer(type)}, false);
     }
 
@@ -233,8 +253,8 @@ public class ContentFile {
     }
 
     public void add(Type type) {
-        types.add(type);
         if (type.nameToken != null) {
+            types.add(type);
             Type old = namespace.add(type);
 
             if (old == type) {
@@ -302,7 +322,6 @@ public class ContentFile {
                 erro(typeToken, "Cyclic reference");
             }
         }
-
 
         int arr = 0;
         ArrayList<Pointer> iPointers = null;

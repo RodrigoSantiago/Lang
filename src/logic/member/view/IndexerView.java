@@ -7,13 +7,11 @@ import logic.typdef.Type;
 
 public class IndexerView {
 
-    private Indexer indexer;
+    public Indexer indexer;
     private ParamView paramView;
     private Pointer typePtr;
 
-    private boolean hasGetAbs, hasSetAbs, hasOwnAbs;
-    private boolean hasGetImpl, hasSetImpl, hasOwnImpl;
-    public int getAcess, setAcess, ownAcess;
+    public IndexerView srcGet, srcSet, srcOwn;
 
     public IndexerView(Pointer caller, Indexer indexer) {
         this.indexer = indexer;
@@ -21,9 +19,6 @@ public class IndexerView {
             typePtr = Pointer.byGeneric(indexer.getTypePtr(), caller);
         }
         paramView = new ParamView(caller, indexer.getParams());
-        getAcess = !indexer.hasGet() || indexer.isGetPrivate() ? 0 : indexer.isGetPublic() ? 2 : 1;
-        setAcess = !indexer.hasSet() || indexer.isSetPrivate() ? 0 : indexer.isSetPublic() ? 2 : 1;
-        ownAcess = !indexer.hasOwn() || indexer.isOwnPrivate() ? 0 : indexer.isOwnPublic() ? 2 : 1;
     }
 
     public IndexerView(Pointer caller, IndexerView indexerView) {
@@ -32,15 +27,9 @@ public class IndexerView {
             typePtr = Pointer.byGeneric(indexerView.getTypePtr(), caller);
         }
         paramView = new ParamView(caller, indexerView.getParams());
-        hasGetAbs = indexerView.hasGetAbs;
-        hasSetAbs = indexerView.hasSetAbs;
-        hasOwnAbs = indexerView.hasOwnAbs;
-        hasGetImpl = indexerView.hasGetImpl;
-        hasSetImpl = indexerView.hasSetImpl;
-        hasOwnImpl = indexerView.hasOwnImpl;
-        getAcess = indexerView.getAcess;
-        setAcess = indexerView.setAcess;
-        ownAcess = indexerView.ownAcess;
+        srcGet = indexerView.srcGet;
+        srcSet = indexerView.srcSet;
+        srcOwn = indexerView.srcOwn;
     }
 
     public boolean isFrom(Type type) {
@@ -64,53 +53,33 @@ public class IndexerView {
     }
 
     public boolean canAcessGet(Type type) {
-        return (getAcess == 0 && indexer.cFile == type.cFile) ||
-                (getAcess == 1 && indexer.cFile.library == type.cFile.library) || (getAcess == 2);
+        return hasGet() && (
+                (isGetPrivate() && indexer.cFile == type.cFile) ||
+                        (isGetPublic()) || (indexer.cFile.library == type.cFile.library));
     }
 
     public boolean canAcessSet(Type type) {
-        return (setAcess == 0 && indexer.cFile == type.cFile) ||
-                (setAcess == 1 && indexer.cFile.library == type.cFile.library) || (setAcess == 2);
+        return hasSet() && (
+                (isSetPrivate() && indexer.cFile == type.cFile) ||
+                        (isSetPublic()) || (indexer.cFile.library == type.cFile.library));
     }
 
     public boolean canAcessOwn(Type type) {
-        return (ownAcess == 0 && indexer.cFile == type.cFile) ||
-                (ownAcess == 1 && indexer.cFile.library == type.cFile.library) || (ownAcess == 2);
+        return hasOwn() && (
+                (isOwnPrivate() && indexer.cFile == type.cFile) ||
+                        (isOwnPublic()) || (indexer.cFile.library == type.cFile.library));
     }
 
-    public void addOverriden(IndexerView other) {
-        if (!hasGet()) getAcess = other.getAcess;
-        if (!hasGet() && other.hasGet()) {
-            if (other.isGetAbstract()) {
-                hasGetAbs = true;
-            } else {
-                hasGetImpl = true;
-            }
-        } else if (hasGet() && isGetAbstract() && other.hasGet() && !other.isGetAbstract()) {
-            hasGetImpl = true;
-        }
+    public void setGetSource(IndexerView other) {
+        srcGet = other.srcGet != null ? other.srcGet : other;
+    }
 
-        if (!hasSet()) setAcess = other.setAcess;
-        if (!hasSet() && other.hasSet()) {
-            if (other.isSetAbstract()) {
-                hasSetAbs = true;
-            } else {
-                hasSetImpl = true;
-            }
-        } else if (hasSet() && isSetAbstract() && other.hasSet() && !other.isSetAbstract()) {
-            hasSetImpl = true;
-        }
+    public void setSetSource(IndexerView other) {
+        srcSet = other.srcSet != null ? other.srcSet : other;
+    }
 
-        if (!hasOwn()) ownAcess = other.ownAcess;
-        if (!hasOwn() && other.hasOwn()) {
-            if (other.isOwnAbstract()) {
-                hasOwnAbs = true;
-            } else {
-                hasOwnImpl = true;
-            }
-        } else if (hasOwn() && isOwnAbstract() && other.hasOwn() && !other.isOwnAbstract()) {
-            hasOwnImpl = true;
-        }
+    public void setOwnSource(IndexerView other) {
+        srcOwn = other.srcOwn != null ? other.srcOwn : other;
     }
 
     public Pointer getTypePtr() {
@@ -126,62 +95,62 @@ public class IndexerView {
     }
 
     public boolean hasGet() {
-        return indexer.hasGet() || hasGetAbs || hasGetImpl;
+        return srcGet != null || indexer.hasGet();
     }
 
     public boolean isGetFinal() {
-        return indexer.isGetFinal();
+        return (srcGet != null && srcGet.isGetFinal()) || (indexer.hasGet() && indexer.isGetFinal());
     }
 
     public boolean isGetAbstract() {
-        return !hasGetImpl && (hasGetAbs || indexer.isGetAbstract());
+        return  (srcGet != null && srcGet.isGetAbstract()) || (indexer.hasGet() && indexer.isGetAbstract());
     }
 
     public boolean isGetPublic() {
-        return indexer.isGetPublic() || getAcess == 2;
+        return (srcGet != null && srcGet.isGetPublic()) || indexer.isGetPublic();
     }
 
     public boolean isGetPrivate() {
-        return getAcess == 0;
+        return (srcGet != null && srcGet.isGetPrivate()) || indexer.isGetPrivate();
     }
 
     public boolean hasSet() {
-        return indexer.hasSet() || hasSetAbs || hasSetImpl;
+        return srcSet != null || indexer.hasSet();
     }
 
     public boolean isSetFinal() {
-        return indexer.isSetFinal();
+        return (srcSet != null && srcSet.isSetFinal()) || (indexer.hasSet() && indexer.isSetFinal());
     }
 
     public boolean isSetAbstract() {
-        return !hasSetImpl && (hasSetAbs || indexer.isSetAbstract());
+        return  (srcSet != null && srcSet.isSetAbstract()) || (indexer.hasSet() && indexer.isSetAbstract());
     }
 
     public boolean isSetPublic() {
-        return indexer.isSetPublic() || setAcess == 2;
+        return (srcSet != null && srcSet.isSetPublic()) || indexer.isSetPublic();
     }
 
     public boolean isSetPrivate() {
-        return setAcess == 0;
+        return (srcSet != null && srcSet.isSetPrivate()) || indexer.isSetPrivate();
     }
 
     public boolean hasOwn() {
-        return indexer.hasOwn() || hasOwnAbs || hasOwnImpl;
+        return srcOwn != null || indexer.hasOwn();
     }
 
     public boolean isOwnFinal() {
-        return indexer.isOwnFinal();
+        return (srcOwn != null && srcOwn.isOwnFinal()) || (indexer.hasOwn() && indexer.isOwnFinal());
     }
 
     public boolean isOwnAbstract() {
-        return !hasOwnImpl && (hasOwnAbs || indexer.isOwnAbstract());
+        return  (srcOwn != null && srcOwn.isOwnAbstract()) || (indexer.hasOwn() && indexer.isOwnAbstract());
     }
 
     public boolean isOwnPublic() {
-        return indexer.isOwnPublic() || ownAcess == 2;
+        return (srcOwn != null && srcOwn.isOwnPublic()) || indexer.isOwnPublic();
     }
 
     public boolean isOwnPrivate() {
-        return ownAcess == 0;
+        return (srcOwn != null && srcOwn.isOwnPrivate()) || indexer.isOwnPrivate();
     }
 }

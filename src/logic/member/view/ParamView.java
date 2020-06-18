@@ -43,7 +43,7 @@ public class ParamView {
             for (int i = 0; i < getArgsCount(); i++) {
                 Pointer ptrA = getArgTypePtr(i);
                 Pointer ptrB = other.getArgTypePtr(i);
-                if (!ptrA.hasGeneric() && !ptrB.hasGeneric() && !ptrA.equals(ptrB)) {
+                if (!ptrA.hasGeneric() && !ptrB.hasGeneric() && !ptrA.overloadEquals(ptrB)) {
                     dif = true;
                     break;
                 }

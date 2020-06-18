@@ -5,6 +5,8 @@ import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
+import logic.member.view.IndexerView;
+import logic.member.view.MethodView;
 import logic.params.Parameters;
 import logic.typdef.Type;
 
@@ -246,6 +248,54 @@ public class Indexer extends Member {
                         .ln();
             }
         }
+    }
+
+    public void buildImplGet(CppBuilder cBuilder, Pointer self, IndexerView iw) {
+        Pointer getPtr = typePtr.toLet();
+
+        cBuilder.toHeader();
+        cBuilder.idt(1);
+        cBuilder.add("virtual ");
+        cBuilder.add(getPtr)
+                .add(" get").add("(").add(params).add(");").ln();
+
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .add(getPtr)
+                .add(" ").path(self, false).add("::get").add("(").add(params).add(") {").ln()
+                .idt(1).add("return ").path(self.type.parent, false).add("::get(").args(iw.getParams()).add(");").ln()
+                .add("}").ln()
+                .ln();
+    }
+
+    public void buildImplOwn(CppBuilder cBuilder, Pointer self, IndexerView iw) {
+        cBuilder.toHeader();
+        cBuilder.idt(1);
+        cBuilder.add("virtual ");
+        cBuilder.add(typePtr)
+                .add(" own").add("(").add(params).add(");").ln();
+
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .add(typePtr)
+                .add(" ").path(self, false).add("::own").add("(").add(params).add(") {").ln()
+                .idt(1).add("return ").path(self.type.parent, false).add("::own(").args(iw.getParams()).add(");").ln()
+                .add("}").ln()
+                .ln();
+    }
+
+    public void buildImplSet(CppBuilder cBuilder, Pointer self, IndexerView iw) {
+        cBuilder.toHeader();
+        cBuilder.idt(1);
+        cBuilder.add("virtual void set(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value);").ln();
+
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .add("void ").path(self, false).add("::set")
+                .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) {").ln()
+                .idt(1).path(self.type.parent, false).add("::set(").args(iw.getParams(), true).add(");").ln()
+                .add("}").ln()
+                .ln();
     }
 
     public Parameters getParams() {

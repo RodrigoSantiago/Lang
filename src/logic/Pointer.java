@@ -110,13 +110,35 @@ public class Pointer {
         return false;
     }
 
+    public boolean overloadEquals(Pointer other) {
+        if (other == null) return false;
+        if (other.type != type || other.typeSource != typeSource) {
+            return false;
+        } else if (other.pointers != null && pointers != null) {
+            if (other.pointers.length != pointers.length) {
+                return false;
+            } else {
+                for (int i = 0; i < pointers.length; i++) {
+                    if (!pointers[i].equals(other.pointers[i])) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        } else if (other.pointers != pointers) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
         if (obj == this) return true;
         if (obj instanceof Pointer) {
             Pointer other = (Pointer) obj;
-            if (other.type != type || other.typeSource != typeSource) {
+            if (other.type != type || other.typeSource != typeSource || other.let != let) {
                 return false;
             } else if (other.pointers != null && pointers != null) {
                 if (other.pointers.length != pointers.length) {

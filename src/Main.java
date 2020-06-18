@@ -53,6 +53,13 @@ public class Main {
             }
         }
         if (!erros) {
+            File[] fls = lang.getSrcDir().listFiles();
+            if (fls != null) {
+                for (File file : fls) {
+                    file.delete();
+                }
+            }
+
             lang.build(new CppBuilder());
             for (ContentFile cFile : lang.cFiles.values()) {
                 if (cFile.erros.size() > 0) {

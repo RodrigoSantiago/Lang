@@ -20,30 +20,17 @@ public class Interface extends Type {
         isLoaded = true;
         super.load();
 
+
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
-            if ((parent.type.isPrivate() && parent.type.cFile != cFile)
-                    || !parent.type.isPublic() && parent.type.cFile.library != cFile.library) {
-                cFile.erro(pTypeToken.start, "Invalid acess permisison");
-            } else if (parents.contains(parent)) {
-                cFile.erro(pTypeToken.start, "Repeated parent");
-            } else if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined parent");
-            } else if (parent.typeSource != null) {
-                cFile.erro(pTypeToken.start, "A interface could not inherit it's generic");
-            } else if (parent.type.isFinal()) {
-                cFile.erro(pTypeToken.start, "A Interface could not inherit from a Final Type");
-            } else if (parent.type.isClass()) {
-                cFile.erro(pTypeToken.start, "A interface could not inherit from a Class");
-            } else if (parent.type.isInterface()) {
-                this.parents.add(parent);
-                this.parentTokens.add(pTypeToken.start);
-            } else {
+            if (parent.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined type");
+            } else {
+                cFile.erro(pTypeToken.start, "An Interface cannot inherit");
             }
         }
 
-        this.parent = cFile.langObject();
+        this.parent = cFile.langObjectPtr();
         this.parents.add(0, parent);
         this.parentTokens.add(0, nameToken);
     }

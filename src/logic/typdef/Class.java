@@ -19,14 +19,18 @@ public class Class extends Type {
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
-            if ((parent.type.isPrivate() && parent.type.cFile != cFile)
+            if (parent.typeSource != null) {
+                cFile.erro(pTypeToken.start, "Cannot inherit it's template");
+            } else if (parent.type == null) {
+                cFile.erro(pTypeToken.start, "Undefined parent");
+            } else if ((parent.type.isPrivate() && parent.type.cFile != cFile)
                     || (!parent.type.isPublic() && parent.type.cFile.library != cFile.library)) {
                 cFile.erro(pTypeToken.start, "Invalid acess permisison");
             } else if (parents.contains(parent)) {
                 cFile.erro(pTypeToken.start, "Repeated parent");
-            } else if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined parent");
-            } else if (parent.typeSource != null) {
+            } else if (this.parent != null && this.parent.isDerivedFrom(parent) > -1) {
+                cFile.erro(pTypeToken.start, "Repeated parent");
+            }else if (parent.typeSource != null) {
                 cFile.erro(pTypeToken.start, "A class could not inherit it's generic");
             } else if (parent.type.isFinal()) {
                 cFile.erro(pTypeToken.start, "A class could not inherit from a Final Type");
@@ -39,7 +43,7 @@ public class Class extends Type {
                     this.parents.add(0, parent);
                     this.parentTokens.add(0, pTypeToken.start);
                 } else {
-                    cFile.erro(pTypeToken.start, "A class cannot have multiple class parents");
+                    cFile.erro(pTypeToken.start, "A class cannot have multiple classes");
                 }
             } else if (parent.type.isInterface()) {
                 this.parents.add(parent);
@@ -49,8 +53,8 @@ public class Class extends Type {
             }
         }
 
-        if (this.parent == null && cFile.langObject().type != this) {
-            this.parent = cFile.langObject();
+        if (this.parent == null && cFile.langObjectPtr().type != this) {
+            this.parent = cFile.langObjectPtr();
             this.parents.add(0, parent);
             this.parentTokens.add(0, nameToken);
         }

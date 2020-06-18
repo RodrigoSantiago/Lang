@@ -22,11 +22,11 @@ public class Enum extends Type {
             if (parent.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined type");
             } else {
-                cFile.erro(pTypeToken.start, "A enum cannot inherit");
+                cFile.erro(pTypeToken.start, "An Enum cannot inherit");
             }
         }
 
-        parent = cFile.langWrapper(this);
+        parent = cFile.langWrapperPtr(this);
     }
 
     @Override

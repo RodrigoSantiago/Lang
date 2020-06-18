@@ -14,13 +14,14 @@ public class FieldView {
     public Pointer typePtr;
 
     private Variable srcVar;
-    private Num srcNum;
-    private Property srcPro;
     private int srcID;
 
-    private boolean hasGetAbs, hasSetAbs, hasOwnAbs;
-    private boolean hasGetImpl, hasSetImpl, hasOwnImpl;
-    public int getAcess, setAcess, ownAcess;
+    private Num srcNum;
+    public Property srcPro;
+
+    public Property srcGet;
+    public Property srcSet;
+    public Property srcOwn;
 
     public FieldView(Token nameToken, Pointer typePtr, Variable variable, int index) {
         this.nameToken = nameToken;
@@ -40,9 +41,9 @@ public class FieldView {
         this.nameToken = nameToken;
         this.typePtr = typePtr;
         this.srcPro = property;
-        getAcess = !property.hasGet() || property.isGetPrivate() ? 0 : property.isGetPublic() ? 2 : 1;
-        setAcess = !property.hasSet() || property.isSetPrivate() ? 0 : property.isSetPublic() ? 2 : 1;
-        ownAcess = !property.hasOwn() || property.isOwnPrivate() ? 0 : property.isOwnPublic() ? 2 : 1;
+        srcGet = property.hasGet() ? property : null;
+        srcSet = property.hasSet() ? property : null;
+        srcOwn = property.hasOwn() ? property : null;
     }
 
     public FieldView(Pointer caller, FieldView fieldView) {
@@ -57,15 +58,9 @@ public class FieldView {
         } else {
             typePtr = fieldView.getTypePtr();
         }
-        hasGetAbs = fieldView.hasGetAbs;
-        hasSetAbs = fieldView.hasSetAbs;
-        hasOwnAbs = fieldView.hasOwnAbs;
-        hasGetImpl = fieldView.hasGetImpl;
-        hasSetImpl = fieldView.hasSetImpl;
-        hasOwnImpl = fieldView.hasOwnImpl;
-        getAcess = fieldView.getAcess;
-        setAcess = fieldView.setAcess;
-        ownAcess = fieldView.ownAcess;
+        srcGet = fieldView.srcGet;
+        srcSet = fieldView.srcSet;
+        srcOwn = fieldView.srcOwn;
     }
 
     public Token getName() {
@@ -78,7 +73,7 @@ public class FieldView {
 
     public boolean isFrom(Type type) {
         return  (srcPro != null && srcPro.type == type) ||
-                (srcVar != null && srcVar.type == type) || srcNum.type == type;
+                (srcVar != null && srcVar.type == type) || (srcNum != null && srcNum.type == type);
     }
 
     public boolean canShadow(FieldView other) {
@@ -90,53 +85,33 @@ public class FieldView {
     }
 
     public boolean canAcessGet(Type type) {
-        return (getAcess == 0 && srcPro.cFile == type.cFile) ||
-                (getAcess == 1 && srcPro.cFile.library == type.cFile.library) || (getAcess == 2);
+        return srcGet != null && (
+                (srcGet.isPrivate() && srcPro.cFile == type.cFile) ||
+                (srcGet.isPublic()) || (srcPro.cFile.library == type.cFile.library));
     }
 
     public boolean canAcessSet(Type type) {
-        return (setAcess == 0 && srcPro.cFile == type.cFile) ||
-                (setAcess == 1 && srcPro.cFile.library == type.cFile.library) || (setAcess == 2);
+        return srcSet != null && (
+                (srcSet.isPrivate() && srcPro.cFile == type.cFile) ||
+                        (srcSet.isPublic()) || (srcPro.cFile.library == type.cFile.library));
     }
 
     public boolean canAcessOwn(Type type) {
-        return (ownAcess == 0 && srcPro.cFile == type.cFile) ||
-                (ownAcess == 1 && srcPro.cFile.library == type.cFile.library) || (ownAcess == 2);
+        return srcOwn != null && (
+                (srcOwn.isPrivate() && srcPro.cFile == type.cFile) ||
+                        (srcOwn.isPublic()) || (srcPro.cFile.library == type.cFile.library));
     }
 
-    public void addOverriden(FieldView other) {
-        if (!hasGet()) getAcess = other.getAcess;
-        if (!hasGet() && other.hasGet()) {
-            if (other.isGetAbstract()) {
-                hasGetAbs = true;
-            } else {
-                hasGetImpl = true;
-            }
-        } else if (hasGet() && isGetAbstract() && other.hasGet() && !other.isGetAbstract()) {
-            hasGetImpl = true;
-        }
+    public void setGetSource(FieldView other) {
+        srcGet = other.srcGet;
+    }
 
-        if (!hasSet()) setAcess = other.setAcess;
-        if (!hasSet() && other.hasSet()) {
-            if (other.isSetAbstract()) {
-                hasSetAbs = true;
-            } else {
-                hasSetImpl = true;
-            }
-        } else if (hasSet() && isSetAbstract() && other.hasSet() && !other.isSetAbstract()) {
-            hasSetImpl = true;
-        }
+    public void setSetSource(FieldView other) {
+        srcSet = other.srcSet;
+    }
 
-        if (!hasOwn()) ownAcess = other.ownAcess;
-        if (!hasOwn() && other.hasOwn()) {
-            if (other.isOwnAbstract()) {
-                hasOwnAbs = true;
-            } else {
-                hasOwnImpl = true;
-            }
-        } else if (hasOwn() && isOwnAbstract() && other.hasOwn() && !other.isOwnAbstract()) {
-            hasOwnImpl = true;
-        }
+    public void setOwnSource(FieldView other) {
+        srcOwn = other.srcOwn;
     }
 
     public boolean isProperty() {
@@ -160,62 +135,62 @@ public class FieldView {
     }
 
     public boolean hasGet() {
-        return srcPro != null ? srcPro.hasGet() || hasGetAbs || hasGetImpl : true;
+        return srcPro == null || srcGet != null;
     }
 
     public boolean isGetFinal() {
-        return srcPro != null ? srcPro.isGetFinal() : false;
+        return srcPro == null || srcGet.isFinal();
     }
 
     public boolean isGetAbstract() {
-        return srcPro != null ? (!hasGetImpl && (hasGetAbs || srcPro.isGetAbstract())) : false;
+        return srcPro != null && srcGet.isGetAbstract();
     }
 
     public boolean isGetPublic() {
-        return srcPro != null ? srcPro.isGetPublic() || getAcess == 2 : srcVar != null ? srcVar.isPublic() : true;
+        return srcPro != null ? srcGet.isGetPublic() : srcVar != null ? srcVar.isPublic() : true;
     }
 
     public boolean isGetPrivate() {
-        return srcPro != null ? getAcess == 0 : srcVar != null ? srcVar.isPrivate() : false;
+        return srcPro != null ? srcGet.isGetPrivate() : srcVar != null ? srcVar.isPrivate() : true;
     }
 
     public boolean hasSet() {
-        return srcPro != null ? (srcPro.hasSet() || hasSetAbs || hasSetImpl) : srcVar != null;
+        return srcPro != null ? srcSet != null : srcVar != null;
     }
 
     public boolean isSetFinal() {
-        return srcPro != null ? srcPro.isSetFinal() : false;
+        return srcPro != null ? srcSet.isSetFinal() : false;
     }
 
     public boolean isSetAbstract() {
-        return srcPro != null ? (!hasSetImpl && (hasSetAbs || srcPro.isSetAbstract())) : false;
+        return srcPro != null ? srcSet.isSetAbstract() : false;
     }
 
     public boolean isSetPublic() {
-        return srcPro != null ? srcPro.isSetPublic() || setAcess == 2 : srcVar != null ? srcVar.isPublic() : false;
+        return srcPro != null ? srcSet.isSetPublic() : srcVar != null ? srcVar.isPublic() : false;
     }
 
     public boolean isSetPrivate() {
-        return srcPro != null ? setAcess == 0 : srcVar != null ? srcVar.isPrivate() : false;
+        return srcPro != null ? srcSet.isSetPrivate() : srcVar != null ? srcVar.isPrivate() : false;
     }
 
     public boolean hasOwn() {
-        return srcPro != null ? (srcPro.hasOwn() || hasOwnAbs || hasOwnImpl) : srcVar != null;
+        return srcPro != null ? srcOwn != null : srcVar != null;
     }
 
     public boolean isOwnFinal() {
-        return srcPro != null ? srcPro.isOwnFinal() : false;
+        return srcPro != null ? srcOwn.isOwnFinal() : false;
     }
 
     public boolean isOwnAbstract() {
-        return srcPro != null ? (!hasOwnImpl && (hasOwnAbs || srcPro.isOwnAbstract())) : false;
+        return srcPro != null ? srcOwn.isOwnAbstract() : false;
     }
 
     public boolean isOwnPublic() {
-        return srcPro != null ? srcPro.isOwnPublic() || ownAcess == 2 : srcVar != null ? srcVar.isPublic() : false;
+        return srcPro != null ? srcOwn.isOwnPublic() : srcVar != null ? srcVar.isPublic() : false;
     }
 
     public boolean isOwnPrivate() {
-        return srcPro != null ? ownAcess == 0 : srcVar != null ? srcVar.isPrivate() : false;
+        return srcPro != null ? srcOwn.isOwnPrivate() : srcVar != null ? srcVar.isPrivate() : false;
     }
 }

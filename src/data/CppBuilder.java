@@ -2,6 +2,7 @@ package data;
 
 import content.Key;
 import content.Token;
+import logic.member.view.ParamView;
 import logic.params.Parameters;
 import logic.templates.Generic;
 import logic.templates.Template;
@@ -355,6 +356,30 @@ public class CppBuilder {
         for (int i = 0; i < params.args.size(); i++) {
             if (i > 0) add(", ");
             add(params.args.get(i).typePtr).add(" v_").add(params.args.get(i).nameToken);
+        }
+        return this;
+    }
+
+    public CppBuilder add(ParamView params) {
+        for (int i = 0; i < params.getArgsCount(); i++) {
+            if (i > 0) add(", ");
+            add(params.getArgTypePtr(i)).add(" v_").add(params.getArgName(i));
+        }
+        return this;
+    }
+
+    public CppBuilder args(ParamView params) {
+        return args(params, false);
+    }
+
+    public CppBuilder args(ParamView params, boolean extraValue) {
+        for (int i = 0; i < params.getArgsCount(); i++) {
+            if (i > 0) add(", ");
+            add("v_").add(params.getArgName(i));
+        }
+        if (extraValue) {
+            if (params.getArgsCount() > 0) add(", ");
+            add("v_value");
         }
         return this;
     }

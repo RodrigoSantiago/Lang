@@ -6,6 +6,7 @@ import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
+import logic.member.view.IndexerView;
 import logic.typdef.Type;
 
 public class Property extends Member {
@@ -268,6 +269,52 @@ public class Property extends Member {
                         .ln();
             }
         }
+    }
+
+    public void buildImplGet(CppBuilder cBuilder, Pointer self) {
+        Pointer getPtr = typePtr.toLet();
+
+        cBuilder.toHeader();
+        cBuilder.idt(1);
+        cBuilder.add("virtual ").add(getPtr).add(" get_").add(nameToken).add("();").ln();
+
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .add(getPtr)
+                .add(" ").path(self, false).add("::get_").add(nameToken).add("() {").ln()
+                .idt(1).add("return ").path(self.type.parent, false).add("::get_").add(nameToken).add("();").ln()
+                .add("}").ln()
+                .ln();
+    }
+
+    public void buildImplOwn(CppBuilder cBuilder, Pointer self) {
+        cBuilder.toHeader();
+        cBuilder.idt(1);
+        cBuilder.add("virtual ");
+        cBuilder.add(typePtr)
+                .add(" own_").add(nameToken).add("();").ln();
+
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .add(typePtr)
+                .add(" ").path(self, false).add("::own_").add(nameToken).add("() {").ln()
+                .idt(1).add("return ").path(self.type.parent, false).add("::own_").add(nameToken).add("();").ln()
+                .add("}").ln()
+                .ln();
+    }
+
+    public void buildImplSet(CppBuilder cBuilder, Pointer self) {
+        cBuilder.toHeader();
+        cBuilder.idt(1);
+        cBuilder.add("virtual void set_").add(nameToken).add("(").add(typePtr).add(" v_value);").ln();
+
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .add("void ").path(self, false).add("::set_").add(nameToken)
+                .add("(").add(typePtr).add(" v_value) {").ln()
+                .idt(1).path(self.type.parent, false).add("::set_").add(nameToken).add("(v_value);").ln()
+                .add("}").ln()
+                .ln();
     }
 
     public FieldView getField() {

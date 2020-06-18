@@ -59,6 +59,14 @@ public abstract class Type implements GenericOwner {
     private ViewList<MethodView> methodView = new ViewList<>();
     private ArrayList<IndexerView> indexerView = new ArrayList<>();
 
+    private ArrayList<MethodView> methodViewImpl = new ArrayList<>();
+    private ArrayList<IndexerView> indexerGetViewImpl = new ArrayList<>();
+    private ArrayList<IndexerView> indexerSetViewImpl = new ArrayList<>();
+    private ArrayList<IndexerView> indexerOwnViewImpl = new ArrayList<>();
+    private ArrayList<Property> propertyGetViewImpl = new ArrayList<>();
+    private ArrayList<Property> propertySetViewImpl = new ArrayList<>();
+    private ArrayList<Property> propertyOwnViewImpl = new ArrayList<>();
+
     public Type(ContentFile cFile, Key key, Token start, Token end) {
         this.cFile = cFile;
 
@@ -120,7 +128,7 @@ public abstract class Type implements GenericOwner {
                 state = 5;
             } else if (state == 5 && token.key == Key.COMMA) {
                 state = 4;
-            } else if (token.key == Key.BRACE) {
+            } else if ((state == 2 || state == 3 || state == 4 || state == 5) && token.key == Key.BRACE) {
                 contentToken = token;
                 state = 6;
             } else {
@@ -152,7 +160,7 @@ public abstract class Type implements GenericOwner {
         String pathName = (cFile.namespace.name + "::" + nameToken).replace("_", "__").replace("::", "_");
         fileName = (isClass() ? "c_" : isStruct() ? "s_" : isEnum() ? "e_" : "i_") + pathName;
         pathToken = new Token(pathName);
-        staticPathToken = new Token("_"+pathName);
+        staticPathToken = new Token("_" + pathName);
 
         if (cFile.library == cFile.library.getCompiler().getLangLibrary()) {
             isBase = nameToken.equals("bool")
@@ -209,13 +217,16 @@ public abstract class Type implements GenericOwner {
             pType.cross();
         }
 
+        if (nameToken.equals("A")) {
+            System.out.println("");
+        }
         for (int i = 0; i < parents.size(); i++) {
             Pointer pPtr = parents.get(i);
             for (MethodView pMW : pPtr.type.methodView) {
                 if (pMW.isStatic()) continue;
                 pMW = new MethodView(pPtr, pMW);
 
-                boolean impl = false;
+                MethodView impl = null;
                 boolean add = true;
                 for (MethodView mw : methodView.get(pMW.getName())) {
                     if (mw.isStatic()) continue;
@@ -230,10 +241,9 @@ public abstract class Type implements GenericOwner {
                         if ((pMW.isPublic() && !mw.isPublic()) || (!pMW.isPrivate() && mw.isPrivate())) {
                             cFile.erro(erro, "Incompatible acess");
                         }
-
-                        impl = true;
+                        mw.markOverrided(pMW);
+                        impl = mw;
                         add = false;
-                        break;
                     } else if (!mw.canOverload(pMW)) {
                         cFile.erro(erro, "Incompatible signature [" + pMW.getName() + "]");
                         add = false;
@@ -241,9 +251,26 @@ public abstract class Type implements GenericOwner {
                     }
                 }
 
-                if (!isAbstract() && pMW.isAbstract() && !impl) {
+                if (!isAbstract() && pMW.isAbstract() && impl == null) {
                     cFile.erro(parentTokens.get(i), "Abstract method not implemented [" + pMW.getName() + "]");
+                } else if (!isAbstract() && pMW.isAbstract() && impl != null && impl.method.type != this) {
+                    methodViewImpl.add(impl);
+                } else if (!isAbstract() && parents.size() > 1 && pMW.original().type == cFile.langObject() &&
+                        (impl == null || impl.method.type != this)) {
+
+                    // lang::Object Exception
+                    boolean has = false;
+                    for (MethodView imw : methodViewImpl) {
+                        if (imw.original().type == cFile.langObject() && imw.getName().equals(pMW.getName())) {
+                            has = true;
+                            break;
+                        }
+                    }
+                    if (!has) {
+                        methodViewImpl.add(impl == null ? pMW : impl);
+                    }
                 }
+
                 if (add) {
                     hasGeneric = hasGeneric || pMW.getTemplate() != null;
                     methodView.put(pMW.getName(), pMW);
@@ -252,6 +279,7 @@ public abstract class Type implements GenericOwner {
             for (IndexerView pIW : pPtr.type.indexerView) {
                 pIW = new IndexerView(pPtr, pIW);
 
+                IndexerView implIndexerGet = null, implIndexerSet = null, implIndexerOwn = null;
                 boolean implGet = !pIW.hasGet() || !pIW.isGetAbstract();
                 boolean implSet = !pIW.hasSet() || !pIW.isSetAbstract();
                 boolean implOwn = !pIW.hasOwn() || !pIW.isOwnAbstract();
@@ -260,36 +288,43 @@ public abstract class Type implements GenericOwner {
                     Token erro = iw.isFrom(this) ? iw.getToken() : parentTokens.get(i);
 
                     if (iw.canOverride(pIW)) {
-                        iw.addOverriden(pIW);
                         if (pIW.hasGet()) {
                             if (pIW.isGetFinal()) cFile.erro(erro, "Cannot override a final GET");
-                            if (!pIW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET");
-                            if (pIW.getAcess > iw.getAcess) {
+                            else if (!pIW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET");
+                            else if (iw.hasGet() && (iw.isGetPrivate() || (!iw.isGetPublic() && pIW.isGetPublic()))) {
                                 cFile.erro(erro, "Incompatible GET acess");
-                                iw.getAcess = pIW.getAcess;
+                            } else if (!iw.hasGet()) {
+                                if (!pIW.isGetAbstract()) iw.setGetSource(pIW);
+                            } else if (pIW.isGetAbstract()) {
+                                implGet = true;
+                                implIndexerGet = iw.srcGet;
                             }
                         }
 
                         if (pIW.hasSet()) {
                             if (pIW.isSetFinal()) cFile.erro(erro, "Cannot override a final SET");
-                            if (!pIW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET");
-                            if (pIW.setAcess > iw.setAcess) {
+                            else if (!pIW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET");
+                            else if (iw.hasSet() && (iw.isSetPrivate() || (!iw.isSetPublic() && pIW.isSetPublic()))) {
                                 cFile.erro(erro, "Incompatible SET acess");
-                                iw.setAcess = pIW.setAcess;
+                            } else if (!iw.hasSet()) {
+                                if (!pIW.isSetAbstract()) iw.setSetSource(pIW);
+                            } else if (pIW.isSetAbstract()) {
+                                implSet = true;
+                                implIndexerSet = iw.srcSet;
                             }
                         }
                         if (pIW.hasOwn()) {
                             if (pIW.isOwnFinal()) cFile.erro(erro, "Cannot override a final OWN");
-                            if (!pIW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN");
-                            if (pIW.ownAcess > iw.ownAcess) {
+                            else if (!pIW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN");
+                            else if (iw.hasOwn() && (iw.isOwnPrivate() || (!iw.isOwnPublic() && pIW.isOwnPublic()))) {
                                 cFile.erro(erro, "Incompatible OWN acess");
-                                iw.ownAcess = pIW.ownAcess;
+                            } else if (!iw.hasOwn()) {
+                                if (!pIW.isOwnAbstract()) iw.setOwnSource(pIW);
+                            } else if (pIW.isOwnAbstract()) {
+                                implOwn = true;
+                                implIndexerOwn = iw.srcOwn;
                             }
                         }
-
-                        implGet = implGet || !iw.hasGet() || !iw.isGetAbstract();
-                        implSet = implSet || !iw.hasSet() || !iw.isSetAbstract();
-                        implOwn = implOwn || !iw.hasOwn() || !iw.isOwnAbstract();
                         add = false;
                     } else if (!iw.canOverload(pIW)) {
                         cFile.erro(erro, "Incompatible signature [ " + pIW.getParams() + " ]");
@@ -298,14 +333,20 @@ public abstract class Type implements GenericOwner {
                     }
                 }
 
-                if (!isAbstract() && !implGet) {
+                if (!isAbstract() && pIW.hasGet() && pIW.isGetAbstract() && !implGet) {
                     cFile.erro(parentTokens.get(i), "Abstract indexer 'GET' not implemented [" + pIW.getParams() + "]");
+                } else if (implIndexerGet != null && implIndexerGet.indexer.type != this) {
+                    indexerGetViewImpl.add(implIndexerGet);
                 }
-                if (!isAbstract() && !implSet) {
+                if (!isAbstract() && pIW.hasSet() && pIW.isSetAbstract() && !implSet) {
                     cFile.erro(parentTokens.get(i), "Abstract indexer 'SET' not implemented [" + pIW.getParams() + "]");
+                } else if (implIndexerSet != null && implIndexerSet.indexer.type != this) {
+                    indexerSetViewImpl.add(implIndexerSet);
                 }
-                if (!isAbstract() && !implOwn) {
+                if (!isAbstract() && pIW.hasOwn() && pIW.isOwnAbstract() && !implOwn) {
                     cFile.erro(parentTokens.get(i), "Abstract indexer 'OWN' not implemented [" + pIW.getParams() + "]");
+                } else if (implIndexerOwn != null && implIndexerOwn.indexer.type != this) {
+                    indexerOwnViewImpl.add(implIndexerOwn);
                 }
                 if (add) indexerView.add(pIW);
             }
@@ -313,6 +354,7 @@ public abstract class Type implements GenericOwner {
                 if (pFW.isStatic()) continue;
                 pFW = new FieldView(pPtr, pFW);
 
+                Property implFieldGet = null, implFieldSet = null, implFieldOwn = null;
                 boolean implGet = !pFW.hasGet() || !pFW.isGetAbstract();
                 boolean implSet = !pFW.hasSet() || !pFW.isSetAbstract();
                 boolean implOwn = !pFW.hasOwn() || !pFW.isOwnAbstract();
@@ -322,49 +364,62 @@ public abstract class Type implements GenericOwner {
                     Token erro = fw.isFrom(this) ? fw.getName() : parentTokens.get(i);
                     add = false;
                     if (fw.canOverride(pFW)) {
-                        fw.addOverriden(pFW);
                         if (pFW.hasGet()) {
                             if (pFW.isGetFinal()) cFile.erro(erro, "Cannot override a final GET");
-                            if (!pFW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET");
-                            if (pFW.getAcess > fw.getAcess) {
+                            else if (!pFW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET");
+                            else if (fw.hasGet() && (fw.isGetPrivate() || (!fw.isGetPublic() && pFW.isGetPublic()))) {
                                 cFile.erro(erro, "Incompatible GET acess");
-                                fw.getAcess = pFW.getAcess;
+                            } else if (!fw.hasGet()) {
+                                if (!pFW.isGetAbstract()) fw.setGetSource(pFW);
+                            } else if (pFW.isGetAbstract()) {
+                                implGet = true;
+                                implFieldGet = fw.srcGet;
                             }
                         }
 
                         if (pFW.hasSet()) {
                             if (pFW.isSetFinal()) cFile.erro(erro, "Cannot override a final SET");
-                            if (!pFW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET");
-                            if (pFW.setAcess > fw.setAcess) {
+                            else if (!pFW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET");
+                            else if (fw.hasSet() && (fw.isSetPrivate() || (!fw.isSetPublic() && pFW.isSetPublic()))) {
                                 cFile.erro(erro, "Incompatible SET acess");
-                                fw.setAcess = pFW.setAcess;
+                            } else if (!fw.hasSet()) {
+                                if (!pFW.isSetAbstract()) fw.setSetSource(pFW);
+                            } else if (pFW.isSetAbstract()) {
+                                implSet = true;
+                                implFieldSet = fw.srcSet;
                             }
                         }
                         if (pFW.hasOwn()) {
                             if (pFW.isOwnFinal()) cFile.erro(erro, "Cannot override a final OWN");
-                            if (!pFW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN");
-                            if (pFW.ownAcess > fw.ownAcess) {
+                            else if (!pFW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN");
+                            else if (fw.hasOwn() && (fw.isOwnPrivate() || (!fw.isOwnPublic() && pFW.isOwnPublic()))) {
                                 cFile.erro(erro, "Incompatible OWN acess");
-                                fw.ownAcess = pFW.ownAcess;
+                            } else if (!fw.hasOwn()) {
+                                if (!pFW.isOwnAbstract()) fw.setOwnSource(pFW);
+                            } else if (pFW.isOwnAbstract()) {
+                                implOwn = true;
+                                implFieldOwn = fw.srcOwn;
                             }
                         }
-
-                        implGet = implGet || !fw.hasGet() || !fw.isGetAbstract();
-                        implSet = implSet || !fw.hasSet() || !fw.isSetAbstract();
-                        implOwn = implOwn || !fw.hasOwn() || !fw.isOwnAbstract();
                     } else if (!fw.canShadow(pFW)) {
                         cFile.erro(erro, "Incompatible signature [ " + pFW.getName() + " ]");
                     }
                 }
 
-                if (!isAbstract() && !implGet) {
+                if (!isAbstract() && pFW.hasGet() && pFW.isGetAbstract() && !implGet) {
                     cFile.erro(parentTokens.get(i), "Abstract property 'GET' not implemented [" + pFW.getName() + "]");
+                } else if (implFieldGet != null && implFieldGet.type != this){
+                    propertyGetViewImpl.add(implFieldGet);
                 }
-                if (!isAbstract() && !implSet) {
+                if (!isAbstract() && pFW.hasSet() && pFW.isSetAbstract() && !implSet) {
                     cFile.erro(parentTokens.get(i), "Abstract property 'SET' not implemented [" + pFW.getName() + "]");
+                } else if (implFieldSet != null && implFieldSet.type != this){
+                    propertySetViewImpl.add(implFieldSet);
                 }
-                if (!isAbstract() && !implOwn) {
+                if (!isAbstract() && pFW.hasOwn() && pFW.isOwnAbstract() && !implOwn) {
                     cFile.erro(parentTokens.get(i), "Abstract property 'OWN' not implemented [" + pFW.getName() + "]");
+                } else if (implFieldOwn != null && implFieldOwn.type != this){
+                    propertyOwnViewImpl.add(implFieldOwn);
                 }
                 if (add) fields.put(pFW.getName(), pFW);
             }
@@ -456,46 +511,64 @@ public abstract class Type implements GenericOwner {
 
         cBuilder.toHeader();
         cBuilder.idt(1).add("static lang::type* typeOf() { return getType<T_").add(fileName.toUpperCase()).add(">(); }").ln();
-        cBuilder.idt(1).add(isPointer(), "virtual ")
-                .add("lang::type* getTypeOf() { return typeOf(); }").ln();
+        cBuilder.idt(1).add(isPointer(), "virtual lang::type* getTypeOf() { return typeOf(); }").ln();
+        if (isClass()) cBuilder.idt(1).add("virtual void* self() { return &weak; }").ln();
 
         for (Native nat : natives) {
             if (!nat.isStatic()) {
                 nat.build(cBuilder);
             }
         }
-        for (Property property : properties) {
-            if (!property.isStatic()) {
-                property.build(cBuilder);
-            }
-        }
-        for (Indexer indexer : indexers) {
-            indexer.build(cBuilder);
-        }
+
+        // Variables
         for (Variable variable : variables) {
             if (!variable.isStatic()) {
                 variable.build(cBuilder);
             }
         }
 
+        // Properties
+        for (Property property : properties) {
+            if (!property.isStatic()) {
+                property.build(cBuilder);
+            }
+        }
+        for (Property fw : propertyGetViewImpl) {
+            fw.buildImplGet(cBuilder, self);
+        }
+        for (Property fw : propertySetViewImpl) {
+            fw.buildImplSet(cBuilder, self);
+        }
+        for (Property fw : propertyOwnViewImpl) {
+            fw.buildImplOwn(cBuilder, self);
+        }
+
+        // Indexers
+        for (Indexer indexer : indexers) {
+            indexer.build(cBuilder);
+        }
+        for (IndexerView iw : indexerGetViewImpl) {
+            iw.indexer.buildImplGet(cBuilder, self, iw);
+        }
+        for (IndexerView iw : indexerSetViewImpl) {
+            iw.indexer.buildImplSet(cBuilder, self, iw);
+        }
+        for (IndexerView iw : indexerOwnViewImpl) {
+            iw.indexer.buildImplOwn(cBuilder, self, iw);
+        }
+
+        // Constructors
         if (isValue()) {
             cBuilder.toHeader();
             cBuilder.idt(1).add(pathToken).add("();").ln();
-            if (nameToken.equals("date")) {
-                System.out.println("");
-            }
+
             cBuilder.toSource(hasGeneric());
             cBuilder.path(self, false).add("::").add(pathToken).add("()");
-            boolean first = false;
-            for (int i = 0; i < variables.size(); i++) {
-                Variable variable = variables.get(i);
+            boolean first = true;
+            for (Variable variable : variables) {
                 if (!variable.isStatic()) {
-                    if (!first) {
-                        first = true;
-                        cBuilder.add(" : ").ln();
-                    } else {
-                        cBuilder.add(", ").ln();
-                    }
+                    cBuilder.add(first ? " : " : ", ").ln();
+                    first = false;
                     variable.buildInit(cBuilder);
                 }
             }
@@ -507,14 +580,23 @@ public abstract class Type implements GenericOwner {
                 constructor.build(cBuilder);
             }
         }
+
+        // Destructor
         for (Destructor destructor : destructors) {
             destructor.build(cBuilder);
         }
+
+         // Methods
         for (Method method : methods) {
             if (!method.isStatic()) {
                 method.build(cBuilder);
             }
         }
+        for (MethodView mw : methodViewImpl) {
+            mw.method.buildImpl(cBuilder, self, mw);
+        }
+
+        // Operators
         for (Operator operator : operators) {
             operator.build(cBuilder);
         }
@@ -545,14 +627,14 @@ public abstract class Type implements GenericOwner {
                 nat.build(cBuilder);
             }
         }
-        for (Property property : properties) {
-            if (property.isStatic()) {
-                property.build(cBuilder);
-            }
-        }
         for (Variable variable : variables) {
             if (variable.isStatic()) {
                 variable.build(cBuilder);
+            }
+        }
+        for (Property property : properties) {
+            if (property.isStatic()) {
+                property.build(cBuilder);
             }
         }
         for (Method method : methods) {

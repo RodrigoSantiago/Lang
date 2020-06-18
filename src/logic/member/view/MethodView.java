@@ -12,6 +12,8 @@ public class MethodView {
     public final TemplateView templateView;
     private Pointer typePtr;
 
+    public MethodView overrided;
+
     public MethodView(Pointer caller, Method method) {
         this.caller = caller;
         this.method = method;
@@ -30,6 +32,7 @@ public class MethodView {
         }
         paramView = new ParamView(caller, methodView.getParams());
         templateView = method.getTemplate() != null ? new TemplateView(caller, method.getTemplate()) : null;
+        this.overrided = methodView.overrided;
     }
 
     public boolean isFrom(Type type) {
@@ -58,6 +61,15 @@ public class MethodView {
     public boolean canAcess(Type type) {
         return (isPrivate() && method.cFile == type.cFile) ||
                 (!isPublic() && !isPrivate() && method.cFile.library == type.cFile.library) || isPublic();
+    }
+
+    public void markOverrided(MethodView mw) {
+        overrided = mw;
+    }
+
+    public Method original() {
+        if (overrided != null) return overrided.original();
+        return method;
     }
 
     public Token getName() {

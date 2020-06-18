@@ -109,6 +109,7 @@ public class Native extends Member {
             char chr = in.charAt(i);
             if (chr != ' ' && chr != '\t' && chr != '\n' && chr != '\r') {
                 text = true;
+                break;
             }
         }
         if (text) {

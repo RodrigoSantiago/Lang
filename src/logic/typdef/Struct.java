@@ -36,7 +36,7 @@ public class Struct extends Type {
         }
 
         if (parent == null) {
-            parent = cFile.langWrapper(this);
+            parent = cFile.langWrapperPtr(this);
         }
     }
 
@@ -44,4 +44,6 @@ public class Struct extends Type {
     public final boolean isStruct() {
         return true;
     }
+
+    // todo - nao posso ter destrutores
 }

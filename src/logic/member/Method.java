@@ -5,6 +5,7 @@ import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
 import logic.GenericOwner;
+import logic.member.view.MethodView;
 import logic.templates.Generic;
 import logic.templates.Template;
 import logic.params.Parameters;
@@ -154,6 +155,26 @@ public class Method extends Member implements GenericOwner {
         }
 
         cBuilder.toHeader();
+    }
+
+    public void buildImpl(CppBuilder cBuilder, Pointer self, MethodView mw) {
+        cBuilder.toHeader();
+        cBuilder.idt(1).add(template, 1);
+        cBuilder.add("virtual ")
+                .add(typePtr)
+                .add(" m_").add(nameToken).add("(").add(params).add(")").add(";").ln();
+
+        cBuilder.toSource(self.type.template != null || template != null);
+        cBuilder.add(self.type.template)
+                .add(template)
+                .add(typePtr)
+                .add(" ").path(self, false).add("::m_").add(nameToken)
+                .add("(").add(params).add(") {").ln()
+                .idt(1).add(typePtr != Pointer.voidPointer, "return ")
+                .path(self.type.parent, false).add("::m_").add(nameToken)
+                .add("(").args(mw.getParams()).add(");").ln()
+                .add("}").ln()
+                .ln();
     }
 
     @Override

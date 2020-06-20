@@ -16,6 +16,10 @@ public class LineVar extends Line {
     ArrayList<Expression> expresions = new ArrayList<>();
 
     public LineVar(Block block, Token start, Token end) {
+        this(block, start, end, false);
+    }
+
+    public LineVar(Block block, Token start, Token end, boolean foreachVar) {
         super(block, start, end);
         System.out.println("VAR");
 
@@ -64,7 +68,7 @@ public class LineVar extends Line {
                 nameToken = null;
                 state = 2;
             } else if ((state == 3 || state == 4) && (token.key == Key.SEMICOLON || next == end)) {
-                if (token.key != Key.SEMICOLON) {
+                if (token.key != Key.SEMICOLON && !foreachVar) {
                     cFile.erro(token, "Semicolon expected");
                 }
 
@@ -75,7 +79,7 @@ public class LineVar extends Line {
             } else if (state != 1) {
                 cFile.erro(token, "Unexpected token");
             }
-            if (state != 4 && next == end) {
+            if (state != 4 && next == end && (state != 3 || foreachVar)) {
                 cFile.erro(token, "Unexpected end of tokens");
             }
             token = next;

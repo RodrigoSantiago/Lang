@@ -11,6 +11,8 @@ import java.util.ArrayList;
 
 public abstract class Block extends Line {
 
+    private BlockDo lastBlockDo;
+
     ArrayList<Line> lines = new ArrayList<>();
 
     public Block(Stack stack, Token start, Token end) {
@@ -19,10 +21,6 @@ public abstract class Block extends Line {
 
     public Block(Block block, Token start, Token end) {
         super(block, start, end);
-    }
-
-    public void add(Line line) {
-        lines.add(line);
     }
 
     public void add(Token start, Token end) {
@@ -51,7 +49,7 @@ public abstract class Block extends Line {
                 add(new LineContinue(this, start, end));
             } else if (start.key == Key.BREAK) {
                 add(new LineBreak(this, start, end));
-            } else if (start.key == Key.CASE) {
+            } else if (start.key == Key.CASE || start.key == Key.DEFAULT) {
                 add(new LineCase(this, start, end));
             } else if (start.key == Key.LET || start.key == Key.VAR || start.key == Key.FINAL) {
                 add(new LineVar(this, start, end));
@@ -77,6 +75,54 @@ public abstract class Block extends Line {
                     token = token.getNext();
                 }
             }
+        }
+    }
+
+    private void _add(Line line) {
+        if (lastBlockDo != null) {
+            lastBlockDo.setWhile(null);
+            lastBlockDo = null;
+        }
+        lines.add(line);
+    }
+
+    public void add(LineVar line) {
+        _add(line);
+    }
+
+    public void add(LineCase lineCase) {
+        cFile.erro(lineCase.start, "A case statment must be inside a Switch");
+        _add(lineCase);
+    }
+
+    public void add(BlockElse blockElse) {
+        if (lines.size() == 0 || !lines.get(lines.size() - 1).isIfStatment()) {
+            cFile.erro(blockElse.start, "An Else Statment must be after a If Statment");
+        }
+        _add(blockElse);
+    }
+
+    public void add(BlockWhile blockWhile) {
+        if (lastBlockDo != null) {
+            lastBlockDo.setWhile(blockWhile);
+            lastBlockDo = null;
+        }
+        _add(blockWhile);
+    }
+
+    public void add(BlockDo blockDo) {
+        _add(blockDo);
+        lastBlockDo = blockDo;
+    }
+
+    public void add(Line line) {
+        _add(line);
+    }
+
+    public void end() {
+        if (lastBlockDo != null) {
+            lastBlockDo.setWhile(null);
+            lastBlockDo = null;
         }
     }
 

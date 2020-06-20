@@ -107,6 +107,10 @@ public class Constructor extends Member {
         return params;
     }
 
+    public void markDefault() {
+        isDefault = true;
+    }
+
     @Override
     public String toString() {
         return (isStatic() ? "static this (" : "this (") + params + ")";

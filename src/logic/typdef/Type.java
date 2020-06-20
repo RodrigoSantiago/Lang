@@ -427,10 +427,11 @@ public abstract class Type implements GenericOwner {
                     boolean isImplemented = false;
                     ParamView pCW = new ParamView(parent, pC.getParams());
                     for (Constructor cC : constructors) {
-                        if (cC.getParams().canOverride(pCW)) {
+                        if (!cC.isStatic() && cC.getParams().canOverride(pCW)) {
                             if (!cC.isPublic()) {
                                 cFile.erro(cC.token, "A Default constructor implementation must be public");
                             }
+                            cC.markDefault();
                             isImplemented = true;
                             break;
                         }

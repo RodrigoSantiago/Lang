@@ -100,17 +100,44 @@ public class  Lexer {
                     return null;
 
                 } else if (tk == ',' && parent.getParent() != null) {
-                    boolean isNew = parent.getPrev() != null && parent.getPrev().key == Key.WORD &&
-                            parent.getPrev().getPrev() != null && parent.getPrev().getPrev().key == Key.NEW;
-                    if (!isNew) {
+                    Key pkey = parent.getPrev() != null ? parent.getPrev().key : null;
+                    Key ppkey = pkey != null && parent.getPrev().getPrev() != null ? parent.getPrev().getPrev().key : null;
+                    boolean isType = pkey == Key.WORD && (ppkey == Key.NEW || ppkey == Key.IS || ppkey == Key.ISNOT);
+
+                    if (!isType) {
                         Token pp = parent.getParent();
                         Token pprev = pp.getPrev();
                         if ((pp.key == Key.PARAM && pprev != null && pprev.key == Key.WORD)
-                                || (pp.key == Key.INDEX && level > 1)
-                                || (pp.key == Key.BRACE && pprev != null && pprev.key == Key.INDEX)) {
+                                || (pp.key == Key.INDEX && level > 1)) {
                             parent.setNext(parent.getChild());
                             parent.setChild(null);
                             return null;
+                        } else if (pp.key == Key.BRACE && pprev.key == Key.INDEX) {
+                            // lambda <> array
+                            boolean isArray = false;
+                            int s = 0;
+                            Token back = pprev.getPrev();
+                            while (back != null) {
+                                if (back.key == Key.NEW) {
+                                    isArray = true;
+                                    break;
+                                } else if (back.key == Key.INDEX) {
+                                    if (s != 0) break;
+                                } else if (back.key == Key.GENERIC) {
+                                    if (s != 0) break;
+                                    s = 1;
+                                } else if (back.key == Key.WORD) {
+                                    s = 2;
+                                } else {
+                                    break;
+                                }
+                                back = pprev.getPrev();
+                            }
+                            if (isArray) {
+                                parent.setNext(parent.getChild());
+                                parent.setChild(null);
+                                return null;
+                            }
                         }
                     }
                 } else if (token.key != Key.WORD && token.key != Key.VOID && token.key != Key.LET &&

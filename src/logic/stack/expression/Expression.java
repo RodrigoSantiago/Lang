@@ -136,6 +136,9 @@ public class Expression {
             }
             token = next;
         }
+        if (start == end) {
+            System.out.println("EMPTY");
+        }
     }
 
     public void make() {

@@ -29,4 +29,8 @@ public abstract class Line {
 
     public void make() {
     }
+
+    public boolean isIfStatment() {
+        return false;
+    }
 }

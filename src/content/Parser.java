@@ -165,11 +165,12 @@ public class Parser {
         while (token != null && token != end) {
             Token next = token.getNext();
             if (state == 0 && token.key == Key.BRACE) {
-                // break; clean block [{}]
+                // break; empty block [{}]
                 block.add(start, next);
                 start = next;
-            } else if (state == 0 && token.key.isBlock) {
-                caseExcep = token.key == Key.CASE;
+                caseExcep = false;
+            } else if (state == 0 && (token.key.isBlock || token.key == Key.CASE || token.key == Key.DEFAULT)) {
+                caseExcep = token.key == Key.CASE || token.key == Key.DEFAULT;
                 state = 1; // [if]
 
             } else if (state == 0 && next != end) {
@@ -183,36 +184,49 @@ public class Parser {
                 block.add(start, next);
                 start = next;
                 state = 0;
+                caseExcep = false;
 
             } else if (token.key == Key.SEMICOLON || next == end) {
                 // break; (0)[;] || (1)[else][...][;] || (2)[if][()][;] || (3)[if][()][...][;] || (4)[...][;]
                 block.add(start, next);
                 start = next;
                 state = 0;
+                caseExcep = false;
 
             } else if ((state == 1 || state == 2) && token.key.isBlock) {
                 state = 1; // [for][()][if]
 
+            } else if ((state == 1 || state == 2) && token.key == Key.COLON) {
+                block.add(start, next); // [case][:] empty case | [case][()][:] param case
+                start = next;
+                state = 0;
+                caseExcep = false;
+
             } else if (state == 1 || state == 2) {
-                state = 3; // [if][()][...]
+                state = 3; // [if][()][...] | [else][...]
 
             } else if (state == 3 && caseExcep && token.key == Key.COLON) {
                 block.add(start, next); // [case][...][:]
+                start = next;
                 state = 0;
+                caseExcep = false;
 
             } else if (token.key.isBlock) {
                 // break; unexpected end [...][if]
                 block.add(start, token);
                 start = token;
                 state = 1;
+                caseExcep = false;
             }
             if (next == end && state != 0) {
                 // Incomplet End ? End without [;]
                 block.add(start, next);
                 state = 0;
+                caseExcep = false;
             }
             token = next;
         }
+        block.end();
     }
 
 }

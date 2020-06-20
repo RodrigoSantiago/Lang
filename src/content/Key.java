@@ -37,14 +37,14 @@ public enum Key {
 
     OPERATOR("operator",      false, false),
 
-    IF("if"),
-    ELSE("else"),
-    FOR("for"),
-    WHILE("while"),
-    DO("do"),
-    SWITCH("switch"),
-    LOCK("lock"),
-    NATIVE("native"),
+    IF("if",                  false, false, false, false, true),
+    ELSE("else",              false, false, false, false, true),
+    FOR("for",                false, false, false, false, true),
+    WHILE("while",            false, false, false, false, true),
+    DO("do",                  false, false, false, false, true),
+    SWITCH("switch",          false, false, false, false, true),
+    LOCK("lock",              false, false, false, false, true),
+    NATIVE("native",          false, false, false, false, true),
 
     YIELD("yield"),
     BREAK("break"),
@@ -59,6 +59,8 @@ public enum Key {
     DEFAULT("default",        false, true),
     VOID("void"),
 
+    IS("is",                  false, false, true, false),
+    ISNOT("isnot",            false, false, true, false),
     SEMICOLON(";"),
     COLON(":"),
     DOT("."),
@@ -109,8 +111,7 @@ public enum Key {
     public final boolean isAttribute;
     public final boolean isOperator;
     public final boolean isOverridable;
-    public final boolean isBlock = true;
-    public final boolean isLine = true;
+    public final boolean isBlock;
 
     private Key(String string) {
         this(string, false);
@@ -124,12 +125,18 @@ public enum Key {
         this(string, isNamespace, isAttribute, false, false);
     }
     private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator, boolean isOverridable) {
+        this(string, isNamespace, isAttribute, isOperator, isOverridable, false);
+    }
+    private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator, boolean isOverridable, boolean isBlock) {
         this.string = string;
         this.isNamespace = isNamespace;
         this.isAttribute = isAttribute;
         this.isOperator = isOperator;
         this.isOverridable = isOverridable;
+        this.isBlock = isBlock;
     }
+
+    // TODO - MODIFICAR PARA TOKEN E USAR HASH
 
     public static Key getSimbol(String str, int start, int end) {
         int len = end - start;
@@ -183,7 +190,8 @@ public enum Key {
     public static Key getKeyword(String str, int start, int end) {
         int len = end - start;
         if (len == 2) {
-            return  IF.isEqual(str, start, end) ? IF : DO.isEqual(str, start, end) ? DO : NOONE;
+            return  IF.isEqual(str, start, end) ? IF : DO.isEqual(str, start, end) ? DO :
+                    IS.isEqual(str, start, end) ? IS : NOONE;
         } else if (len == 3) {
             return  NEW.isEqual(str, start, end) ? NEW : VAR.isEqual(str, start, end) ? VAR :
                     // GET.isEqual(str, start, end) ? GET : SET.isEqual(str, start, end) ? SET :
@@ -197,7 +205,8 @@ public enum Key {
             return  USING.isEqual(str, start, end) ? USING : CLASS.isEqual(str, start, end) ? CLASS :
                     FINAL.isEqual(str, start, end) ? FINAL : WHILE.isEqual(str, start, end) ? WHILE :
                     YIELD.isEqual(str, start, end) ? YIELD : BREAK.isEqual(str, start, end) ? BREAK :
-                    SUPER.isEqual(str, start, end) ? SUPER : FALSE.isEqual(str, start, end) ? FALSE : NOONE;
+                    SUPER.isEqual(str, start, end) ? SUPER : FALSE.isEqual(str, start, end) ? FALSE :
+                    ISNOT.isEqual(str, start, end) ? ISNOT : NOONE;
         } else if (len == 6) {
             return  STRUCT.isEqual(str, start, end) ? STRUCT : PUBLIC.isEqual(str, start, end) ? PUBLIC :
                     STATIC.isEqual(str, start, end) ? STATIC : SWITCH.isEqual(str, start, end) ? SWITCH :

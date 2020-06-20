@@ -11,6 +11,7 @@ import logic.stack.Stack;
 public class BlockDo extends Block {
 
     TokenGroup contentTokenGroup;
+    BlockWhile blockWhile;
 
     public BlockDo(Block block, Token start, Token end) {
         super(block, start, end);
@@ -56,4 +57,18 @@ public class BlockDo extends Block {
         }
     }
 
+    public void setWhile(BlockWhile blockWhile) {
+        if (blockWhile == null) {
+            cFile.erro(start, "While Statment expected");
+        } else {
+            this.blockWhile = blockWhile;
+            if (blockWhile.contentTokenGroup != null) {
+                cFile.erro(blockWhile.contentTokenGroup.start, "Unexpected do-while inner block");
+            }
+        }
+    }
+
+    public BlockWhile getWhile() {
+        return blockWhile;
+    }
 }

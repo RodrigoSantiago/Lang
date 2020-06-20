@@ -69,4 +69,9 @@ public class BlockIf extends Block {
             }
         }
     }
+
+    @Override
+    public boolean isIfStatment() {
+        return true;
+    }
 }

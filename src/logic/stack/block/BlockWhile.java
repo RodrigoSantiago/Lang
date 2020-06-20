@@ -7,11 +7,13 @@ import content.TokenGroup;
 import logic.stack.Block;
 import logic.stack.Line;
 import logic.stack.Stack;
+import logic.stack.expression.Expression;
 
 public class BlockWhile extends Block {
 
     Token paramToken;
     TokenGroup contentTokenGroup;
+    Expression expression;
 
     public BlockWhile(Block block, Token start, Token end) {
         super(block, start, end);
@@ -26,6 +28,11 @@ public class BlockWhile extends Block {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM) {
                 paramToken = token;
+                if (paramToken.getChild() != null) {
+                    expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
+                } else {
+                    cFile.erro(token, "Unexpected end of tokens");
+                }
                 state = 2;
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 if (state == 1) {

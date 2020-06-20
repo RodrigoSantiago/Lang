@@ -10,7 +10,7 @@ import logic.stack.line.*;
 
 public class Stack {
 
-    ContentFile cFile;
+    public ContentFile cFile;
     Pointer returnType;
     boolean isStatic;
 
@@ -18,18 +18,17 @@ public class Stack {
     public Block block;
 
     private boolean isExpression;
-    Token start;
-    Token end;
 
-    public Stack(ContentFile cFile, Token start, Token end, boolean isExpression) {
+    public Stack(ContentFile cFile, boolean isExpression) {
         this.cFile = cFile;
-        this.start = start;
-        this.end = end;
         this.isExpression = isExpression;
     }
 
-    public void make() {
+    public void read(Token start, Token end) {
         block = new BlockEmpty(this, start, end);
+    }
+
+    public void make() {
         block.make();
     }
 }

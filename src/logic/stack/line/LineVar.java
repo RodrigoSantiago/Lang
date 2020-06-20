@@ -3,10 +3,8 @@ package logic.stack.line;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.expression.Expression;
 
 import java.util.ArrayList;
@@ -15,7 +13,7 @@ public class LineVar extends Line {
 
     TokenGroup typeToken;
     ArrayList<Token> nameTokens = new ArrayList<>();
-    ArrayList<TokenGroup> initTokens = new ArrayList<>();
+    ArrayList<Expression> expresions = new ArrayList<>();
 
     public LineVar(Block block, Token start, Token end) {
         super(block, start, end);
@@ -23,7 +21,6 @@ public class LineVar extends Line {
 
         boolean isLet = false, isFinal = false;
 
-        TokenGroup initToken = null;
         Token nameToken = null;
         Token token = start;
         Token next;
@@ -57,23 +54,23 @@ public class LineVar extends Line {
                 nameToken = token;
                 state = 3;
             } else if (state == 3 && token.key == Key.SETVAL) {
-                if (next != end && next.key != Key.COMMA && next.key != Key.SEMICOLON) {
-                    while (next != end && next.key != Key.COMMA && next.key != Key.SEMICOLON) {
-                        next = next.getNext();
-                    }
-                    initToken = new TokenGroup(token.getNext(), next);
+                while (next != end && next.key != Key.COMMA && next.key != Key.SEMICOLON) {
+                    next = next.getNext();
                 }
-            } else if (state == 3 && token.key == Key.COMMA) {
+                state = 4;
+            } else if ((state == 3 || state == 4) && token.key == Key.COMMA) {
                 nameTokens.add(nameToken);
-                initTokens.add(initToken);
+                expresions.add(state == 4 ? new Expression(this, nameToken, token) : null);
                 nameToken = null;
-                initToken = null;
                 state = 2;
-            } else if (state == 3 && token.key == Key.SEMICOLON) {
+            } else if ((state == 3 || state == 4) && (token.key == Key.SEMICOLON || next == end)) {
+                if (token.key != Key.SEMICOLON) {
+                    cFile.erro(token, "Semicolon expected");
+                }
+
                 nameTokens.add(nameToken);
-                initTokens.add(initToken);
+                expresions.add(state == 4 ? new Expression(this, nameToken, token.key == Key.SEMICOLON ? token : next) : null);
                 nameToken = null;
-                initToken = null;
                 state = 4;
             } else if (state != 1) {
                 cFile.erro(token, "Unexpected token");

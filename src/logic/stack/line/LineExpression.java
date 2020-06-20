@@ -14,8 +14,7 @@ public class LineExpression extends Line {
 
     public LineExpression(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.print("EXPRESSION:");
-        System.out.println(TokenGroup.toString(start, end));
+        System.out.println("EXPRESSION:");
 
         Token last = end;
         Token token = start;
@@ -32,6 +31,5 @@ public class LineExpression extends Line {
             token = next;
         }
         expression = new Expression(this, start, last);
-        // expression.make();
     }
 }

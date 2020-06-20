@@ -7,11 +7,13 @@ import content.TokenGroup;
 import logic.stack.Block;
 import logic.stack.Line;
 import logic.stack.Stack;
+import logic.stack.expression.Expression;
 
 public class BlockSwitch extends Block {
 
     Token paramToken;
     TokenGroup contentTokenGroup;
+    Expression expression;
 
     public BlockSwitch(Block block, Token start, Token end) {
         super(block, start, end);
@@ -26,10 +28,16 @@ public class BlockSwitch extends Block {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM) {
                 paramToken = token;
+                if (paramToken.getChild() != null) {
+                    expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
+                } else {
+                    cFile.erro(token, "Unexpected end of tokens");
+                }
+
                 state = 2;
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 if (state == 1) {
-                    cFile.erro(token.start, token.start + 1, "Missing condition");
+                    cFile.erro(token.start, token.start + 1, "Missing expression");
                 }
                 contentTokenGroup = new TokenGroup(token, next);
                 state = 3; // completed

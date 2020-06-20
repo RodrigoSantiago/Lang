@@ -29,7 +29,7 @@ public class BlockFor extends Block {
                 state = 2;
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 if (state == 1) {
-                    cFile.erro(token.start, token.start + 1, "Missing condition");
+                    cFile.erro(token.start, token.start + 1, "Missing loop entry");
                 }
                 contentTokenGroup = new TokenGroup(token, next);
                 state = 4; // completed

@@ -21,10 +21,15 @@ public class Expression {
 
     // Never recives [;] -> just mark error
     public Expression(Line line, Token start, Token end) {
-        this.cFile = line.cFile;
-        this.stack = line.stack;
+        this(line.stack, start, end);
+    }
+
+    public Expression(Stack stack, Token start, Token end) {
+        this.cFile = stack.cFile;
+        this.stack = stack;
         this.start = start;
         this.end = end;
+        System.out.println("EXPR: "+ TokenGroup.toString(start, end));
 
         CallGroup group = new CallGroup(this);
 
@@ -37,7 +42,7 @@ public class Expression {
             next = token.getNext();
             if (state == 0 && token.key == Key.NEW) {
                 if (next != end && next.key == Key.WORD) {
-                    next = TokenGroup.nextType(next, end);
+                    next = TokenGroup.nextType(next.getNext(), end);
                     if (next != end && next.key == Key.PARAM) {
                         next = next.getNext();
                     }
@@ -103,7 +108,7 @@ public class Expression {
             } else if (state == 3 && token.key == Key.WORD) {
                 contentStart = token;
                 state = 1;
-            } else if (token.key.isOperator) {
+            } else if (token.key.isOperator || token.key == Key.COLON) {
                 if (state == 1) {
                     group.add(new FieldCall(group, contentStart, contentStart.getNext()));
                 } else if (state == 3) {

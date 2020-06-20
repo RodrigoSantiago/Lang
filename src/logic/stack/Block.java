@@ -23,7 +23,6 @@ public abstract class Block extends Line {
 
     public void add(Line line) {
         lines.add(line);
-        line.make();
     }
 
     public void add(Token start, Token end) {
@@ -78,6 +77,13 @@ public abstract class Block extends Line {
                     token = token.getNext();
                 }
             }
+        }
+    }
+
+    @Override
+    public void make() {
+        for (Line line : lines) {
+            line.make();
         }
     }
 }

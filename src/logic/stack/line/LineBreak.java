@@ -25,12 +25,20 @@ public class LineBreak extends Line {
                 label = token;
                 state = 2;
             } else if ((state == 1 || state == 2) && (token.key == Key.SEMICOLON || next == end)) {
+                if (token.key != Key.SEMICOLON) {
+                    cFile.erro(token, "Semicolon expected");
+                }
+
                 state = 3;
             } else {
                 cFile.erro(token, "Unexpected token");
             }
-            if (state == 0 && next == end) {
-                cFile.erro(token, "Unexpected end of tokens");
+            if (next == end) {
+                if (state == 0) {
+                    cFile.erro(token, "Unexpected end of tokens");
+                } else {
+                    cFile.erro(token, "Semicolon expected");
+                }
             }
             token = next;
         }

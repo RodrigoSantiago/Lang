@@ -44,7 +44,7 @@ public class Expression {
                     if (next != end && next.key == Key.BRACE) {
                         next = next.getNext();
                     }
-                    group.add(new Call(group, token, next, Call.INSTANCE));
+                    group.add(new InstanceCall(group, token, next));
                     state = 2;
                 } else if (next != end) {
                     cFile.erro(next, "Unexpected token");
@@ -55,7 +55,7 @@ public class Expression {
             } else if (state == 0 && token.key == Key.PARAM) {
                 if (next == end || next.key == Key.DOT || next.key == Key.INDEX || next.key.isOperator) {
                     // Inner Expression
-                    group.add(new Call(group, token, next, Call.INNER));
+                    group.add(new InnerCall(group, token, next));
                     state = 2;
                 } else if (next.key == Key.LAMBDA) {
                     next = next.getNext();
@@ -65,44 +65,47 @@ public class Expression {
                     if (next != end && next.key == Key.BRACE) {
                         next = next.getNext();
                     }
-                    group.add(new Call(group, token, next, Call.LAMBDA));
+                    group.add(new LambdaCall(group, token, next));
                     state = 2;
                 } else {
-                    group.add(new Call(group, token, next, Call.CASTING));
+                    group.setCastingOperator(token);
+                    add(group);
+                    group = new CallGroup(this);
+
                     state = 0;
                 }
             } else if (state == 0 && (token.key == Key.DEFAULT || token.key == Key.NULL ||
                     token.key == Key.NUMBER || token.key == Key.STRING ||
                     token.key == Key.TRUE || token.key == Key.FALSE)) {
                 // Literal
-                group.add(new Call(group, token, next, Call.LITERAL));
+                group.add(new LiteralCall(group, token, next));
                 state = 2;
             } else if (state == 0 && (token.key == Key.WORD || token.key == Key.THIS || token.key == Key.SUPER)) {
                 contentStart = token;
                 state = 1;
             } else if (state == 1 && token.key == Key.DOT) {
                 dot = token;
-                group.add(new Call(group, contentStart, contentStart.getNext(), Call.FIELD));
+                group.add(new FieldCall(group, contentStart, contentStart.getNext()));
                 state = 3;
             } else if (state == 1 && token.key == Key.PARAM) {
-                group.add(new Call(group, contentStart, next, Call.METHOD));
+                group.add(new MethodCall(group, contentStart, next));
                 state = 2;
             } else if (state == 1 && token.key == Key.INDEX) {
-                group.add(new Call(group, contentStart, contentStart.getNext(), Call.FIELD));
-                group.add(new Call(group, token, next, Call.INDEXER));
+                group.add(new FieldCall(group, contentStart, contentStart.getNext()));
+                group.add(new IndexerCall(group, token, next));
                 state = 2;
             } else if (state == 2 && token.key == Key.DOT) {
                 dot = token;
                 state = 3;
             } else if (state == 2 && token.key == Key.INDEX) {
-                group.add(new Call(group, token, next, Call.INDEXER));
+                group.add(new IndexerCall(group, token, next));
                 state = 2;
             } else if (state == 3 && token.key == Key.WORD) {
                 contentStart = token;
                 state = 1;
             } else if (token.key.isOperator) {
                 if (state == 1) {
-                    group.add(new Call(group, contentStart, contentStart.getNext(), Call.FIELD));
+                    group.add(new FieldCall(group, contentStart, contentStart.getNext()));
                 } else if (state == 3) {
                     cFile.erro(dot, "Unexpected end of tokens");
                 }
@@ -121,7 +124,7 @@ public class Expression {
             }
             if (next == end) {
                 if (state == 1) {
-                    group.add(new Call(group, contentStart, contentStart.getNext(), Call.FIELD));
+                    group.add(new FieldCall(group, contentStart, contentStart.getNext()));
                 } else if (state == 3) {
                     cFile.erro(dot, "Unexpected end of tokens");
                 }

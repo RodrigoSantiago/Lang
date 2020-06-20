@@ -35,6 +35,9 @@ public class CallGroup {
     public void setOperator(Token token) {
         System.out.println("OP : " + token);
     }
+    public void setCastingOperator(Token token) {
+        System.out.println("CAST : " + token);
+    }
 
     public void add(Call call) {
         calls.add(call);

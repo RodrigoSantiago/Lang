@@ -203,16 +203,22 @@ public class  Lexer {
             }
 
             // Number
+            // 123[l]
+            // 123.123[D|F]
+            // 123e123[D|F]
+            // 123e-123[D|F]
+            // 0xABCDEF09[L]
+            // 0b01[L]
             if (isNumber(chr)) {
                 tkStart = index;
                 while (!eof()) {
-                    if (!(isNumber(readNext()) || (chr == '.' || chr == 'e' || chr == 'E'))) {
+                    if (!isLiteral(readNext())) {
                         readPrev();
                         break;
                     }
                 }
                 tkEnd = nextIndex;
-                tkKeyword = Key.NUMBER;
+                tkKeyword = Key.NUMBER; // Expressoes (0x00, 0b00, 0.0, 0.0e00, 0.00e-00)
                 return true;
             }
 
@@ -342,6 +348,15 @@ public class  Lexer {
 
     private static boolean isNumber(int chr) {
         return (chr >= '0' && chr <= '9');
+    }
+
+    private static boolean isLiteral(int chr) {
+        return (chr >= '0' && chr <= '9') ||
+                (chr >= 'A' && chr <= 'F') ||
+                (chr >= 'a' && chr <= 'f') ||
+                chr == '.' || chr == '-' ||
+                chr == 'x' || chr == 'X' ||
+                chr == 'l' || chr == 'L';
     }
 
     private static boolean isLetter(int chr) {

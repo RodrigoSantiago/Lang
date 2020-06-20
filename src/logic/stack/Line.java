@@ -1,0 +1,32 @@
+package logic.stack;
+
+import content.Token;
+import data.ContentFile;
+
+public abstract class Line {
+    public final Stack stack;
+    public final ContentFile cFile;
+    public final Block parent;
+
+    public Token start;
+    public Token end;
+
+    public Line(Block parent, Token start, Token end) {
+        this.stack = parent.stack;
+        this.cFile = stack.cFile;
+        this.start = start;
+        this.end = end;
+        this.parent = parent;
+    }
+
+    public Line(Stack stack, Token start, Token end) {
+        this.stack = stack;
+        this.cFile = stack.cFile;
+        this.start = start;
+        this.end = end;
+        this.parent = null;
+    }
+
+    public void make() {
+    }
+}

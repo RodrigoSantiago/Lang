@@ -1,10 +1,12 @@
 package logic.member;
 
 import content.Key;
+import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
 import logic.GenericOwner;
+import logic.stack.Stack;
 import logic.member.view.MethodView;
 import logic.templates.Generic;
 import logic.templates.Template;
@@ -87,11 +89,6 @@ public class Method extends Member implements GenericOwner {
         }
     }
 
-    public void toPublic() {
-        isPrivate = false;
-        isPublic = true;
-    }
-
     @Override
     public boolean load() {
         if (typeToken != null) {
@@ -127,6 +124,13 @@ public class Method extends Member implements GenericOwner {
 
         }
         return false;
+    }
+
+    public void make() {
+        if (contentToken != null && contentToken.getChild() != null) {
+            Stack stack = new Stack(cFile, contentToken, contentToken.getNext(), false);
+            stack.make();
+        }
     }
 
     public void build(CppBuilder cBuilder) {

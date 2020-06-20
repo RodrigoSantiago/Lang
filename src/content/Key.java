@@ -8,6 +8,9 @@ public enum Key {
     WORD(""),
     NUMBER(""),
     STRING(""),
+    TRUE("true"),
+    FALSE("false"),
+    NULL("null"),
 
     PARAM("("),
     BRACE("{"),
@@ -60,51 +63,52 @@ public enum Key {
     COLON(":"),
     DOT("."),
     COMMA(","),
-    QUEST("?"),
+    QUEST("?",                false, false, true, false),
     LAMBDA("->"),
-    ADD("+",                  false, false, true),
-    SUB("-",                  false, false, true),
-    MUL("*",                  false, false, true),
-    DIV("/",                  false, false, true),
-    MOD("%",                  false, false, true),
-    RSHIFT(">>",              false, false, true),
-    LSHIFT("<<",              false, false, true),
-    INC("++",                 false, false, true),
-    DEC("--",                 false, false, true),
-    SETVAL("=",               false, false, true),
-    SETADD("+=",              false, false, false),
-    SETSUB("-=",              false, false, false),
-    SETDIV("/=",              false, false, false),
-    SETMOD("%=",              false, false, false),
-    SETRSHIFT(">>=",          false, false, false),
-    SETLSHIFT("<<=",          false, false, false),
-    BITAND("&",               false, false, true),
-    BITOR("|",                false, false, true),
-    BITNOT("~",               false, false, true),
-    BITXOR("^",               false, false, true),
-    SETAND("&=",              false, false, false),
-    SETOR("|=",               false, false, false),
-    SETNOT("~=",              false, false, false),
-    SETXOR("^=",              false, false, false),
-    EQUAL("==",               false, false, true),
-    MORE(">",                 false, false, true),
-    LESS("<",                 false, false, true),
-    EMORE(">=",               false, false, true),
-    ELESS("<=",               false, false, true),
-    DIF("!=",                 false, false, true),
-    AND("&&",                 false, false, true),
-    OR("||",                  false, false, true),
-    NOT("!",                  false, false, true),
+    ADD("+",                  false, false, true, true),
+    SUB("-",                  false, false, true, true),
+    MUL("*",                  false, false, true, true),
+    DIV("/",                  false, false, true, true),
+    MOD("%",                  false, false, true, true),
+    RSHIFT(">>",              false, false, true, true),
+    LSHIFT("<<",              false, false, true, true),
+    INC("++",                 false, false, true, true),
+    DEC("--",                 false, false, true, true),
+    SETVAL("=",               false, false, true, true),
+    SETADD("+=",              false, false, true, false),
+    SETSUB("-=",              false, false, true, false),
+    SETDIV("/=",              false, false, true, false),
+    SETMOD("%=",              false, false, true, false),
+    SETRSHIFT(">>=",          false, false, true, false),
+    SETLSHIFT("<<=",          false, false, true, false),
+    BITAND("&",               false, false, true, true),
+    BITOR("|",                false, false, true, true),
+    BITNOT("~",               false, false, true, true),
+    BITXOR("^",               false, false, true, true),
+    SETAND("&=",              false, false, true, false),
+    SETOR("|=",               false, false, true, false),
+    SETNOT("~=",              false, false, true, false),
+    SETXOR("^=",              false, false, true, false),
+    EQUAL("==",               false, false, true, true),
+    MORE(">",                 false, false, true, true),
+    LESS("<",                 false, false, true, true),
+    EMORE(">=",               false, false, true, true),
+    ELESS("<=",               false, false, true, true),
+    DIF("!=",                 false, false, true, true),
+    AND("&&",                 false, false, true, true),
+    OR("||",                  false, false, true, true),
+    NOT("!",                  false, false, true, true),
 
     // GET("get"),
     // SET("set"),
-    CAST("cast",              false, false, true),
-    AUTO("auto",              false, false, true);
+    CAST("cast",              false, false, false, true),
+    AUTO("auto",              false, false, false, true);
 
     public final String string;
     public final boolean isNamespace;
     public final boolean isAttribute;
     public final boolean isOperator;
+    public final boolean isOverridable;
     public final boolean isBlock = true;
     public final boolean isLine = true;
 
@@ -117,13 +121,14 @@ public enum Key {
     }
 
     private Key(String string, boolean isNamespace, boolean isAttribute) {
-        this(string, isNamespace, isAttribute, false);
+        this(string, isNamespace, isAttribute, false, false);
     }
-    private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator) {
+    private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator, boolean isOverridable) {
         this.string = string;
         this.isNamespace = isNamespace;
         this.isAttribute = isAttribute;
         this.isOperator = isOperator;
+        this.isOverridable = isOverridable;
     }
 
     public static Key getSimbol(String str, int start, int end) {
@@ -168,7 +173,7 @@ public enum Key {
                     : EMORE.isEqual(str, start, end) ? EMORE : ELESS.isEqual(str, start, end) ? ELESS
                     : DIF.isEqual(str, start, end) ? DIF : AND.isEqual(str, start, end) ? AND
                     : OR.isEqual(str, start, end) ? OR : IOP;
-        } else if (len == 3){
+        } else if (len == 3) {
             return SETRSHIFT.isEqual(str, start, end) ? SETRSHIFT
                     : SETLSHIFT.isEqual(str, start, end) ? SETLSHIFT : IOP;
         }
@@ -186,12 +191,13 @@ public enum Key {
         } else if (len == 4) {
             return  ENUM.isEqual(str, start, end) ? ENUM : ELSE.isEqual(str, start, end) ? ELSE :
                     CASE.isEqual(str, start, end) ? CASE : LOCK.isEqual(str, start, end) ? LOCK :
-                    THIS.isEqual(str, start, end) ? THIS : VOID.isEqual(str, start, end) ? VOID :NOONE;
+                    THIS.isEqual(str, start, end) ? THIS : VOID.isEqual(str, start, end) ? VOID :
+                    TRUE.isEqual(str, start, end) ? TRUE : NULL.isEqual(str, start, end) ? NULL : NOONE;
         } else if (len == 5) {
             return  USING.isEqual(str, start, end) ? USING : CLASS.isEqual(str, start, end) ? CLASS :
                     FINAL.isEqual(str, start, end) ? FINAL : WHILE.isEqual(str, start, end) ? WHILE :
                     YIELD.isEqual(str, start, end) ? YIELD : BREAK.isEqual(str, start, end) ? BREAK :
-                    SUPER.isEqual(str, start, end) ? SUPER : NOONE;
+                    SUPER.isEqual(str, start, end) ? SUPER : FALSE.isEqual(str, start, end) ? FALSE : NOONE;
         } else if (len == 6) {
             return  STRUCT.isEqual(str, start, end) ? STRUCT : PUBLIC.isEqual(str, start, end) ? PUBLIC :
                     STATIC.isEqual(str, start, end) ? STATIC : SWITCH.isEqual(str, start, end) ? SWITCH :

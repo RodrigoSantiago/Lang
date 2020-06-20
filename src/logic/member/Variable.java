@@ -117,7 +117,20 @@ public class Variable extends Member {
     }
     public void buildInit(CppBuilder cBuilder) {
         if (isStatic()) {
-
+            // TODO - Use Init Block
+            for (Token name : nameTokens) {
+                cBuilder.idt(1).add("f_").add(name).add(" = ");
+                if (typePtr.typeSource != null) {
+                    cBuilder.add("lang::generic<").add(typePtr).add(">::def()");
+                } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
+                    cBuilder.add("nullptr");
+                } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
+                    cBuilder.path(typePtr, false).add("()");
+                } else {
+                    cBuilder.add("0");
+                }
+                cBuilder.add(";").ln();
+            }
         } else {
             for (int i = 0; i < nameTokens.size(); i++) {
                 Token name = nameTokens.get(i);

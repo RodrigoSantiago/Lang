@@ -183,7 +183,11 @@ public class Library {
      *
      * */
     public void make() {
-
+        for (ContentFile cFile : cFiles.values()) {
+            if (cFile.getState() == 5) {
+                cFile.make();
+            }
+        }
     }
 
     /**

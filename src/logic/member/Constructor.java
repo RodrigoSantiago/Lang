@@ -61,7 +61,7 @@ public class Constructor extends Member {
 
     public void build(CppBuilder cBuilder) {
         if (isStatic()) {
-
+            cBuilder.idt(1).add("// static initializer");
         } else {
             if (type.isPointer()) {
                 cBuilder.toHeader();

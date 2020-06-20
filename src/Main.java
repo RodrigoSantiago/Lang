@@ -26,7 +26,7 @@ public class Main {
         Compiler compiler = new Compiler();
         compiler.libAdd(lang);
 
-        // The compiler should pass all libs in each state
+        // The compiler should pass all dependencies at least at same stage before use
         lang.read();
         lang.preload();
         lang.load();
@@ -36,6 +36,7 @@ public class Main {
         // The compiler can choose wich one will make
         lang.make();
 
+        // The compiler can only build if all makes are done, and have no erros
         boolean erros = false;
         for (ContentFile cFile : lang.cFiles.values()) {
             for (Type type : cFile.types) {
@@ -48,11 +49,12 @@ public class Main {
                 System.out.println("Erros at " + cFile.name);
                 for (Error error : cFile.erros) {
                     System.out.println(error+" ["+cFile.content.substring(error.start, error.end)+"]"
-                            +"["+error.start+", "+ error.end+"]");
+                            +"["+error.start+", "+ error.end+"] line :" +
+                            (1 + cFile.content.substring(0, error.start).length() - cFile.content.substring(0, error.start).replace("\n", "").length()));
                 }
             }
         }
-        if (!erros) {
+        if (!erros && false) {
             File[] fls = lang.getSrcDir().listFiles();
             if (fls != null) {
                 for (File file : fls) {

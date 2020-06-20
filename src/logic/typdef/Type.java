@@ -203,13 +203,12 @@ public abstract class Type implements GenericOwner {
 
     public void internal() {
         if (contentToken != null && contentToken.getChild() != null) {
-            Parser parser = new Parser();
-            parser.parseMembers(this, contentToken.getChild(), contentToken.getLastChild());
+            Parser.parseMembers(this, contentToken.getChild(), contentToken.getLastChild());
         }
     }
 
     public void cross() {
-        if (isCrossed || isStruct() || isEnum()) return;
+        if (isCrossed || !isClass()) return;
         isCrossed = true;
 
         for (Pointer parent : parents) {
@@ -217,9 +216,6 @@ public abstract class Type implements GenericOwner {
             pType.cross();
         }
 
-        if (nameToken.equals("A")) {
-            System.out.println("");
-        }
         for (int i = 0; i < parents.size(); i++) {
             Pointer pPtr = parents.get(i);
             for (MethodView pMW : pPtr.type.methodView) {
@@ -425,7 +421,7 @@ public abstract class Type implements GenericOwner {
             }
         }
 
-        if (parent != null && isClass()) {
+        if (parent != null) {
             for (Constructor pC : parent.type.constructors) {
                 if (pC.isDefault() && pC.isPublic()) {
                     boolean isImplemented = false;
@@ -447,13 +443,11 @@ public abstract class Type implements GenericOwner {
         }
     }
 
-    private void recursiveGetParent(Pointer caller, ArrayList<Pointer> pointers) {
-        for (Pointer pointer : parents) {
-            Pointer p = Pointer.byGeneric(pointer, caller);
-            if (!pointers.contains(p)) {
-                pointers.add(p);
+    public void make() {
+        for (Method method : methods) {
+            if (!method.isAbstract()) {
+                method.make();
             }
-            p.type.recursiveGetParent(p, pointers);
         }
     }
 
@@ -509,11 +503,15 @@ public abstract class Type implements GenericOwner {
         cBuilder.add(" {").ln()
                 .add("public :").ln();
 
-        cBuilder.toHeader();
-        cBuilder.idt(1).add("static lang::type* typeOf() { return getType<T_").add(fileName.toUpperCase()).add(">(); }").ln();
-        cBuilder.idt(1).add(isPointer(), "virtual lang::type* getTypeOf() { return typeOf(); }").ln();
+        cBuilder.idt(1).add("// Type").ln()
+                .idt(1).add("using P = ").add(isPointer(), "Ptr<").path(self, false).add(isPointer() ? ">;" : ";").ln()
+                .idt(1).add("using L = ").add(isPointer(), "Let<").path(self, false).add(isPointer() ? ">;" : ";").ln()
+                .idt(1).add("static lang::type* typeOf() { return getType<T_").add(fileName.toUpperCase()).add(">(); }").ln()
+                .idt(1).add(isPointer(), "virtual lang::type* getTypeOf() { return typeOf(); }").ln();
+
         if (isClass()) cBuilder.idt(1).add("virtual void* self() { return &weak; }").ln();
 
+        // Natives
         for (Native nat : natives) {
             if (!nat.isStatic()) {
                 nat.build(cBuilder);
@@ -617,8 +615,17 @@ public abstract class Type implements GenericOwner {
                 .idt(1).add("static bool _init = initBlock();").ln()
                 .add("}").ln()
                 .ln();
-        cBuilder.add("bool ").path(self, true).add("::initBlock() {").ln()
-                .idt(1).add("return true;").ln()
+
+        cBuilder.add("bool ").path(self, true).add("::initBlock() {").ln();
+        for (Variable variable : variables) {
+            if (variable.isStatic()) {
+                variable.buildInit(cBuilder);
+            }
+        }
+        if (staticConstructor != null) {
+            staticConstructor.build(cBuilder);
+        }
+        cBuilder.idt(1).add("return true;").ln()
                 .add("}").ln()
                 .ln();
 
@@ -729,6 +736,16 @@ public abstract class Type implements GenericOwner {
             return template.findGeneric(genericToken);
         }
         return null;
+    }
+
+    private void recursiveGetParent(Pointer caller, ArrayList<Pointer> pointers) {
+        for (Pointer pointer : parents) {
+            Pointer p = Pointer.byGeneric(pointer, caller);
+            if (!pointers.contains(p)) {
+                pointers.add(p);
+            }
+            p.type.recursiveGetParent(p, pointers);
+        }
     }
 
     public boolean cyclicVerify(Type type) {
@@ -976,7 +993,7 @@ public abstract class Type implements GenericOwner {
         if (destructor.load()) {
             if (destructors.size() > 0) {
                 cFile.erro(destructor.token, "Repeated destructor");
-            } else if (isEnum() || isInterface()) {
+            } else if (!isClass()) {
                 cFile.erro(destructor.token, "Destructors not allowed");
             } else {
                 destructors.add(destructor);

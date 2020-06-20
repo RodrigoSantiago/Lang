@@ -98,6 +98,14 @@ public class ContentFile {
         state = 5;
     }
 
+    public void make() {
+        for (Type type : types) {
+            type.make();
+        }
+
+        state = 5;
+    }
+
     public void unload() {
         for (Type type : types) {
             namespace.remove(type);

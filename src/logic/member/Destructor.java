@@ -61,7 +61,7 @@ public class Destructor extends Member {
         cBuilder.add(type.template)
                 .add("void ").path(type.self, false).add("::destroy() {").ln();
 
-        if (type.parent != null && type.isClass()) {
+        if (type.parent != null) {
             cBuilder.idt(1).path(type.parent, false).add("::destroy();").ln();
         }
 

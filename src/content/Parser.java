@@ -2,7 +2,8 @@ package content;
 
 import data.ContentFile;
 import logic.Using;
-import logic.line.Stack;
+import logic.stack.Block;
+import logic.stack.Stack;
 import logic.member.*;
 import logic.typdef.Class;
 import logic.typdef.Enum;
@@ -16,7 +17,7 @@ public class Parser {
 
     }
 
-    public void parseWorkspace(ContentFile cFile, Token init) {
+    public static void parseWorkspace(ContentFile cFile, Token init) {
         int state = 0;
 
         Key typeKey = Key.NOONE;
@@ -59,7 +60,7 @@ public class Parser {
         }
     }
 
-    public void parseMembers(Type type, Token init, Token end) {
+    public static void parseMembers(Type type, Token init, Token end) {
         boolean destructor = false, constructor = false;
         boolean prevThis = false, prevDest = false;
         int state = 0;
@@ -67,6 +68,8 @@ public class Parser {
         Token prev = null;
         Token token = init;
         Token start = token;
+
+        // todo - Verificar se todos os loops se protejem de nulo
         while (token != end) {
             Token next = token.getNext();
 
@@ -153,18 +156,20 @@ public class Parser {
         }
     }
 
-    public void parseLines(Stack stack, Token init, Token end) {
+    public static void parseLines(Block block, Token init, Token end) {
         int state = 0;
+        boolean caseExcep = false;
 
         Token token = init;
         Token start = token;
-        while (token != end) {
+        while (token != null && token != end) {
             Token next = token.getNext();
             if (state == 0 && token.key == Key.BRACE) {
                 // break; clean block [{}]
-                stack.addLine(start, token);
+                block.add(start, next);
                 start = next;
             } else if (state == 0 && token.key.isBlock) {
+                caseExcep = token.key == Key.CASE;
                 state = 1; // [if]
 
             } else if (state == 0 && next != end) {
@@ -175,13 +180,13 @@ public class Parser {
 
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 // break; [if][()][{}] || [else][{}]
-                stack.addLine(start, token);
+                block.add(start, next);
                 start = next;
                 state = 0;
 
             } else if (token.key == Key.SEMICOLON || next == end) {
                 // break; (0)[;] || (1)[else][...][;] || (2)[if][()][;] || (3)[if][()][...][;] || (4)[...][;]
-                stack.addLine(start, token);
+                block.add(start, next);
                 start = next;
                 state = 0;
 
@@ -191,11 +196,20 @@ public class Parser {
             } else if (state == 1 || state == 2) {
                 state = 3; // [if][()][...]
 
+            } else if (state == 3 && caseExcep && token.key == Key.COLON) {
+                block.add(start, next); // [case][...][:]
+                state = 0;
+
             } else if (token.key.isBlock) {
-                // break; unexpected [...][if]
-                stack.addLine(start, token.getPrev());
+                // break; unexpected end [...][if]
+                block.add(start, token);
                 start = token;
                 state = 1;
+            }
+            if (next == end && state != 0) {
+                // Incomplet End ? End without [;]
+                block.add(start, next);
+                state = 0;
             }
             token = next;
         }

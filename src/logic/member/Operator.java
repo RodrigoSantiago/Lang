@@ -36,6 +36,9 @@ public class Operator extends Member {
                 state = 2;
             } else if (state == 2 && token.key.isOperator) {
                 this.token = operator = token;
+                if (!token.key.isOverridable) {
+                    cFile.erro(token, "This operator cannot be overriden");
+                }
                 op = token.key;
                 state = 3;
             } else if (state == 2 && token.equals("cast")) {

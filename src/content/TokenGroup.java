@@ -19,6 +19,16 @@ public class TokenGroup {
         return next;
     }
 
+    public static String toString(Token start, Token end) {
+        String str = "";
+        Token token = start;
+        while (token != end) {
+            str += token;
+            token = token.getNext();
+        }
+        return str;
+    }
+
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();

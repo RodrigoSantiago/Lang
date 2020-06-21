@@ -3,7 +3,9 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import logic.Pointer;
 import logic.member.view.MethodView;
+import logic.stack.Context;
 
 import java.util.ArrayList;
 
@@ -29,14 +31,14 @@ public class MethodCall extends Call {
                 if (token.getChild() != null) {
                     readArguments(token.getChild(), token.getLastChild());
                 } else {
-                    cFile.erro(token, "Unexpected end of tokens");
+                    cFile.erro(token, "Unexpected end of tokens", this);
                 }
                 state = 2;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
             if (next == end && state != 2) {
-                cFile.erro(token, "Unexpected end of tokens");
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
@@ -50,7 +52,7 @@ public class MethodCall extends Call {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.COMMA) {
-                arguments.add(new Expression(getStack(), contentStart, token));
+                arguments.add(new Expression(getLine(), contentStart, token));
                 state = 1;
             } else if (state == 1 && token.key != Key.COMMA) {
                 contentStart = token;
@@ -58,12 +60,39 @@ public class MethodCall extends Call {
             }
             if (next == end) {
                 if (state == 0) {
-                    arguments.add(new Expression(getStack(), contentStart, next));
+                    arguments.add(new Expression(getLine(), contentStart, next));
                 } else {
-                    cFile.erro(token, "Unexpected end of tokens");
+                    cFile.erro(token, "Unexpected end of tokens", this);
                 }
             }
             token = next;
         }
+    }
+
+    @Override
+    public void load(Context context) {
+        if (nameToken == null) {
+            context.jumpTo(null);
+        } else {
+
+            // TODO - INNER CONSTRUCTOR BEHAVIOR
+            ArrayList<MethodView> methods = context.findMethod(nameToken, arguments);
+            if (methods.size() == 0) {
+                // erro
+            } else if (methods.size() > 1) {
+                // erro
+                methodView = methods.get(0);
+            } else {
+                methodView = methods.get(0);
+            }
+            context.jumpTo(methodView == null ? null : methodView.getTypePtr());
+        }
+    }
+
+    @Override
+    public Pointer request(Pointer pointer) {
+        if (methodView == null) return null;
+
+        return methodView.getTypePtr();
     }
 }

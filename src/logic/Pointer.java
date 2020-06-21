@@ -53,6 +53,19 @@ public class Pointer {
         return false;
     }
 
+    public boolean isGenericEquivalent(Pointer other) {
+        if (this == other) return true;
+        if (typeSource != null && other.typeSource != null) return true;
+        if (isDefault()) return other.isDefault();
+
+        if (type == other.type && pointers != null && pointers.length == other.pointers.length) {
+            for (int i = 0; i < pointers.length; i++) {
+                if (pointers[i].isGenericEquivalent(other.pointers[i])) return true;
+            }
+        }
+        return false;
+    }
+
     public boolean contains(Type type) {
         if (this.type == type) return true;
         if (pointers != null) {

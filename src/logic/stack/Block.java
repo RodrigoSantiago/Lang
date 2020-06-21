@@ -1,9 +1,7 @@
 package logic.stack;
 
 import content.Key;
-import content.Parser;
 import content.Token;
-import logic.stack.Line;
 import logic.stack.block.*;
 import logic.stack.line.*;
 
@@ -91,13 +89,13 @@ public abstract class Block extends Line {
     }
 
     public void add(LineCase lineCase) {
-        cFile.erro(lineCase.start, "A case statment must be inside a Switch");
+        cFile.erro(lineCase.start, "A case statment must be inside a Switch", this);
         _add(lineCase);
     }
 
     public void add(BlockElse blockElse) {
         if (lines.size() == 0 || !lines.get(lines.size() - 1).isIfStatment()) {
-            cFile.erro(blockElse.start, "An Else Statment must be after a If Statment");
+            cFile.erro(blockElse.start, "An Else Statment must be after a If Statment", this);
         }
         _add(blockElse);
     }

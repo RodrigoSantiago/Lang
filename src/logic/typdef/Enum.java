@@ -7,6 +7,7 @@ import data.ContentFile;
 import logic.Pointer;
 
 public class Enum extends Type {
+
     public Enum(ContentFile cFile, Token start, Token end) {
         super(cFile, Key.ENUM, start, end);
     }
@@ -20,9 +21,9 @@ public class Enum extends Type {
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
             if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined type");
+                cFile.erro(pTypeToken.start, "Undefined type", this);
             } else {
-                cFile.erro(pTypeToken.start, "An Enum cannot inherit");
+                cFile.erro(pTypeToken.start, "An Enum cannot inherit", this);
             }
         }
 

@@ -2,7 +2,6 @@ package logic.member;
 
 import content.Key;
 import content.Token;
-import data.ContentFile;
 import data.CppBuilder;
 import logic.member.view.FieldView;
 import logic.typdef.Type;
@@ -40,7 +39,7 @@ public class Num extends Member {
             } else if (state == 2 && token.key == Key.SEMICOLON) {
                 state = 3;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -48,7 +47,7 @@ public class Num extends Member {
         }
 
         if (state != 3) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
     }
 

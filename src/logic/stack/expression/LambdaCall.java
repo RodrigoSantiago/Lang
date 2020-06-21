@@ -3,7 +3,9 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import logic.Pointer;
 import logic.params.Parameters;
+import logic.stack.Context;
 import logic.stack.StackExpansion;
 
 public class LambdaCall extends Call {
@@ -31,19 +33,25 @@ public class LambdaCall extends Call {
                 state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.BRACE) {
                 innerStack = new StackExpansion(getStack());
-                if (token.getChild() != null) {
-                    innerStack.read(token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens");
-                }
+                innerStack.read(token, next, true);
                 state = 4;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
-            if (next == end && state != 2) {
-                cFile.erro(token, "Unexpected end of tokens");
+            if (next == end && state != 4) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
+    }
+
+    @Override
+    public void load(Context context) {
+
+    }
+
+    @Override
+    public Pointer request(Pointer pointer) {
+        return null;
     }
 }

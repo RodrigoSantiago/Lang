@@ -4,7 +4,6 @@ import content.Key;
 import content.Token;
 import logic.stack.Block;
 import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.expression.Expression;
 
 public class LineCase extends Line {
@@ -29,16 +28,16 @@ public class LineCase extends Line {
             } else if (state == 1 && token.key == Key.COLON) {
                 if (key != token) {
                     if (isDefault) {
-                        cFile.erro(token, "Default Statment should not have a value");
+                        cFile.erro(token, "Default Statment should not have a value", this);
                     }
                     expression = new Expression(this, key, token);
                 }
                 state = 2;
             } else if (state != 1) {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
             if (state != 2 && next == end) {
-                cFile.erro(token, "Colon expected");
+                cFile.erro(token, "Colon expected", this);
             }
             token = next;
         }

@@ -10,6 +10,7 @@ import logic.member.Method;
 import logic.member.Property;
 
 public class Interface extends Type {
+
     public Interface(ContentFile cFile, Token start, Token end) {
         super(cFile, Key.INTERFACE, start, end);
     }
@@ -20,13 +21,12 @@ public class Interface extends Type {
         isLoaded = true;
         super.load();
 
-
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
             if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined type");
+                cFile.erro(pTypeToken.start, "Undefined type", this);
             } else {
-                cFile.erro(pTypeToken.start, "An Interface cannot inherit");
+                cFile.erro(pTypeToken.start, "An Interface cannot inherit", this);
             }
         }
 

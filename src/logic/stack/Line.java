@@ -2,6 +2,7 @@ package logic.stack;
 
 import content.Token;
 import data.ContentFile;
+import logic.Pointer;
 
 public abstract class Line {
     public final Stack stack;
@@ -30,7 +31,23 @@ public abstract class Line {
     public void make() {
     }
 
+    public void load(Pointer request) {
+
+    }
+
     public boolean isIfStatment() {
         return false;
+    }
+
+    public boolean isLoopStatment() {
+        return false;
+    }
+
+    public Line isBreakble(Token label) {
+        return parent != null ? parent.isBreakble(label) : null;
+    }
+
+    public Line isContinuable(Token label) {
+        return parent != null ? parent.isContinuable(label) : null;
     }
 }

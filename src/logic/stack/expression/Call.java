@@ -5,6 +5,8 @@ import data.ContentFile;
 import logic.Pointer;
 import logic.member.Constructor;
 import logic.member.view.*;
+import logic.stack.Context;
+import logic.stack.Line;
 import logic.stack.Stack;
 
 public abstract class Call {
@@ -24,36 +26,24 @@ public abstract class Call {
         return group.parent;
     }
 
-    public void readField() {
-
-    }
-
-    public void readMethod() {
-
-    }
-
-    public void readIndexer() {
-
-    }
-
-    public void readInstance() {
-
-    }
-
-    public void readLambda() {
-
-    }
-
-    public void readCasting() {
-
-    }
-
-    public void readLiteral() {
-
+    public Line getLine() {
+        return group.parent.parent;
     }
 
     public void make() {
 
+    }
+
+    public void load(Context context) {
+
+    }
+
+    public boolean verify(Pointer pointer) {
+        return false;
+    }
+
+    public Pointer request(Pointer pointer) {
+        return null;
     }
 
     public Pointer getReturnType() {

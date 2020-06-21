@@ -53,38 +53,38 @@ public abstract  class Member {
                       boolean hasAbstract, boolean hasFinal, boolean hasStatic, boolean hasLet, boolean hasDefault) {
         if ((token.key == Key.PUBLIC && hasPublic) || (token.key == Key.PRIVATE && hasPrivate)) {
             if (isPublic || isPrivate) {
-                cFile.erro(token, "Repeated acess modifier");
+                cFile.erro(token, "Repeated acess modifier", this);
             } else {
                 isPublic = (token.key == Key.PUBLIC);
                 isPrivate = (token.key == Key.PRIVATE);
             }
         } else if ((token.key == Key.ABSTRACT && hasAbstract) || (token.key == Key.FINAL && hasFinal)) {
             if (isAbstract || isFinal) {
-                cFile.erro(token, "Repeated modifier");
+                cFile.erro(token, "Repeated modifier", this);
             } else {
                 isAbstract = (token.key == Key.ABSTRACT);
                 isFinal = (token.key == Key.FINAL);
             }
         } else if (token.key == Key.STATIC && hasStatic) {
             if (isStatic) {
-                cFile.erro(token, "Repeated modifier");
+                cFile.erro(token, "Repeated modifier", this);
             } else {
                 isStatic = true;
             }
         } else if (token.key == Key.LET && hasLet) {
             if (isLet) {
-                cFile.erro(token, "Repeated modifier");
+                cFile.erro(token, "Repeated modifier", this);
             } else {
                 isLet = true;
             }
         } else if (token.key == Key.DEFAULT && hasDefault) {
             if (isDefault) {
-                cFile.erro(token, "Repeated modifier");
+                cFile.erro(token, "Repeated modifier", this);
             } else {
                 isDefault = true;
             }
         } else {
-            cFile.erro(token, "Unexpected modifier");
+            cFile.erro(token, "Unexpected modifier", this);
         }
     }
 }

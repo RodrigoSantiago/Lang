@@ -37,7 +37,7 @@ public class Operator extends Member {
             } else if (state == 2 && token.key.isOperator) {
                 this.token = operator = token;
                 if (!token.key.isOverridable) {
-                    cFile.erro(token, "This operator cannot be overriden");
+                    cFile.erro(token, "This operator cannot be overriden", this);
                 }
                 op = token.key;
                 state = 3;
@@ -56,7 +56,7 @@ public class Operator extends Member {
                 contentToken = token;
                 state = 5;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -64,7 +64,7 @@ public class Operator extends Member {
         }
 
         if (state != 5) {
-            cFile.erro(last, "Unexpected end of token");
+            cFile.erro(last, "Unexpected end of token", this);
         }
     }
 
@@ -76,9 +76,9 @@ public class Operator extends Member {
             if (params != null) {
                 params.load(type);
 
-                if (params.args.size() == 1) {
-                    if (!params.args.get(0).typePtr.equals(type.self)) {
-                        cFile.erro(operator, "The first parameter must be the current Type");
+                if (params.getCount() == 1) {
+                    if (!params.getTypePtr(0).equals(type.self)) {
+                        cFile.erro(operator, "The first parameter must be the current Type", this);
 
                         return false;
                     } else if (op != Key.INC && op != Key.DEC &&
@@ -86,29 +86,28 @@ public class Operator extends Member {
                                 op != Key.CAST && op != Key.AUTO &&
                                 op != Key.NOT && op != Key.BITNOT && op != Key.SETVAL) {
 
-                        cFile.erro(operator, "The operator must have two parameters");
+                        cFile.erro(operator, "The operator must have two parameters", this);
                         return false;
                     }
-                } else if (params.args.size() == 2) {
-                    if (!params.args.get(0).typePtr.equals(type.self) &&
-                            !params.args.get(1).typePtr.equals(type.self)) {
-                        cFile.erro(operator, "The first or second parameter must be the current Type");
+                } else if (params.getCount() == 2) {
+                    if (!params.getTypePtr(0).equals(type.self) && !params.getTypePtr(1).equals(type.self)) {
+                        cFile.erro(operator, "The first or second parameter must be the current Type", this);
                         return false;
                     } else if (op == Key.INC || op == Key.DEC ||
                             op == Key.CAST || op == Key.AUTO ||
                             op == Key.NOT || op == Key.BITNOT || op == Key.SETVAL) {
-                        cFile.erro(operator, "The operator must have a single parameter");
+                        cFile.erro(operator, "The operator must have a single parameter", this);
                         return false;
                     }
                 }
 
                 if (typePtr.equals(type.self) && (op == Key.CAST || op == Key.AUTO)) {
-                    cFile.erro(params.token, "The casting operators cannot return the current type");
+                    cFile.erro(params.token, "The casting operators cannot return the current type", this);
                     return false;
                 }
 
                 if (typePtr.equals(type.parent) && (op == Key.CAST || op == Key.AUTO)) {
-                    cFile.erro(params.token, "The casting operators cannot return the Wrapper Parent");
+                    cFile.erro(params.token, "The casting operators cannot return the Wrapper Parent", this);
                     return false;
                 }
 

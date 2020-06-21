@@ -7,6 +7,7 @@ import data.ContentFile;
 import logic.Pointer;
 
 public class Class extends Type {
+
     public Class(ContentFile cFile, Token start, Token end) {
         super(cFile, Key.CLASS, start, end);
     }
@@ -20,36 +21,36 @@ public class Class extends Type {
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
             if (parent.typeSource != null) {
-                cFile.erro(pTypeToken.start, "Cannot inherit it's template");
+                cFile.erro(pTypeToken.start, "Cannot inherit it's template", this);
             } else if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined parent");
+                cFile.erro(pTypeToken.start, "Undefined parent", this);
             } else if ((parent.type.isPrivate() && parent.type.cFile != cFile)
                     || (!parent.type.isPublic() && parent.type.cFile.library != cFile.library)) {
-                cFile.erro(pTypeToken.start, "Invalid acess permisison");
+                cFile.erro(pTypeToken.start, "Invalid acess permisison", this);
             } else if (parents.contains(parent)) {
-                cFile.erro(pTypeToken.start, "Repeated parent");
+                cFile.erro(pTypeToken.start, "Repeated parent", this);
             } else if (this.parent != null && this.parent.isDerivedFrom(parent) > -1) {
-                cFile.erro(pTypeToken.start, "Repeated parent");
+                cFile.erro(pTypeToken.start, "Repeated parent", this);
             }else if (parent.typeSource != null) {
-                cFile.erro(pTypeToken.start, "A class could not inherit it's generic");
+                cFile.erro(pTypeToken.start, "A class could not inherit it's generic", this);
             } else if (parent.type.isFinal()) {
-                cFile.erro(pTypeToken.start, "A class could not inherit from a Final Type");
+                cFile.erro(pTypeToken.start, "A class could not inherit from a Final Type", this);
             } else if (parent.type.isClass()) {
                 if (this.parent == null) {
                     if (parents.size() > 0) {
-                        cFile.erro(pTypeToken.start, "The class parent must come before interfaces");
+                        cFile.erro(pTypeToken.start, "The class parent must come before interfaces", this);
                     }
                     this.parent = parent;
                     this.parents.add(0, parent);
                     this.parentTokens.add(0, pTypeToken.start);
                 } else {
-                    cFile.erro(pTypeToken.start, "A class cannot have multiple classes");
+                    cFile.erro(pTypeToken.start, "A class cannot have multiple classes", this);
                 }
             } else if (parent.type.isInterface()) {
                 this.parents.add(parent);
                 this.parentTokens.add(pTypeToken.start);
             } else {
-                cFile.erro(pTypeToken.start, "Undefined type");
+                cFile.erro(pTypeToken.start, "Undefined type", this);
             }
         }
 

@@ -25,7 +25,7 @@ public class Stack {
     }
 
     public void read(Token start, Token end) {
-        block = new BlockEmpty(this, start, end);
+        block = new BlockEmpty(this, start, end, true);
     }
 
     public void make() {

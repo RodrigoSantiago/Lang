@@ -2,10 +2,8 @@ package logic.stack.line;
 
 import content.Key;
 import content.Token;
-import content.TokenGroup;
 import logic.stack.Block;
 import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.expression.Expression;
 
 public class LineExpression extends Line {
@@ -23,7 +21,7 @@ public class LineExpression extends Line {
             next = token.getNext();
             if (next == end) {
                 if (token.key != Key.SEMICOLON) {
-                    cFile.erro(token, "Semicolon expected");
+                    cFile.erro(token, "Semicolon expected", this);
                 } else {
                     last = token;
                 }

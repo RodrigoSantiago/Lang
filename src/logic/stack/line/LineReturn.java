@@ -4,7 +4,6 @@ import content.Key;
 import content.Token;
 import logic.stack.Block;
 import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.expression.Expression;
 
 public class LineReturn extends Line {
@@ -26,17 +25,17 @@ public class LineReturn extends Line {
                 state = 1;
             } else if (state == 1 && (token.key == Key.SEMICOLON || next == end)) {
                 if (token.key != Key.SEMICOLON) {
-                    cFile.erro(token, "Semicolon expected");
+                    cFile.erro(token, "Semicolon expected", this);
                 }
                 if (key != (token.key == Key.SEMICOLON ? token : next)) {
                     expression = new Expression(this, key, token.key == Key.SEMICOLON ? token : next);
                 }
                 state = 2;
             } else if (state != 1) {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
             if (state == 0 && next == end) {
-                cFile.erro(token, "Unexpected end of tokens");
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }

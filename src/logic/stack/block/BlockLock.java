@@ -5,8 +5,6 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
-import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.expression.Expression;
 
 public class BlockLock extends Block {
@@ -31,40 +29,35 @@ public class BlockLock extends Block {
                 if (paramToken.getChild() != null) {
                     expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
                 } else {
-                    cFile.erro(token, "Unexpected end of tokens");
+                    cFile.erro(token, "Unexpected end of tokens", this);
                 }
                 state = 2;
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 if (state == 1) {
-                    cFile.erro(token.start, token.start + 1, "Missing locker");
+                    cFile.erro(token.start, token.start + 1, "Missing locker", this);
                 }
-                contentTokenGroup = new TokenGroup(token, next);
-                state = 4; // completed
-            } else if (state == 2 && token.key == Key.SEMICOLON) {
-                state = 4; // empty lock
+                contentTokenGroup = new TokenGroup(token.getChild(), token.getLastChild());
+                state = 3;
+            } else if ((state == 1 || state == 2) && token.key == Key.SEMICOLON) {
+                if (state == 1) {
+                    cFile.erro(token.start, token.start + 1, "Missing locker", this);
+                }
+                state = 3;
             } else if (state == 2) {
-
-                state = 3; // waiting [;]
-            } else if (state == 3 && (token.key == Key.SEMICOLON || next == end)) {
-                if (token.key != Key.SEMICOLON) {
-                    cFile.erro(token, "Semicolon expected");
-                }
-
-                contentTokenGroup = new TokenGroup(paramToken.getNext(), next);
-                state = 4; // completed
-            } else if (state != 3) {
-                cFile.erro(token, "Unexpected token");
+                contentTokenGroup = new TokenGroup(token, end);
+                next = end;
+                state = 3;
+            } else  {
+                cFile.erro(token, "Unexpected token", this);
             }
-            if (next == end && state != 4) {
-                cFile.erro(token, "Unexpected end of tokens");
+            if (next == end && state != 3) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
 
         if (contentTokenGroup != null) {
-            if (contentTokenGroup.start.key == Key.BRACE) {
-                Parser.parseLines(this, contentTokenGroup.start.getChild(), contentTokenGroup.start.getLastChild());
-            }
+            Parser.parseLines(this, contentTokenGroup.start, contentTokenGroup.end);
         }
     }
 }

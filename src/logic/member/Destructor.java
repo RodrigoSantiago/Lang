@@ -27,14 +27,14 @@ public class Destructor extends Member {
                 state = 2;
             } else if (state == 2 && token.key == Key.PARAM) {
                 if (token.getChild() != null && token.getChild() != token.getLastChild()) {
-                    cFile.erro(token, "A destruct cannot have parameters");
+                    cFile.erro(token, "A destruct cannot have parameters", this);
                 }
                 state = 3;
             } else if (state == 3 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
                 contentToken = token;
                 state = 4;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -42,7 +42,7 @@ public class Destructor extends Member {
         }
 
         if (state != 4) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
 
         isPublic = true;

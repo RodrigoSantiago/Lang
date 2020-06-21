@@ -6,19 +6,21 @@ import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
 import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.expression.Expression;
 import logic.stack.line.LineExpression;
 import logic.stack.line.LineVar;
 
 public class BlockFor extends Block {
 
+    Token label;
     Token paramToken;
     TokenGroup contentTokenGroup;
 
     Line firstLine;
     Expression condition, loop;
     LineVar foreachVar;
+
+    // TODO - Priorizar braces !!!
 
     public BlockFor(Block block, Token start, Token end) {
         super(block, start, end);
@@ -33,47 +35,76 @@ public class BlockFor extends Block {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM) {
                 paramToken = token;
-                if (paramToken.getChild() != null) {
-                    Token colon = readIsForeach(paramToken.getChild(), paramToken.getLastChild());
-                    if (colon != null) {
-                        System.out.println("EACH");
-                        readForeach(paramToken.getChild(), paramToken.getLastChild(), colon);
-                    } else {
-                        readFor(paramToken.getChild(), paramToken.getLastChild());
-                    }
+                Token colon = readIsForeach(paramToken.getChild(), paramToken.getLastChild());
+                if (colon != null) {
+                    System.out.println("EACH");
+                    readForeach(paramToken.getChild(), paramToken.getLastChild(), colon);
+                } else {
+                    readFor(paramToken.getChild(), paramToken.getLastChild());
                 }
                 state = 2;
-            } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
+            } else if (state == 2 && token.key == Key.COLON) {
+                state = 3;
+            } else if (state == 3 && token.key == Key.WORD) {
+                System.out.println("LABEL :"+ token);
+                label = token;
+                state = 4;
+            } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.BRACE) {
                 if (state == 1) {
-                    cFile.erro(token.start, token.start + 1, "Missing loop entry");
+                    cFile.erro(token.start, token.start + 1, "Missing loop entries", this);
+                } else if (state == 3) {
+                    cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
                 }
-                contentTokenGroup = new TokenGroup(token, next);
-                state = 4; // completed
-            } else if (state == 2 && token.key == Key.SEMICOLON) {
-                state = 4; // empty for
-            }  else if (state == 2) {
-
-                state = 3; // waiting [;]
-            } else if (state == 3 && (token.key == Key.SEMICOLON || next == end)) {
-                if (token.key != Key.SEMICOLON) {
-                    cFile.erro(token, "Semicolon expected");
+                // state == 2 || state == 4 (correct)
+                contentTokenGroup = new TokenGroup(token.getChild(), token.getLastChild());
+                state = 5;
+            } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.SEMICOLON) {
+                if (state == 1) {
+                    cFile.erro(token.start, token.start + 1, "Missing loop entries", this);
+                } else if (state == 3) {
+                    cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
                 }
-
-                contentTokenGroup = new TokenGroup(paramToken.getNext(), next);
-                state = 4; // completed
-            } else if (state != 3) {
-                cFile.erro(token, "Unexpected token");
+                // state == 2 || state == 4 (correct) -> empty for [for][()][;] || [for][()][:][label][;]
+                state = 5;
+            } else if (state == 2 || state == 4) {
+                contentTokenGroup = new TokenGroup(token, end);
+                next = end;
+                state = 5;
+            } else {
+                cFile.erro(token, "Unexpected token", this);
             }
-            if (next == end && state != 4) {
-                cFile.erro(token, "Unexpected end of tokens");
+
+            if (next == end && state != 5) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
 
         if (contentTokenGroup != null) {
-            if (contentTokenGroup.start.key == Key.BRACE) {
-                Parser.parseLines(this, contentTokenGroup.start.getChild(), contentTokenGroup.start.getLastChild());
-            }
+            Parser.parseLines(this, contentTokenGroup.start, contentTokenGroup.end);
+        }
+    }
+
+    @Override
+    public boolean isLoopStatment() {
+        return true;
+    }
+
+    @Override
+    public Line isBreakble(Token label) {
+        if (label == this.label || (this.label != null && this.label.equals(label))) {
+            return this;
+        } else {
+            return super.isBreakble(label);
+        }
+    }
+
+    @Override
+    public Line isContinuable(Token label) {
+        if (label == this.label || (this.label != null && this.label.equals(label))) {
+            return this;
+        } else {
+            return super.isContinuable(label);
         }
     }
 
@@ -129,11 +160,11 @@ public class BlockFor extends Block {
                         firstLine = readFirstForLine(contentStart, token);
                         // -> LineVar/LineExpression already call unexpected
                     } else {
-                        cFile.erro(token, "Unexpected end of tokens");
+                        cFile.erro(token, "Unexpected end of tokens", this);
                     }
                 } else if (state == 1) {
                     if (contentStart != token) condition = new Expression(this, contentStart, token);
-                    cFile.erro(token, "Unexpected end of tokens");
+                    cFile.erro(token, "Unexpected end of tokens", this);
                 } else if (state == 2) {
                     // empty loop
                 }
@@ -172,7 +203,7 @@ public class BlockFor extends Block {
         if (colon.getNext() != end) {
             loop = new Expression(this, colon.getNext(), end);
         } else {
-            cFile.erro(colon, "Unexpected end of tokens");
+            cFile.erro(colon, "Unexpected end of tokens", this);
         }
     }
 }

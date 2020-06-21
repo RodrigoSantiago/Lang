@@ -13,15 +13,15 @@ import java.util.ArrayList;
 public class Template {
 
     private final ContentFile cFile;
-    private boolean openPointer;
+    private final boolean isOpenAllowed;
+    private final ArrayList<Generic> generics = new ArrayList<>();
 
-    public Token token;
-    public ArrayList<Generic> generics = new ArrayList<>();
+    public final Token token;
 
-    public Template(ContentFile cFile, Token template, boolean openPointer) {
+    public Template(ContentFile cFile, Token template, boolean isOpenAllowed) {
         this.cFile = cFile;
         this.token = template;
-        this.openPointer = openPointer;
+        this.isOpenAllowed = isOpenAllowed;
         Token start = template.getChild();
         Token end = template.getLastChild();
 
@@ -60,18 +60,18 @@ public class Template {
             } else if (state == 3 && token.key == Key.COMMA) {
                 state = 0;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
             if ((state == 1 || state == 2) && next == end) {
                 generics.add(new Generic(this, generics.size(), token, null));
                 state = 0;
-                cFile.erro(token, "Unexpected end of tokens");
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
 
         if (state != 0 || generics.size() == 0) {
-            cFile.erro(end != null ? end : template, "Unexpected end of tokens");
+            cFile.erro(end != null ? end : template, "Unexpected end of tokens", this);
         }
     }
 
@@ -90,13 +90,14 @@ public class Template {
                         cycleOwner, genericOwner, false);
                 if (generic.basePtr.type != null && generic.basePtr.type.isFinal()) {
                     generic.basePtr = cFile.langObjectPtr();
-                    cFile.erro(generic.typeToken.start, "A Generic cannot be a final Type");
+                    cFile.erro(generic.typeToken.start, "A Generic cannot be a final Type", this);
                 }
+                generic.defaultPtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers, false);
             } else {
-                generic.basePtr = openPointer ? Pointer.openPointer : cFile.langObjectPtr();
+                generic.basePtr = isOpenAllowed ? Pointer.openPointer : cFile.langObjectPtr();
+                generic.defaultPtr = cFile.langObjectPtr();
             }
             generic.typePtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers, generic, false);
-            generic.defaultPtr = new Pointer(generic.basePtr.type, generic.basePtr.pointers, false);
         }
     }
 
@@ -107,5 +108,25 @@ public class Template {
             }
         }
         return null;
+    }
+
+    public int getCount() {
+        return generics.size();
+    }
+
+    public Token getNameToken(int pos) {
+        return generics.get(pos).nameToken;
+    }
+
+    public Pointer getTypePtr(int pos) {
+        return generics.get(pos).typePtr;
+    }
+
+    public Pointer getBasePtr(int pos) {
+        return generics.get(pos).basePtr;
+    }
+
+    public Pointer getDefaultPtr(int pos) {
+        return generics.get(pos).defaultPtr;
     }
 }

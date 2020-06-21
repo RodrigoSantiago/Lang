@@ -5,8 +5,6 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
-import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.expression.Expression;
 
 public class BlockElse extends Block {
@@ -36,40 +34,35 @@ public class BlockElse extends Block {
                 if (token.getChild() != null) {
                     condition = new Expression(this, token.getChild(), token.getLastChild());
                 } else {
-                    cFile.erro(token, "Unexpected end of tokens");
+                    cFile.erro(token, "Unexpected end of tokens", this);
+                }
+                state = 3;
+            } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.BRACE) {
+                if (state == 2) {
+                    cFile.erro(token.start, token.start + 1, "Missing condition", this);
+                }
+                contentTokenGroup = new TokenGroup(token.getChild(), token.getLastChild());
+                state = 4;
+            } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.SEMICOLON) {
+                if (state == 2) {
+                    cFile.erro(token.start, token.start + 1, "Missing condition", this);
                 }
                 state = 4;
-            } else if ((state == 1 || state == 4) && token.key == Key.BRACE) {
-                contentTokenGroup = new TokenGroup(token, next);
-                state = 6; // ENDED
-            } else if ((state == 1 || state == 4) && token.key == Key.SEMICOLON) {
-                state = 6; // ENDED empty
-            } else if ((state == 1 || state == 4)) {
-                state = 7;
-            } else if (state == 7 && (token.key == Key.SEMICOLON || next == end)) {
-                if (token.key != Key.SEMICOLON) {
-                    cFile.erro(token, "Semicolon expected");
-                }
-
-                contentTokenGroup = new TokenGroup(key.getNext(), next);
-                state = 6;
-            } else if (state != 7) {
-                cFile.erro(token, "Unexpected token");
+            } else if (state == 2 || state == 3) {
+                contentTokenGroup = new TokenGroup(token, end);
+                next = end;
+                state = 4;
+            } else {
+                cFile.erro(token, "Unexpected token", this);
             }
-            if (next == end && state != 6) {
-                if (state == 7) {
-                    cFile.erro(token, "Semicolon expected");
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens");
-                }
+            if (next == end && state != 4) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
 
         if (contentTokenGroup != null) {
-            if (contentTokenGroup.start.key == Key.BRACE) {
-                Parser.parseLines(this, contentTokenGroup.start.getChild(), contentTokenGroup.start.getLastChild());
-            }
+            Parser.parseLines(this, contentTokenGroup.start, contentTokenGroup.end);
         }
     }
 

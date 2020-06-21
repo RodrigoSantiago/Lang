@@ -33,7 +33,7 @@ public class Constructor extends Member {
                 contentToken = token;
                 state = 3;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -41,7 +41,7 @@ public class Constructor extends Member {
         }
 
         if (state != 3) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
     }
 
@@ -50,8 +50,8 @@ public class Constructor extends Member {
         if (token != null && params != null) {
             params.load(isStatic() ? null : type);
 
-            if (isStatic() && params.args.size() > 0) {
-                cFile.erro(token, "Static constructors cannot have parameters");
+            if (isStatic() && params.getCount() > 0) {
+                cFile.erro(token, "Static constructors cannot have parameters", this);
             }
 
             return true;
@@ -78,8 +78,8 @@ public class Constructor extends Member {
                 cBuilder.toHeader();
                 if (params.isEmpty()) {
                     cBuilder.idt(1).add(type.pathToken).add("(empty e);").ln();
-                } else if (params.args.size() == 1 && params.args.get(0).typePtr.equals(type.self)) {
-                    cBuilder.idt(1).add(type.pathToken).add("(empty e, ").add(type.self).add(" v_").add(params.args.get(0).nameToken).add(");").ln();
+                } else if (params.getCount() == 1 && params.getTypePtr(0).equals(type.self)) {
+                    cBuilder.idt(1).add(type.pathToken).add("(empty e, ").add(type.self).add(" v_").add(params.getNameToken(0)).add(");").ln();
                 } else{
                     cBuilder.idt(1).add(type.pathToken).add("(").add(params).add(");").ln();
                 }
@@ -89,9 +89,9 @@ public class Constructor extends Member {
                         .path(type.self, false).add("::").add(type.pathToken);
                 if (params.isEmpty()) {
                     cBuilder.add("(empty e) : ").add(type.pathToken).add("() {").ln();
-                } else if (params.args.size() == 1 && params.args.get(0).typePtr.equals(type.self)) {
+                } else if (params.getCount() == 1 && params.getTypePtr(0).equals(type.self)) {
                     cBuilder.add("(empty e, ").add(type.self)
-                            .add(" v_").add(params.args.get(0).nameToken).add(") : ").add(type.pathToken).add("() {").ln();
+                            .add(" v_").add(params.getNameToken(0)).add(") : ").add(type.pathToken).add("() {").ln();
                 } else {
                     cBuilder.add("(").add(params).add(") : ").add(type.pathToken).add("() {").ln();
                 }

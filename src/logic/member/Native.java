@@ -2,7 +2,6 @@ package logic.member;
 
 import content.Key;
 import content.Token;
-import data.ContentFile;
 import data.CppBuilder;
 import logic.typdef.Type;
 
@@ -34,13 +33,13 @@ public class Native extends Member {
                 state = 3;
             } else if (state == 3 && token.key == Key.BRACE) {
                 if (token.getChild() == null) {
-                    cFile.erro(token, "Unexpected token");
+                    cFile.erro(token, "Unexpected token", this);
                 } else {
                     contentToken = token;
                 }
                 state = 4;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -48,7 +47,7 @@ public class Native extends Member {
         }
 
         if (state != 4) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
     }
 
@@ -73,7 +72,7 @@ public class Native extends Member {
                 isReturn = true;
                 state = 1;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -81,14 +80,14 @@ public class Native extends Member {
         }
 
         if (state != 1) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
     }
 
     @Override
     public boolean load() {
         if (sourceToken != null && isReturn) {
-            cFile.erro(sourceToken, "Returning block are not allowed here");
+            cFile.erro(sourceToken, "Returning block are not allowed here", this);
         }
         return contentToken != null && sourceToken != null && !isReturn;
     }

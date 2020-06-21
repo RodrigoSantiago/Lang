@@ -4,7 +4,6 @@ import content.Key;
 import content.Token;
 import data.ContentFile;
 import logic.typdef.Type;
-import data.Compiler;
 
 public class Using {
 
@@ -53,7 +52,7 @@ public class Using {
             }else if (state == 4 && (token.key == Key.SEMICOLON || next == end)) {
                 state = (next == end ? 5 : 6);
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             token = next;
@@ -65,11 +64,11 @@ public class Using {
 
         if (isDirect && !isStatic && nameToken.endsWith("::")) {
             isDirect = false;
-            cFile.erro(nameToken, "Unexpected end of tokens");
+            cFile.erro(nameToken, "Unexpected end of tokens", this);
         }
 
         if (state != 6) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
     }
 
@@ -78,7 +77,7 @@ public class Using {
             Type type = cFile.getCompiler().findType(cFile.library, nameToken);
             if (type == null) {
                 isUsable = false;
-                cFile.erro(nameToken, "Type not found");
+                cFile.erro(nameToken, "Type not found", this);
             } else {
                 staticType = cFile.mark(type);
             }
@@ -86,7 +85,7 @@ public class Using {
             Type type = cFile.getCompiler().findType(cFile.library, nameToken);
             if (type == null) {
                 isUsable = false;
-                cFile.erro(nameToken, "Type not found");
+                cFile.erro(nameToken, "Type not found", this);
             } else {
                 directType = cFile.mark(type);
             }
@@ -94,7 +93,7 @@ public class Using {
             namespace = cFile.getCompiler().findNamespace(cFile.library, nameToken.toString(0, nameToken.length - 2));
             if (namespace == null) {
                 isUsable = false;
-                cFile.erro(nameToken, "Namespace not found");
+                cFile.erro(nameToken, "Namespace not found", this);
             } else {
                 cFile.link(namespace);
             }

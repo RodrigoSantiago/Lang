@@ -1,14 +1,12 @@
 package logic.member;
 
 import content.Key;
-import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
 import logic.GenericOwner;
 import logic.stack.Stack;
 import logic.member.view.MethodView;
-import logic.templates.Generic;
 import logic.templates.Template;
 import logic.params.Parameters;
 import logic.Pointer;
@@ -41,7 +39,7 @@ public class Method extends Member implements GenericOwner {
                 state = 1;
             } else if ((state == 0 || state == 1) && token.key == Key.VOID) {
                 if (isLet()) {
-                    cFile.erro(token, "A Let method cannot return void");
+                    cFile.erro(token, "A Let method cannot return void", this);
                 }
                 typeToken = new TokenGroup(token, next);
                 state = 2;
@@ -59,7 +57,7 @@ public class Method extends Member implements GenericOwner {
                 contentToken = token;
                 state = 5;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -67,11 +65,11 @@ public class Method extends Member implements GenericOwner {
         }
 
         if (state != 5) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
 
         if (isAbstract() && template != null) {
-            cFile.erro(template.token, "A abstract method cannot have templates");
+            cFile.erro(template.token, "A abstract method cannot have templates", this);
             isAbstract = false;
             isFinal = true;
         }
@@ -80,7 +78,7 @@ public class Method extends Member implements GenericOwner {
     public boolean toAbstract() {
         if (template != null) {
             if (!isAbstract) {
-                cFile.erro(template.token, "A abstract method cannot have templates");
+                cFile.erro(template.token, "A abstract method cannot have templates", this);
             }
             return false;
         } else {
@@ -103,9 +101,9 @@ public class Method extends Member implements GenericOwner {
                 if (!isStatic()) {
                     boolean templateMiss = false;
                     if (type.template != null) {
-                        for (Generic gen : template.generics) {
-                            if (type.template.findGeneric(gen.nameToken) != null) {
-                                cFile.erro(gen.nameToken, "Generic name conflict");
+                        for (int i = 0; i < template.getCount(); i++) {
+                            if (type.template.findGeneric(template.getNameToken(i)) != null) {
+                                cFile.erro(template.getNameToken(i), "Generic name conflict", this);
                                 templateMiss = true;
                             }
                         }

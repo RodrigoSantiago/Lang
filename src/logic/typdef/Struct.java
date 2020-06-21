@@ -21,17 +21,17 @@ public class Struct extends Type {
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
             if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined wrapper");
+                cFile.erro(pTypeToken.start, "Undefined wrapper", this);
             } else if (parent.typeSource != null) {
-                cFile.erro(pTypeToken.start, "A struct could not have it's generic as wrapper");
+                cFile.erro(pTypeToken.start, "A struct could not have it's generic as wrapper", this);
             } else if (parent.type.isClass()) {
                 if (this.parent == null) {
                     this.parent = parent;
                 } else {
-                    cFile.erro(pTypeToken.start, "A struct could not have multiple wrappers");
+                    cFile.erro(pTypeToken.start, "A struct could not have multiple wrappers", this);
                 }
             } else{
-                cFile.erro(pTypeToken.start, "A struct wrapper should be a class");
+                cFile.erro(pTypeToken.start, "A struct wrapper should be a class", this);
             }
         }
 
@@ -44,6 +44,4 @@ public class Struct extends Type {
     public final boolean isStruct() {
         return true;
     }
-
-    // todo - nao posso ter destrutores
 }

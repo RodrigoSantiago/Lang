@@ -69,7 +69,7 @@ public class LineVar extends Line {
                 state = 2;
             } else if ((state == 3 || state == 4) && (token.key == Key.SEMICOLON || next == end)) {
                 if (token.key != Key.SEMICOLON && !foreachVar) {
-                    cFile.erro(token, "Semicolon expected");
+                    cFile.erro(token, "Semicolon expected", this);
                 }
 
                 nameTokens.add(nameToken);
@@ -77,10 +77,10 @@ public class LineVar extends Line {
                 nameToken = null;
                 state = 4;
             } else if (state != 1) {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
             if (state != 4 && next == end && (state != 3 || foreachVar)) {
-                cFile.erro(token, "Unexpected end of tokens");
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }

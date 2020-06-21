@@ -5,6 +5,7 @@ import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
 import logic.Pointer;
+import logic.stack.Context;
 import logic.stack.Line;
 import logic.stack.Stack;
 
@@ -14,19 +15,16 @@ public class Expression {
 
     public final ContentFile cFile;
     public final Stack stack;
+    public final Line parent;
     Pointer returnPtr;
     Token start, end;
 
     ArrayList<CallGroup> groups = new ArrayList<>();
 
-    // Never recives [;] -> just mark error
     public Expression(Line line, Token start, Token end) {
-        this(line.stack, start, end);
-    }
-
-    public Expression(Stack stack, Token start, Token end) {
-        this.cFile = stack.cFile;
-        this.stack = stack;
+        this.cFile = line.cFile;
+        this.stack = line.stack;
+        this.parent = line;
         this.start = start;
         this.end = end;
         System.out.println("EXPR: "+ TokenGroup.toString(start, end));
@@ -52,9 +50,9 @@ public class Expression {
                     group.add(new InstanceCall(group, token, next));
                     state = 2;
                 } else if (next != end) {
-                    cFile.erro(next, "Unexpected token");
+                    cFile.erro(next, "Unexpected token", this);
                 } else {
-                    cFile.erro(token, "Unexpected end of tokens");
+                    cFile.erro(token, "Unexpected end of tokens", this);
                     break;
                 }
             } else if (state == 0 && token.key == Key.PARAM) {
@@ -65,6 +63,7 @@ public class Expression {
                 } else if (next.key == Key.LAMBDA) {
                     next = next.getNext();
                     if (next != end && next.key == Key.WORD) {
+                        next = next.getNext();
                         next = TokenGroup.nextType(next, end);
                     }
                     if (next != end && next.key == Key.BRACE) {
@@ -112,7 +111,7 @@ public class Expression {
                 if (state == 1) {
                     group.add(new FieldCall(group, contentStart, contentStart.getNext()));
                 } else if (state == 3) {
-                    cFile.erro(dot, "Unexpected end of tokens");
+                    cFile.erro(dot, "Unexpected end of tokens", this);
                 }
                 if (group.isEmpty()) {
                     group.setOperator(token);
@@ -125,13 +124,13 @@ public class Expression {
                 group = new CallGroup(this);
                 state = 0;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
             if (next == end) {
                 if (state == 1) {
                     group.add(new FieldCall(group, contentStart, contentStart.getNext()));
                 } else if (state == 3) {
-                    cFile.erro(dot, "Unexpected end of tokens");
+                    cFile.erro(dot, "Unexpected end of tokens", this);
                 }
             }
             token = next;
@@ -141,9 +140,19 @@ public class Expression {
         }
     }
 
-    public void make() {
-        // load group types
-        // load operators
+    public void load(Context context) {
+        for (int i = 0; i < groups.size(); i++) {
+            CallGroup group = groups.get(i);
+            if (group.isOperator()) {
+                // ordem aqui ?
+            } else {
+                group.load(context);
+            }
+        }
+    }
+
+    public boolean request(Pointer pointer) {
+        return false;
     }
 
     public void add(CallGroup group) {

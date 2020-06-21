@@ -1,7 +1,6 @@
 package logic.member.view;
 
 import content.Token;
-import logic.templates.Generic;
 import logic.Pointer;
 import logic.templates.Template;
 
@@ -13,11 +12,10 @@ public class TemplateView {
     public TemplateView(Pointer caller, Template template) {
         this.template = template;
 
-        typePtrs = new Pointer[template.generics.size()];
-        for (int i = 0; i < template.generics.size(); i++) {
-            Generic gen = template.generics.get(i);
-            if (Pointer.hasGeneric(gen.basePtr, caller)) {
-                typePtrs[i] = Pointer.byGeneric(gen.basePtr, caller);
+        typePtrs = new Pointer[template.getCount()];
+        for (int i = 0; i < template.getCount(); i++) {
+            if (Pointer.hasGeneric(template.getBasePtr(i), caller)) {
+                typePtrs[i] = Pointer.byGeneric(template.getBasePtr(i), caller);
             }
         }
     }
@@ -34,17 +32,17 @@ public class TemplateView {
     }
 
     public int getGenCount() {
-        return template.generics.size();
+        return template.getCount();
     }
 
     public Pointer getGenTypePtr(int index) {
         if (typePtrs == null || typePtrs[index] == null) {
-            return template.generics.get(index).basePtr;
+            return template.getBasePtr(index);
         }
         return typePtrs[index];
     }
 
     public Token getGenName(int index) {
-        return template.generics.get(index).nameToken;
+        return template.getNameToken(index);
     }
 }

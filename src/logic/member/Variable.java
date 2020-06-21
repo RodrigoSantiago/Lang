@@ -56,7 +56,7 @@ public class Variable extends Member {
                 initTokens.add(null);
                 state = 3;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
 
             last = token;
@@ -64,7 +64,7 @@ public class Variable extends Member {
         }
 
         if (state != 3) {
-            cFile.erro(last, "Unexpected end of tokens");
+            cFile.erro(last, "Unexpected end of tokens", this);
         }
     }
 

@@ -12,10 +12,11 @@ import java.util.ArrayList;
 
 public class Parameters {
 
-    public final ContentFile cFile;
-    public ArrayList<Arg> args = new ArrayList<>();
+    private final ContentFile cFile;
+    private final ArrayList<Arg> args = new ArrayList<>();
     private boolean hasGeneric;
-    public Token token;
+
+    public final Token token;
 
     public Parameters(ContentFile cFile, Token parameters) {
         this.cFile = cFile;
@@ -50,13 +51,13 @@ public class Parameters {
             } else if (state == 3 && token.key == Key.COMMA) {
                 state = 0;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
+            }
+
+            if (next == end && state != 0) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
-        }
-
-        if (state != 0) {
-            cFile.erro(end != null ? end : parameters, "Unexpected end of tokens");
         }
     }
 
@@ -68,6 +69,18 @@ public class Parameters {
             }
         }
         return true;
+    }
+
+    public int getCount() {
+        return args.size();
+    }
+
+    public Pointer getTypePtr(int pos) {
+        return args.get(pos).typePtr;
+    }
+
+    public Token getNameToken(int pos) {
+        return args.get(pos).nameToken;
     }
 
     public boolean hasGeneric() {
@@ -84,8 +97,7 @@ public class Parameters {
             for (int i = 0; i < args.size(); i++) {
                 Arg argA = args.get(i);
                 Arg argB = other.args.get(i);
-                if (!argA.typePtr.hasGeneric() && !argB.typePtr.hasGeneric() &&
-                        !argA.typePtr.overloadEquals(argB.typePtr)) {
+                if (!argA.typePtr.isGenericEquivalent(argB.typePtr) && !argA.typePtr.overloadEquals(argB.typePtr)) {
                     dif = true;
                     break;
                 }

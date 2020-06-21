@@ -72,9 +72,8 @@ public abstract class Type implements GenericOwner {
 
         int state = 0;
         Token next;
-        Token last = start;
         Token token = start;
-        while (token != end) {
+        while (token != null && token != end) {
             next = token.getNext();
 
             if (state == 0 && token.key == key) {
@@ -82,45 +81,49 @@ public abstract class Type implements GenericOwner {
             } else if (state == 0 && token.key.isAttribute) {
                 if (token.key == Key.PUBLIC || token.key == Key.PRIVATE) {
                     if (isPublic || isPrivate) {
-                        cFile.erro(token, "Repeated acess modifier");
+                        cFile.erro(token, "Repeated acess modifier", this);
                     } else {
                         isPublic = (token.key == Key.PUBLIC);
                         isPrivate = (token.key == Key.PRIVATE);
                     }
                 } else if (token.key == Key.ABSTRACT || token.key == Key.FINAL) {
                     if (!isClass()) {
-                        cFile.erro(token, "Unexpected modifier");
+                        cFile.erro(token, "Unexpected modifier", this);
                     } else if (isAbstract || isFinal) {
-                        cFile.erro(token, "Repeated inheritance modifier");
+                        cFile.erro(token, "Repeated inheritance modifier", this);
                     } else {
                         isAbstract = (token.key == Key.ABSTRACT);
                         isFinal = (token.key == Key.FINAL);
                     }
                 } else if (token.key == Key.STATIC) {
                     if (!isStruct()) {
-                        cFile.erro(token, "Unexpected modifier");
+                        cFile.erro(token, "Unexpected modifier", this);
                     } else if (isStatic) {
-                        cFile.erro(token, "Repeated modifier");
+                        cFile.erro(token, "Repeated modifier", this);
                     } else {
                         isStatic = true;
                     }
                 } else {
-                    cFile.erro(token, "Unexpected modifier");
+                    cFile.erro(token, "Unexpected modifier", this);
                 }
             } else if (state == 1 && token.key == Key.WORD) {
                 nameToken = token;
                 if (token.startsWith('_')) {
-                    cFile.erro(nameToken, "Type names cannot start with underline (_)");
+                    cFile.erro(nameToken, "Type names cannot start with underline (_)", this);
                 }
                 state = 2;
             } else if (state == 2 && token.key == Key.GENERIC) {
-                if (isEnum()) {
-                    cFile.erro(token, "A enum cannot have genrics");
+                if (token.getChild() != null) {
+                    if (isEnum()) {
+                        cFile.erro(token, "A enum cannot have genrics", this);
+                    } else {
+                        hasGeneric = true;
+                        template = new Template(cFile, token, !isStruct());
+                    }
+                    state = 3;
                 } else {
-                    hasGeneric = true;
-                    template = new Template(cFile, token, !isStruct());
+                    cFile.erro(token, "Unexpected token", this);
                 }
-                state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.COLON) {
                 state = 4;
             } else if (state == 4 && token.key == Key.WORD) {
@@ -132,15 +135,12 @@ public abstract class Type implements GenericOwner {
                 contentToken = token;
                 state = 6;
             } else {
-                cFile.erro(token, "Unexpected token");
+                cFile.erro(token, "Unexpected token", this);
             }
-
-            last = token;
+            if (next == end && state != 6) {
+                cFile.erro(token, "Unexpected end of tokens", this);
+            }
             token = next;
-        }
-
-        if (state != 6) {
-            cFile.erro(last, "Unexpected end of tokens");
         }
 
         if (isEnum()) {
@@ -192,10 +192,10 @@ public abstract class Type implements GenericOwner {
             template.load(this, null);
         }
 
-        Pointer[] p = template == null ? null : new Pointer[template.generics.size()];
+        Pointer[] p = template == null ? null : new Pointer[template.getCount()];
         if (p != null) {
             for (int i = 0; i < p.length; i++) {
-                p[i] = template.generics.get(i).typePtr;
+                p[i] = template.getTypePtr(i);
             }
         }
         self = new Pointer(this, p, false);
@@ -229,26 +229,26 @@ public abstract class Type implements GenericOwner {
                     Token erro = mw.isFrom(this) ? mw.getName() : parentTokens.get(i);
 
                     if (mw.canOverride(pMW)) {
-                        if (pMW.isFinal()) cFile.erro(erro, "Cannot override a final method");
+                        if (pMW.isFinal()) cFile.erro(erro, "Cannot override a final method", this);
                         if (!pMW.canAcess(this)) {
                             pMW.canAcess(this);
-                            cFile.erro(erro, "Cannot acess");
+                            cFile.erro(erro, "Cannot acess", this);
                         }
                         if ((pMW.isPublic() && !mw.isPublic()) || (!pMW.isPrivate() && mw.isPrivate())) {
-                            cFile.erro(erro, "Incompatible acess");
+                            cFile.erro(erro, "Incompatible acess", this);
                         }
                         mw.markOverrided(pMW);
                         impl = mw;
                         add = false;
                     } else if (!mw.canOverload(pMW)) {
-                        cFile.erro(erro, "Incompatible signature [" + pMW.getName() + "]");
+                        cFile.erro(erro, "Incompatible signature [" + pMW.getName() + "]", this);
                         add = false;
                         break;
                     }
                 }
 
                 if (!isAbstract() && pMW.isAbstract() && impl == null) {
-                    cFile.erro(parentTokens.get(i), "Abstract method not implemented [" + pMW.getName() + "]");
+                    cFile.erro(parentTokens.get(i), "Abstract method not implemented [" + pMW.getName() + "]", this);
                 } else if (!isAbstract() && pMW.isAbstract() && impl != null && impl.method.type != this) {
                     methodViewImpl.add(impl);
                 } else if (!isAbstract() && parents.size() > 1 && pMW.original().type == cFile.langObject() &&
@@ -285,10 +285,10 @@ public abstract class Type implements GenericOwner {
 
                     if (iw.canOverride(pIW)) {
                         if (pIW.hasGet()) {
-                            if (pIW.isGetFinal()) cFile.erro(erro, "Cannot override a final GET");
-                            else if (!pIW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET");
+                            if (pIW.isGetFinal()) cFile.erro(erro, "Cannot override a final GET", this);
+                            else if (!pIW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET", this);
                             else if (iw.hasGet() && (iw.isGetPrivate() || (!iw.isGetPublic() && pIW.isGetPublic()))) {
-                                cFile.erro(erro, "Incompatible GET acess");
+                                cFile.erro(erro, "Incompatible GET acess", this);
                             } else if (!iw.hasGet()) {
                                 if (!pIW.isGetAbstract()) iw.setGetSource(pIW);
                             } else if (pIW.isGetAbstract()) {
@@ -298,10 +298,10 @@ public abstract class Type implements GenericOwner {
                         }
 
                         if (pIW.hasSet()) {
-                            if (pIW.isSetFinal()) cFile.erro(erro, "Cannot override a final SET");
-                            else if (!pIW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET");
+                            if (pIW.isSetFinal()) cFile.erro(erro, "Cannot override a final SET", this);
+                            else if (!pIW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET", this);
                             else if (iw.hasSet() && (iw.isSetPrivate() || (!iw.isSetPublic() && pIW.isSetPublic()))) {
-                                cFile.erro(erro, "Incompatible SET acess");
+                                cFile.erro(erro, "Incompatible SET acess", this);
                             } else if (!iw.hasSet()) {
                                 if (!pIW.isSetAbstract()) iw.setSetSource(pIW);
                             } else if (pIW.isSetAbstract()) {
@@ -310,10 +310,10 @@ public abstract class Type implements GenericOwner {
                             }
                         }
                         if (pIW.hasOwn()) {
-                            if (pIW.isOwnFinal()) cFile.erro(erro, "Cannot override a final OWN");
-                            else if (!pIW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN");
+                            if (pIW.isOwnFinal()) cFile.erro(erro, "Cannot override a final OWN", this);
+                            else if (!pIW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN", this);
                             else if (iw.hasOwn() && (iw.isOwnPrivate() || (!iw.isOwnPublic() && pIW.isOwnPublic()))) {
-                                cFile.erro(erro, "Incompatible OWN acess");
+                                cFile.erro(erro, "Incompatible OWN acess", this);
                             } else if (!iw.hasOwn()) {
                                 if (!pIW.isOwnAbstract()) iw.setOwnSource(pIW);
                             } else if (pIW.isOwnAbstract()) {
@@ -323,24 +323,24 @@ public abstract class Type implements GenericOwner {
                         }
                         add = false;
                     } else if (!iw.canOverload(pIW)) {
-                        cFile.erro(erro, "Incompatible signature [ " + pIW.getParams() + " ]");
+                        cFile.erro(erro, "Incompatible signature [ " + pIW.getParams() + " ]", this);
                         add = false;
                         break;
                     }
                 }
 
                 if (!isAbstract() && pIW.hasGet() && pIW.isGetAbstract() && !implGet) {
-                    cFile.erro(parentTokens.get(i), "Abstract indexer 'GET' not implemented [" + pIW.getParams() + "]");
+                    cFile.erro(parentTokens.get(i), "Abstract indexer 'GET' not implemented [" + pIW.getParams() + "]", this);
                 } else if (implIndexerGet != null && implIndexerGet.indexer.type != this) {
                     indexerGetViewImpl.add(implIndexerGet);
                 }
                 if (!isAbstract() && pIW.hasSet() && pIW.isSetAbstract() && !implSet) {
-                    cFile.erro(parentTokens.get(i), "Abstract indexer 'SET' not implemented [" + pIW.getParams() + "]");
+                    cFile.erro(parentTokens.get(i), "Abstract indexer 'SET' not implemented [" + pIW.getParams() + "]", this);
                 } else if (implIndexerSet != null && implIndexerSet.indexer.type != this) {
                     indexerSetViewImpl.add(implIndexerSet);
                 }
                 if (!isAbstract() && pIW.hasOwn() && pIW.isOwnAbstract() && !implOwn) {
-                    cFile.erro(parentTokens.get(i), "Abstract indexer 'OWN' not implemented [" + pIW.getParams() + "]");
+                    cFile.erro(parentTokens.get(i), "Abstract indexer 'OWN' not implemented [" + pIW.getParams() + "]", this);
                 } else if (implIndexerOwn != null && implIndexerOwn.indexer.type != this) {
                     indexerOwnViewImpl.add(implIndexerOwn);
                 }
@@ -361,10 +361,10 @@ public abstract class Type implements GenericOwner {
                     add = false;
                     if (fw.canOverride(pFW)) {
                         if (pFW.hasGet()) {
-                            if (pFW.isGetFinal()) cFile.erro(erro, "Cannot override a final GET");
-                            else if (!pFW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET");
+                            if (pFW.isGetFinal()) cFile.erro(erro, "Cannot override a final GET", this);
+                            else if (!pFW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET", this);
                             else if (fw.hasGet() && (fw.isGetPrivate() || (!fw.isGetPublic() && pFW.isGetPublic()))) {
-                                cFile.erro(erro, "Incompatible GET acess");
+                                cFile.erro(erro, "Incompatible GET acess", this);
                             } else if (!fw.hasGet()) {
                                 if (!pFW.isGetAbstract()) fw.setGetSource(pFW);
                             } else if (pFW.isGetAbstract()) {
@@ -374,10 +374,10 @@ public abstract class Type implements GenericOwner {
                         }
 
                         if (pFW.hasSet()) {
-                            if (pFW.isSetFinal()) cFile.erro(erro, "Cannot override a final SET");
-                            else if (!pFW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET");
+                            if (pFW.isSetFinal()) cFile.erro(erro, "Cannot override a final SET", this);
+                            else if (!pFW.canAcessSet(this)) cFile.erro(erro, "Cannot acess SET", this);
                             else if (fw.hasSet() && (fw.isSetPrivate() || (!fw.isSetPublic() && pFW.isSetPublic()))) {
-                                cFile.erro(erro, "Incompatible SET acess");
+                                cFile.erro(erro, "Incompatible SET acess", this);
                             } else if (!fw.hasSet()) {
                                 if (!pFW.isSetAbstract()) fw.setSetSource(pFW);
                             } else if (pFW.isSetAbstract()) {
@@ -386,10 +386,10 @@ public abstract class Type implements GenericOwner {
                             }
                         }
                         if (pFW.hasOwn()) {
-                            if (pFW.isOwnFinal()) cFile.erro(erro, "Cannot override a final OWN");
-                            else if (!pFW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN");
+                            if (pFW.isOwnFinal()) cFile.erro(erro, "Cannot override a final OWN", this);
+                            else if (!pFW.canAcessOwn(this)) cFile.erro(erro, "Cannot acess OWN", this);
                             else if (fw.hasOwn() && (fw.isOwnPrivate() || (!fw.isOwnPublic() && pFW.isOwnPublic()))) {
-                                cFile.erro(erro, "Incompatible OWN acess");
+                                cFile.erro(erro, "Incompatible OWN acess", this);
                             } else if (!fw.hasOwn()) {
                                 if (!pFW.isOwnAbstract()) fw.setOwnSource(pFW);
                             } else if (pFW.isOwnAbstract()) {
@@ -398,22 +398,22 @@ public abstract class Type implements GenericOwner {
                             }
                         }
                     } else if (!fw.canShadow(pFW)) {
-                        cFile.erro(erro, "Incompatible signature [ " + pFW.getName() + " ]");
+                        cFile.erro(erro, "Incompatible signature [ " + pFW.getName() + " ]", this);
                     }
                 }
 
                 if (!isAbstract() && pFW.hasGet() && pFW.isGetAbstract() && !implGet) {
-                    cFile.erro(parentTokens.get(i), "Abstract property 'GET' not implemented [" + pFW.getName() + "]");
+                    cFile.erro(parentTokens.get(i), "Abstract property 'GET' not implemented [" + pFW.getName() + "]", this);
                 } else if (implFieldGet != null && implFieldGet.type != this){
                     propertyGetViewImpl.add(implFieldGet);
                 }
                 if (!isAbstract() && pFW.hasSet() && pFW.isSetAbstract() && !implSet) {
-                    cFile.erro(parentTokens.get(i), "Abstract property 'SET' not implemented [" + pFW.getName() + "]");
+                    cFile.erro(parentTokens.get(i), "Abstract property 'SET' not implemented [" + pFW.getName() + "]", this);
                 } else if (implFieldSet != null && implFieldSet.type != this){
                     propertySetViewImpl.add(implFieldSet);
                 }
                 if (!isAbstract() && pFW.hasOwn() && pFW.isOwnAbstract() && !implOwn) {
-                    cFile.erro(parentTokens.get(i), "Abstract property 'OWN' not implemented [" + pFW.getName() + "]");
+                    cFile.erro(parentTokens.get(i), "Abstract property 'OWN' not implemented [" + pFW.getName() + "]", this);
                 } else if (implFieldOwn != null && implFieldOwn.type != this){
                     propertyOwnViewImpl.add(implFieldOwn);
                 }
@@ -429,7 +429,7 @@ public abstract class Type implements GenericOwner {
                     for (Constructor cC : constructors) {
                         if (!cC.isStatic() && cC.getParams().canOverride(pCW)) {
                             if (!cC.isPublic()) {
-                                cFile.erro(cC.token, "A Default constructor implementation must be public");
+                                cFile.erro(cC.token, "A Default constructor implementation must be public", this);
                             }
                             cC.markDefault();
                             isImplemented = true;
@@ -437,7 +437,7 @@ public abstract class Type implements GenericOwner {
                         }
                     }
                     if (!isImplemented) {
-                        cFile.erro(nameToken, "Default constructor not implemented");
+                        cFile.erro(nameToken, "Default constructor not implemented", this);
                     }
                 }
             }
@@ -824,17 +824,17 @@ public abstract class Type implements GenericOwner {
     public void add(Variable variable) {
         if (variable.load()) {
             if (isInterface() && !variable.isStatic()) {
-                cFile.erro(variable.token, "Instance variables not allowed");
+                cFile.erro(variable.token, "Instance variables not allowed", this);
             } else if (isStruct()
                     && variable.getTypePtr().type != null
                     && variable.getTypePtr().type.isStruct()
                     && variable.getTypePtr().type.cyclicVariableVerify(this)) {
-                cFile.erro(variable.getTypeToken().start, "Cyclic variable type");
+                cFile.erro(variable.getTypeToken().start, "Cyclic variable type", this);
             } else {
 
                 for (FieldView field : variable.getFields()) {
                     if (fields.containsKey(field.nameToken)) {
-                        cFile.erro(field.nameToken, "Repeated field name");
+                        cFile.erro(field.nameToken, "Repeated field name", this);
                     } else {
                         fields.put(field.nameToken, field);
                     }
@@ -848,19 +848,19 @@ public abstract class Type implements GenericOwner {
         if (property.load()) {
             if (property.hasGet() && property.isGetAbstract() &&
                     ((property.isGetPrivate() && !isPrivate()) || (!property.isGetPublic() && isPublic()))) {
-                cFile.erro(property.token, "A abstract property GET cannot have a stronger acess modifier");
+                cFile.erro(property.token, "A abstract property GET cannot have a stronger acess modifier", this);
             }
             if (property.hasSet() && property.isSetAbstract() &&
                     ((property.isSetPrivate() && !isPrivate()) || (!property.isSetPublic() && isPublic()))) {
-                cFile.erro(property.token, "A abstract property SET cannot have a strong acess modifier");
+                cFile.erro(property.token, "A abstract property SET cannot have a strong acess modifier", this);
             }
             if (property.hasOwn() && property.isOwnAbstract() &&
                     ((property.isOwnPrivate() && !isPrivate()) || (!property.isOwnPublic() && isPublic()))) {
-                cFile.erro(property.token, "A abstract property OWN cannot have a strong acess modifier");
+                cFile.erro(property.token, "A abstract property OWN cannot have a strong acess modifier", this);
             }
             FieldView field = property.getField();
             if (fields.containsKey(field.nameToken)) {
-                cFile.erro(field.nameToken, "Repeated field name");
+                cFile.erro(field.nameToken, "Repeated field name", this);
             } else {
                 fields.put(field.nameToken, field);
             }
@@ -871,11 +871,11 @@ public abstract class Type implements GenericOwner {
     public void add(Num num) {
         if (num.load()) {
             if (!isEnum()) {
-                cFile.erro(num.token, "Unexpected enumeration");
+                cFile.erro(num.token, "Unexpected enumeration", this);
             } else {
                 for (FieldView field : num.getFields()) {
                     if (fields.containsKey(field.nameToken)) {
-                        cFile.erro(field.nameToken, "Repeated field name");
+                        cFile.erro(field.nameToken, "Repeated field name", this);
                     } else {
                         fields.put(field.nameToken, field);
                     }
@@ -888,12 +888,12 @@ public abstract class Type implements GenericOwner {
     public void add(Method method) {
         if (method.load()) {
             if (method.isAbstract() && ((method.isPrivate() && !isPrivate()) || (!method.isPublic() && isPublic()))) {
-                cFile.erro(method.getName(), "A abstract method cannot have a strong acess modifier than the type");
+                cFile.erro(method.getName(), "A abstract method cannot have a strong acess modifier than the type", this);
             }
             for (Method methodB : methods) {
                 if (method.getName().equals(methodB.getName())) {
                     if (!method.getParams().canOverload(methodB.getParams())) {
-                        cFile.erro(method.getName(), "Invalid overloading");
+                        cFile.erro(method.getName(), "Invalid overloading", this);
                         return;
                     }
                 }
@@ -910,19 +910,19 @@ public abstract class Type implements GenericOwner {
         if (indexer.load()) {
             if (indexer.hasGet() && indexer.isGetAbstract() &&
                     ((indexer.isGetPrivate() && !isPrivate()) || (!indexer.isGetPublic() && isPublic()))) {
-                cFile.erro(indexer.token, "A abstract indexer GET cannot have a stronger acess modifier");
+                cFile.erro(indexer.token, "A abstract indexer GET cannot have a stronger acess modifier", this);
             }
             if (indexer.hasSet() && indexer.isSetAbstract() &&
                     ((indexer.isSetPrivate() && !isPrivate()) || (!indexer.isSetPublic() && isPublic()))) {
-                cFile.erro(indexer.token, "A abstract indexer SET cannot have a strong acess modifier");
+                cFile.erro(indexer.token, "A abstract indexer SET cannot have a strong acess modifier", this);
             }
             if (indexer.hasOwn() && indexer.isOwnAbstract() &&
                     ((indexer.isOwnPrivate() && !isPrivate()) || (!indexer.isOwnPublic() && isPublic()))) {
-                cFile.erro(indexer.token, "A abstract indexer OWN cannot have a strong acess modifier");
+                cFile.erro(indexer.token, "A abstract indexer OWN cannot have a strong acess modifier", this);
             }
             for (Indexer indexerB : indexers) {
                 if (!indexer.getParams().canOverload(indexerB.getParams())) {
-                    cFile.erro(indexer.token, "Invalid overloading");
+                    cFile.erro(indexer.token, "Invalid overloading", this);
                     return;
                 }
             }
@@ -935,7 +935,7 @@ public abstract class Type implements GenericOwner {
     public void add(Operator operator) {
         if (operator.load()) {
             if (!isStruct()) {
-                cFile.erro(operator.token, "Operators not allowed");
+                cFile.erro(operator.token, "Operators not allowed", this);
             } else {
                 for (Operator operatorB : operators) {
                     if (operator.op == operatorB.op
@@ -944,11 +944,11 @@ public abstract class Type implements GenericOwner {
 
                         if (operator.op == Key.CAST || operator.op == Key.AUTO) {
                             if (operator.typePtr.equals(operatorB.typePtr)) {
-                                cFile.erro(operator.token, "Invalid overloading");
+                                cFile.erro(operator.token, "Invalid overloading", this);
                                 return;
                             }
                         } else if (!operator.params.canOverload(operatorB.params)) {
-                            cFile.erro(operator.token, "Invalid overloading");
+                            cFile.erro(operator.token, "Invalid overloading", this);
                             return;
                         }
                     }
@@ -962,25 +962,25 @@ public abstract class Type implements GenericOwner {
     public void add(Constructor constructor) {
         if (constructor.load()) {
             if (isInterface() && !constructor.isStatic()) {
-                cFile.erro(constructor.token, "Instance constructors not allowed");
+                cFile.erro(constructor.token, "Instance constructors not allowed", this);
             } else if (constructor.isStatic()) {
                 if (staticConstructor != null) {
-                    cFile.erro(constructor.token, "Repeated static constructor");
+                    cFile.erro(constructor.token, "Repeated static constructor", this);
                 } else if (constructor.isDefault()) {
-                    cFile.erro(constructor.token, "A Default constructor cannot be static");
+                    cFile.erro(constructor.token, "A Default constructor cannot be static", this);
                 } else {
                     if (constructor.isPrivate()) {
-                        cFile.erro(constructor.token, "Static constructors are always public");
+                        cFile.erro(constructor.token, "Static constructors are always public", this);
                     }
                     staticConstructor = constructor;
                 }
             } else {
                 if (constructor.isDefault() && !constructor.isPublic()) {
-                    cFile.erro(constructor.token, "A Default constructor must be public");
+                    cFile.erro(constructor.token, "A Default constructor must be public", this);
                 }
                 for (Constructor constructorB : constructors) {
                     if (!constructor.getParams().canOverload(constructorB.getParams())) {
-                        cFile.erro(constructor.token, "Invalid overloading");
+                        cFile.erro(constructor.token, "Invalid overloading", this);
                         return;
                     }
                 }
@@ -993,9 +993,9 @@ public abstract class Type implements GenericOwner {
     public void add(Destructor destructor) {
         if (destructor.load()) {
             if (destructors.size() > 0) {
-                cFile.erro(destructor.token, "Repeated destructor");
+                cFile.erro(destructor.token, "Repeated destructor", this);
             } else if (!isClass()) {
-                cFile.erro(destructor.token, "Destructors not allowed");
+                cFile.erro(destructor.token, "Destructors not allowed", this);
             } else {
                 destructors.add(destructor);
             }

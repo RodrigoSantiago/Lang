@@ -131,7 +131,7 @@ public class  Lexer {
                                 } else {
                                     break;
                                 }
-                                back = pprev.getPrev();
+                                back = back.getPrev();
                             }
                             if (isArray) {
                                 parent.setNext(parent.getChild());
@@ -180,9 +180,17 @@ public class  Lexer {
             token = token.getNext();
         }
 
-        if (group == '[' || group == '{' || group == '(') {
+        /*parent.setLastChild(null);
+        return last;*/
+        if (group == '{') {
             parent.setLastChild(null);
             return last;
+        } else if (group == '[' || group == '(') {
+            /*parent.setLastChild(null);
+            return last;*/
+            parent.setNext(parent.getChild());
+            parent.setChild(null);
+            return null;
         } else if (group == '<') {
             parent.setNext(parent.getChild());
             parent.setChild(null);

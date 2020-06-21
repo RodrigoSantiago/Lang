@@ -23,7 +23,7 @@ public class LambdaCall extends Call {
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && token.key == Key.PARAM) {
+            if (state == 0 && token.key == Key.PARAM && token.getChild() != null) {
                 params = new Parameters(cFile, token);
                 state = 1;
             } else if (state == 1 && token.key == Key.LAMBDA) {
@@ -31,9 +31,9 @@ public class LambdaCall extends Call {
             } else if (state == 2 && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 3;
-            } else if ((state == 2 || state == 3) && token.key == Key.BRACE) {
+            } else if ((state == 2 || state == 3) && token.key == Key.BRACE && token.getChild() != null) {
                 innerStack = new StackExpansion(getStack());
-                innerStack.read(token, next, true);
+                innerStack.read(token.getChild(), token.getLastChild(), true);
                 state = 4;
             } else {
                 cFile.erro(token, "Unexpected token", this);

@@ -29,7 +29,7 @@ public abstract class Type implements GenericOwner {
     public String fileName;
 
     public Template template;
-    public Token contentToken;
+    public TokenGroup contentToken;
 
     public Pointer self;
     public Pointer parent;
@@ -112,18 +112,14 @@ public abstract class Type implements GenericOwner {
                     cFile.erro(nameToken, "Type names cannot start with underline (_)", this);
                 }
                 state = 2;
-            } else if (state == 2 && token.key == Key.GENERIC) {
-                if (token.getChild() != null) {
-                    if (isEnum()) {
-                        cFile.erro(token, "A enum cannot have genrics", this);
-                    } else {
-                        hasGeneric = true;
-                        template = new Template(cFile, token, !isStruct());
-                    }
-                    state = 3;
+            } else if (state == 2 && token.key == Key.GENERIC && token.getChild() != null) {
+                if (isEnum()) {
+                    cFile.erro(token, "A enum cannot have genrics", this);
                 } else {
-                    cFile.erro(token, "Unexpected token", this);
+                    hasGeneric = true;
+                    template = new Template(cFile, token, !isStruct());
                 }
+                state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.COLON) {
                 state = 4;
             } else if (state == 4 && token.key == Key.WORD) {
@@ -132,7 +128,16 @@ public abstract class Type implements GenericOwner {
             } else if (state == 5 && token.key == Key.COMMA) {
                 state = 4;
             } else if ((state == 2 || state == 3 || state == 4 || state == 5) && token.key == Key.BRACE) {
-                contentToken = token;
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
                 state = 6;
             } else {
                 cFile.erro(token, "Unexpected token", this);
@@ -202,8 +207,8 @@ public abstract class Type implements GenericOwner {
     }
 
     public void internal() {
-        if (contentToken != null && contentToken.getChild() != null) {
-            Parser.parseMembers(this, contentToken.getChild(), contentToken.getLastChild());
+        if (contentToken != null) {
+            Parser.parseMembers(this, contentToken.start, contentToken.end);
         }
     }
 
@@ -791,13 +796,7 @@ public abstract class Type implements GenericOwner {
                     while (iToken != null && iToken != iEnd) {
                         Token iNext = iToken.getNext();
                         if (iState == 0 && iToken.key == Key.WORD) {
-                            if (iNext != null && (iNext.key == Key.GENERIC)) {
-                                iNext = iNext.getNext();
-                            }
-                            while (iNext != null && iNext.key == Key.INDEX) {
-                                iNext = iNext.getNext();
-                            }
-                            inheritanceType(iToken, iNext);
+                            inheritanceType(iToken, iNext = TokenGroup.nextType(iNext, iEnd));
                             iState = 1;
                         } else if (iState == 1 && iToken.key == Key.COMMA) {
                             iState = 0;

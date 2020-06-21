@@ -2,6 +2,7 @@ package logic.member;
 
 import content.Key;
 import content.Token;
+import content.TokenGroup;
 import data.CppBuilder;
 import logic.params.Parameters;
 import logic.typdef.Type;
@@ -9,14 +10,13 @@ import logic.typdef.Type;
 public class Constructor extends Member {
 
     private Parameters params;
-    private Token contentToken;
+    private TokenGroup contentToken;
 
     public Constructor(Type type, Token start, Token end) {
         super(type);
 
         int state = 0;
         Token next;
-        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -26,27 +26,40 @@ public class Constructor extends Member {
             } else if (state == 0 && token.key == Key.THIS) {
                 this.token = token;
                 state = 1;
-            } else if (state == 1 && token.key == Key.PARAM) {
+            } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
                 params = new Parameters(cFile, token);
                 state = 2;
-            } else if (state == 2 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
-                contentToken = token;
+            } else if (state == 2 && token.key == Key.BRACE) {
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
+                state = 3;
+            } else if (state == 2 && token.key == Key.SEMICOLON) {
+                contentToken = new TokenGroup(token, next);
                 state = 3;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-
-            last = token;
+            if (next == end && state != 3) {
+                cFile.erro(token, "Unexpected end of tokens", this);
+            }
             token = next;
-        }
-
-        if (state != 3) {
-            cFile.erro(last, "Unexpected end of tokens", this);
         }
     }
 
     @Override
     public boolean load() {
+        if (contentToken != null && contentToken.start.key == Key.SEMICOLON) {
+            cFile.erro(contentToken.start, "A Constructor should implement", this);
+        }
+
         if (token != null && params != null) {
             params.load(isStatic() ? null : type);
 

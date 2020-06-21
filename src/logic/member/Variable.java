@@ -23,7 +23,6 @@ public class Variable extends Member {
 
         int state = 0;
         Token next;
-        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -58,14 +57,12 @@ public class Variable extends Member {
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-
-            last = token;
+            if (next == end && state != 3) {
+                cFile.erro(token, "Unexpected end of tokens", this);
+            }
             token = next;
         }
 
-        if (state != 3) {
-            cFile.erro(last, "Unexpected end of tokens", this);
-        }
     }
 
     @Override

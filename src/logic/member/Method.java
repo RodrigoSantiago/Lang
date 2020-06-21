@@ -21,20 +21,19 @@ public class Method extends Member implements GenericOwner {
     private Pointer typePtr;
     private TokenGroup typeToken;
 
-    private Token contentToken;
+    private TokenGroup contentToken;
 
     public Method(Type type, Token start, Token end) {
         super(type);
 
         int state = 0;
         Token next;
-        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
                 readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, true, false);
-            } else if (state == 0 && token.key == Key.GENERIC) {
+            } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null) {
                 template = new Template(cFile, token, true);
                 state = 1;
             } else if ((state == 0 || state == 1) && token.key == Key.VOID) {
@@ -50,22 +49,31 @@ public class Method extends Member implements GenericOwner {
                 this.token = token;
                 nameToken = token;
                 state = 3;
-            } else if (state == 3 && token.key == Key.PARAM) {
+            } else if (state == 3 && token.key == Key.PARAM && token.getChild() != null) {
                 params = new Parameters(cFile, token);
                 state = 4;
-            } else if (state == 4 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
-                contentToken = token;
+            } else if (state == 4 && token.key == Key.BRACE) {
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
+                state = 5;
+            } else if (state == 4 && token.key == Key.SEMICOLON) {
+                contentToken = new TokenGroup(token, next);
                 state = 5;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-
-            last = token;
+            if (next == end && state != 5) {
+                cFile.erro(token, "Unexpected end of tokens", this);
+            }
             token = next;
-        }
-
-        if (state != 5) {
-            cFile.erro(last, "Unexpected end of tokens", this);
         }
 
         if (isAbstract() && template != null) {
@@ -89,6 +97,10 @@ public class Method extends Member implements GenericOwner {
 
     @Override
     public boolean load() {
+        if (contentToken != null && contentToken.start.key == Key.SEMICOLON && !isAbstract()) {
+            cFile.erro(contentToken.start, "A Non-Abstract Method should implement", this);
+        }
+
         if (typeToken != null) {
             if (typeToken.start.key == Key.VOID) {
                 typePtr = Pointer.voidPointer;
@@ -126,9 +138,9 @@ public class Method extends Member implements GenericOwner {
 
     public void make() {
         if (nameToken.equals("method")) {
-            if (contentToken != null && contentToken.getChild() != null) {
+            if (contentToken != null) {
                 Stack stack = new Stack(cFile, false);
-                stack.read(contentToken, contentToken.getNext());
+                stack.read(contentToken.start, contentToken.end);
                 stack.make();
             }
         }

@@ -1,14 +1,10 @@
 package data;
 
-import content.Key;
-import content.Lexer;
-import content.Parser;
-import content.Token;
+import content.*;
 import logic.GenericOwner;
 import logic.Namespace;
 import logic.Pointer;
 import logic.Using;
-import logic.templates.Generic;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
@@ -168,10 +164,10 @@ public class ContentFile {
             } else if (state == 2 && token.key == Key.SEMICOLON) {
                 state = 3;
             } else {
-                erro(token, "Unexpected token");
+                erro(token, "Unexpected token", this);
             }
             if (next == end && state != 3) {
-                erro(token, "Unexpected end of tokens");
+                erro(token, "Unexpected end of tokens", this);
             }
 
             token = next;
@@ -179,17 +175,17 @@ public class ContentFile {
 
         String name = null;
         if (tokenName == null) {
-            erro(keyToken == null ? start : keyToken, "Invalid Namespace : Name expected");
+            erro(keyToken == null ? start : keyToken, "Invalid Namespace : Name expected", this);
         } else {
             name = tokenName.toString();
             if (tokenName.endsWith("::")) {
                 name = null;
-                erro(tokenName, "Invalid Namespace : Invalid name");
+                erro(tokenName, "Invalid Namespace : Invalid name", this);
             } else {
                 String[] parts = name.split("::");
                 for (String part : parts) {
                     if (part.startsWith("_")) {
-                        erro(tokenName, "A nmespace cannot start with underline (_)");
+                        erro(tokenName, "A nmespace cannot start with underline (_)", this);
                     }
                 }
             }
@@ -234,6 +230,14 @@ public class ContentFile {
         return new Pointer(mark(getCompiler().getLangString()));
     }
 
+    public Pointer langIntPtr() {
+        return new Pointer(mark(getCompiler().getLangInt()));
+    }
+
+    public Pointer langBoolPtr() {
+        return new Pointer(mark(getCompiler().getLangBool()));
+    }
+
     public Pointer langArrayPtr(Pointer pointer) {
         return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer}, false);
     }
@@ -266,9 +270,9 @@ public class ContentFile {
             Type old = namespace.add(type);
 
             if (old == type) {
-                erro(old.nameToken, "Repeated type name (Insensitive case exception)");
+                erro(old.nameToken, "Repeated type name (Insensitive case exception)", this);
             } else if (old != null) {
-                erro(old.nameToken, "Repeated type name");
+                erro(old.nameToken, "Repeated type name", this);
             }
         }
     }
@@ -320,14 +324,14 @@ public class ContentFile {
             type = findType(typeToken);
             if (type == null) {
                 type = getCompiler().getLangObject();
-                erro(typeToken, "Undefined type");
+                erro(typeToken, "Undefined type", this);
             }
         }
 
         if (type != null && cycleOwner != null) {
             if (type.cyclicVerify(cycleOwner)) {
                 type = getCompiler().getLangObject();
-                erro(typeToken, "Cyclic reference");
+                erro(typeToken, "Cyclic reference", this);
             }
         }
 
@@ -339,13 +343,11 @@ public class ContentFile {
         while (token != end) {
             Token next = token.getNext();
 
-            if (state == 0 && ptr != null && token.key == Key.GENERIC) {
-                erro(token, "Generic types could not apply generic variance");
-            } else if (state == 0 && token.key == Key.GENERIC && type != null && type.template == null) {
-                erro(token, "Unexpected generic variance");
-            } else if (state == 0 && token.key == Key.GENERIC && type != null) {
-                ArrayList<Generic> generics = type.template.generics;
-
+            if (state == 0 && token.key == Key.GENERIC && token.getChild() != null && ptr != null) {
+                erro(token, "Generic types could not apply generic variance", this);
+            } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null && type != null && type.template == null) {
+                erro(token, "Unexpected generic variance", this);
+            } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null && type != null) {
                 iPointers = new ArrayList<>();
 
                 boolean hasLet = false;
@@ -357,20 +359,20 @@ public class ContentFile {
                     Token iNext = iToken.getNext();
 
                     if (iState == 0 && iToken.key == Key.LET) {
+                        if (type.isFunction()) {
+                            hasLet = true;
+                        } else {
+                            erro(iToken, "Let is not allowed here", this);
+                        }
                         iState = 1;
                     } else if ((iState == 0 || iState == 1) && iToken.key == Key.WORD) {
-                        if (iNext != null && (iNext.key == Key.GENERIC)) {
-                            iNext = iNext.getNext();
-                        }
-                        while (iNext != null && iNext.key == Key.INDEX) {
-                            iNext = iNext.getNext();
-                        }
-                        Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner, false);
-                        if (index >= generics.size() && !type.isFunction()) {
+                        iNext = TokenGroup.nextType(iNext, iEnd);
+                        Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner, hasLet);
+                        if (index >= type.template.getCount() && !type.isFunction()) {
                             erro(iToken, iNext, "Unexpected generic");
                         } else {
-                            if (!type.isFunction() && genPtr.isDerivedFrom(generics.get(index).basePtr) == -1) {
-                                genPtr = generics.get(index).defaultPtr;
+                            if (!type.isFunction() && genPtr.isDerivedFrom(type.template.getBasePtr(index)) == -1) {
+                                genPtr = type.template.getDefaultPtr(index);
                                 erro(iToken, iNext, "Invalid generic");
                             }
                             index++;
@@ -382,12 +384,12 @@ public class ContentFile {
                             iPointers.add(Pointer.voidPointer);
                             index++;
                         } else {
-                            erro(iToken, "Void not allowed here");
+                            erro(iToken, "Void not allowed here", this);
                         }
                     } else if (iState == 2 && iToken.key == Key.COMMA) {
                         iState = 0;
                     } else {
-                        erro(iToken, "Unexpected token");
+                        erro(iToken, "Unexpected token", this);
                     }
                     iToken = iNext;
                 }
@@ -398,7 +400,7 @@ public class ContentFile {
                 arr++;
                 state = 1;
             } else {
-                erro(token, "Unexpected token");
+                erro(token, "Unexpected token", this);
             }
             token = next;
         }
@@ -406,10 +408,10 @@ public class ContentFile {
         if (ptr == null) {
             if (iPointers != null) {
                 if (type.template != null && !type.isFunction()) {
-                    if (iPointers.size() < type.template.generics.size()) {
+                    if (iPointers.size() < type.template.getCount()) {
                         type = getCompiler().getLangObject();
                         iPointers = null;
-                        erro(token, "Missing generics");
+                        erro(token, "Missing generics", this);
                     }
                 }
             }
@@ -422,12 +424,12 @@ public class ContentFile {
         return ptr;
     }
 
-    public void erro(int start, int end, String message) {
-        erros.add(new Error(Error.ERROR, start, end, message));
+    public void erro(int start, int end, String message, Object sender) {
+        erros.add(new Error(Error.ERROR, start, end, message + " > from " + sender.getClass().getSimpleName()));
     }
 
-    public void erro(Token token, String message) {
-        erros.add(new Error(Error.ERROR, token.start, token.end, message));
+    public void erro(Token token, String message, Object sender) {
+        erros.add(new Error(Error.ERROR, token.start, token.end, message + " > from " + sender.getClass().getSimpleName()));
     }
 
     public void erro(Token token, Token tokenEnd, String message) {

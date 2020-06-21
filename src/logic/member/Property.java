@@ -14,7 +14,7 @@ public class Property extends Member {
     private TokenGroup typeToken;
     private Pointer typePtr;
 
-    private Token contentToken;
+    private TokenGroup contentToken;
     private TokenGroup initToken;
     private Token getContentToken, setContentToken, ownContentToken;
 
@@ -28,7 +28,6 @@ public class Property extends Member {
 
         int state = 0;
         Token next;
-        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -42,42 +41,52 @@ public class Property extends Member {
                 nameToken = token;
                 state = 2;
             } else if (state == 2 && token.key == Key.BRACE) {
-                contentToken = token;
-                readBlocks(contentToken);
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
+                if (contentToken != null) readBlocks(contentToken);
                 state = 3;
+            } else if (state == 2 && token.key == Key.SEMICOLON) {
+                contentToken = new TokenGroup(token, next);
+                state = 4;
             } else if (state == 3 && token.key == Key.SETVAL) {
-                while (next != null && next != end && next.key != Key.SEMICOLON) {
+                while (next != end && next.key != Key.SEMICOLON) {
                     next = next.getNext();
                 }
-                if (next != end && next != null) {
+                if (next != end) {
                     next = next.getNext();
                 } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
+                    cFile.erro(token, "Semicolon expected", this);
                 }
                 initToken = new TokenGroup(token, next);
                 state = 4;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-
-            last = token;
+            if (next == end && state < 3) {
+                cFile.erro(token, "Unexpected end of tokens", this);
+            }
             token = next;
         }
 
-        if (state < 3) {
-            cFile.erro(last, "Unexpected end of tokens", this);
-        }
     }
 
-    private void readBlocks(Token group) {
+    private void readBlocks(TokenGroup group) {
         boolean isPrivate = false, isPublic = false, isAbstract = false, isFinal = false;
         boolean getOwn = false;
         int t = 0;
 
         int state = 0;
         Token next;
-        Token end =  group.getLastChild();
-        Token token = group.getChild();
+        Token end =  group.end;
+        Token token = group.start;
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
@@ -158,9 +167,6 @@ public class Property extends Member {
                     isOwnFinal = (this.isFinal && !isAbstract) || isFinal;
                     isOwnAbstract = (this.isAbstract && !isFinal) || isAbstract;
                 }
-                if (getOwn) {
-                    System.out.println("aki");
-                }
                 isGetOwn = isGetOwn || getOwn;
                 t = 0;
                 isPublic = isPrivate = isAbstract = isFinal = getOwn = false;
@@ -168,11 +174,10 @@ public class Property extends Member {
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
+            if (next == end && (state != 0 || (!hasGet && !hasSet && !hasOwn))) {
+                cFile.erro(token, "Unexpected end of tokens", this);
+            }
             token = next;
-        }
-
-        if (state != 0 || (!hasGet && !hasSet && !hasOwn)) {
-            cFile.erro(end != null ? end : group, "Unexpected end of tokens", this);
         }
     }
 
@@ -185,6 +190,24 @@ public class Property extends Member {
 
     @Override
     public boolean load() {
+        if ((contentToken != null && contentToken.start.key == Key.SEMICOLON) || !hasGet && !hasSet && !hasOwn) {
+            cFile.erro(contentToken == null ? token : contentToken.start,
+                    "A Property should have at least one member", this);
+        }
+        if (hasGet && !isGetAbstract && (getContentToken == null || getContentToken.key == Key.SEMICOLON) &&
+                (!isGetOwn || (ownContentToken == null || ownContentToken.key == Key.SEMICOLON))) {
+            cFile.erro(getContentToken == null ? token : getContentToken,
+                    "A Non-Abstract Get Member should implement", this);
+        }
+        if (hasOwn && !isOwnAbstract && (ownContentToken == null || ownContentToken.key == Key.SEMICOLON) &&
+                (!isGetOwn || (getContentToken == null || getContentToken.key == Key.SEMICOLON))) {
+            cFile.erro(ownContentToken == null ? token : ownContentToken,
+                    "A Non-Abstract Own Member should implement", this);
+        }
+        if (hasSet && !isSetAbstract && (setContentToken == null || setContentToken.key == Key.SEMICOLON)) {
+            cFile.erro(setContentToken == null ? token : setContentToken,
+                    "A Non-Abstract Set Member should implement", this);
+        }
         if (typeToken != null) {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type, isLet());
 

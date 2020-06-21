@@ -207,14 +207,14 @@ public class Library {
                 try (PrintWriter pw = new PrintWriter(header)) {
                     pw.print(cppBuilder.getHeader());
                 } catch (Exception e) {
-                    cFile.erro(0, 0, "Unable to write to file[" + header + "]");
+                    cFile.erro(0, 0, "Unable to write to file[" + header + "]", this);
                 }
 
                 File source = new File(srcDir, type.fileName + ".cpp");
                 try (PrintWriter pw = new PrintWriter(source)) {
                     pw.print(cppBuilder.getSource());
                 } catch (Exception e) {
-                    cFile.erro(0, 0, "Unable to write to file[" + source + "]");
+                    cFile.erro(0, 0, "Unable to write to file[" + source + "]", this);
                 }
 
                 if (type.hasGeneric()) {
@@ -222,7 +222,7 @@ public class Library {
                     try (PrintWriter pw = new PrintWriter(generic)) {
                         pw.print(cppBuilder.getGeneric());
                     } catch (Exception e) {
-                        cFile.erro(0, 0, "Unable to write to file[" + generic + "]");
+                        cFile.erro(0, 0, "Unable to write to file[" + generic + "]", this);
                     }
                 }
             }

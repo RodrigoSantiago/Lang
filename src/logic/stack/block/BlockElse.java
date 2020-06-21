@@ -9,7 +9,7 @@ import logic.stack.expression.Expression;
 
 public class BlockElse extends Block {
 
-    TokenGroup contentTokenGroup;
+    TokenGroup contentToken;
     Expression condition;
     private boolean isElseIf;
 
@@ -30,18 +30,23 @@ public class BlockElse extends Block {
                 System.out.println("AND IF");
                 isElseIf = true;
                 state = 2;
-            } else if (state == 2 && token.key == Key.PARAM) {
-                if (token.getChild() != null) {
-                    condition = new Expression(this, token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+            } else if (state == 2 && token.key == Key.PARAM && token.getChild() != null) {
+                condition = new Expression(this, token.getChild(), token.getLastChild());
                 state = 3;
             } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.BRACE) {
                 if (state == 2) {
                     cFile.erro(token.start, token.start + 1, "Missing condition", this);
                 }
-                contentTokenGroup = new TokenGroup(token.getChild(), token.getLastChild());
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
                 state = 4;
             } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.SEMICOLON) {
                 if (state == 2) {
@@ -49,7 +54,7 @@ public class BlockElse extends Block {
                 }
                 state = 4;
             } else if (state == 2 || state == 3) {
-                contentTokenGroup = new TokenGroup(token, end);
+                contentToken = new TokenGroup(token, end);
                 next = end;
                 state = 4;
             } else {
@@ -61,8 +66,8 @@ public class BlockElse extends Block {
             token = next;
         }
 
-        if (contentTokenGroup != null) {
-            Parser.parseLines(this, contentTokenGroup.start, contentTokenGroup.end);
+        if (contentToken != null) {
+            Parser.parseLines(this, contentToken.start, contentToken.end);
         }
     }
 

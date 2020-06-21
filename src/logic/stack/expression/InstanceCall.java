@@ -42,29 +42,24 @@ public class InstanceCall extends Call {
                 typeToken = new TokenGroup(token, next);
 
                 while (next != end && next.key == Key.INDEX) {
-                    if (next.getChild() != null && !next.isEmptyParent()) {
-                        readArguments(getLine(), this.indexArguments, next.getChild(), next.getLastChild());
-                    } else {
+                    if (next.getChild() == null) {
+                        cFile.erro(next, "Unexpected token", this);
+                    } else if (next.isEmptyParent()) {
                         indexArguments.add(null);
+                    } else {
+                        readArguments(getLine(), this.indexArguments, next.getChild(), next.getLastChild());
                     }
                     next = next.getNext();
                 }
                 state = 2;
-            } else if (state == 2 && token.key == Key.PARAM) {
-                if (token.getChild() != null) {
-                    readArguments(getLine(), this.arguments, token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+            } else if (state == 2 && token.key == Key.PARAM && token.getChild() != null) {
+                readArguments(getLine(), this.arguments, token.getChild(), token.getLastChild());
                 state = 3;
-            } else if ((state == 2 || state == 3) && token.key == Key.BRACE) {
+            } else if ((state == 2 || state == 3) && token.key == Key.BRACE && token.getChild() != null) {
                 initStack = new StackExpansion(getStack());
-                if (token.getChild() != null) {
-                    initStack.read(token.getChild(), token.getLastChild(), false);
-                    readArguments(initStack.block, this.initArguments, token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+                initStack.read(token.getChild(), token.getLastChild(), false);
+                readArguments(initStack.block, this.initArguments, token.getChild(), token.getLastChild());
+
                 state = 4;
             } else {
                 cFile.erro(token, "Unexpected token", this);

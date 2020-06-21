@@ -113,6 +113,22 @@ public class Compiler {
         return langString;
     }
 
+    public Type getLangInt() {
+        if (langInt == null) {
+            langInt = getLangType(new Token("int"));
+        }
+
+        return langInt;
+    }
+
+    public Type getLangBool() {
+        if (langBool == null) {
+            langBool = getLangType(new Token("bool"));
+        }
+
+        return langBool;
+    }
+
     public Type getLangWrapper() {
         if (langWrapper == null) {
             langWrapper = getLangType(new Token("Wrapper"));

@@ -14,7 +14,7 @@ public class Operator extends Member {
 
     public Token operator;
     public Key op = Key.NOONE;
-    public Token contentToken;
+    public TokenGroup contentToken;
     public TokenGroup typeToken;
     public Pointer typePtr;
 
@@ -23,12 +23,11 @@ public class Operator extends Member {
 
         int state = 0;
         Token next;
-        Token last = start;
         Token token = start;
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, true, true, true, true, false);
+                readModifier(cFile, token, true, true, false, true, true, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
@@ -49,27 +48,41 @@ public class Operator extends Member {
                 this.token = operator = token;
                 op = Key.AUTO;
                 state = 3;
-            } else if (state == 3 && token.key == Key.PARAM) {
+            } else if (state == 3 && token.key == Key.PARAM && token.getChild() != null) {
                 params = new Parameters(cFile, token);
                 state = 4;
-            } else if (state == 4 && (token.key == Key.BRACE || token.key == Key.SEMICOLON)) {
-                contentToken = token;
+            } else if (state == 4 && token.key == Key.BRACE) {
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
+                state = 5;
+            } else if (state == 4 && token.key == Key.SEMICOLON) {
+                contentToken = new TokenGroup(token, next);
                 state = 5;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-
-            last = token;
+            if (next == end && state != 5) {
+                cFile.erro(token, "Unexpected end of token", this);
+            }
             token = next;
         }
 
-        if (state != 5) {
-            cFile.erro(last, "Unexpected end of token", this);
-        }
     }
 
     @Override
     public boolean load() {
+        if (contentToken != null && contentToken.start.key == Key.SEMICOLON) {
+            cFile.erro(contentToken.start, "A Operator should implement", this);
+        }
+
         if (typeToken != null) {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type, isLet());
 

@@ -25,13 +25,9 @@ public class IndexerCall extends Call {
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && token.key == Key.INDEX) {
+            if (state == 0 && token.key == Key.INDEX && token.getChild() != null) {
                 this.token = token;
-                if (token.getChild() != null) {
-                    readArguments(token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+                readArguments(token.getChild(), token.getLastChild());
                 state = 1;
             } else {
                 cFile.erro(token, "Unexpected token", this);

@@ -19,13 +19,10 @@ public class InnerCall extends Call {
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && token.key == Key.PARAM) {
+            if (state == 0 && token.key == Key.PARAM && token.getChild() != null) {
                 this.token = token;
-                if (token.getChild() != null) {
-                    innerExpression = new Expression(getLine(), token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+                // TODO - EMPTY CALL
+                innerExpression = new Expression(getLine(), token.getChild(), token.getLastChild());
                 state = 1;
             } else {
                 cFile.erro(token, "Unexpected token", this);

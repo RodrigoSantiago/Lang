@@ -194,9 +194,9 @@ public class Parser {
                 caseExcep = false;
 
             } else if ((state == 1 || state == 2) && token.key.isBlock) {
-                state = 1; // [for][()][if]
+                state = 1; // [for][if] || [for][()][if]
 
-            } else if ((state == 1 || state == 2) && token.key == Key.COLON) {
+            } else if ((state == 1 || state == 2) && caseExcep && token.key == Key.COLON) {
                 block.add(start, next); // [case][:] empty case | [case][()][:] param case
                 start = next;
                 state = 0;

@@ -14,7 +14,7 @@ public class BlockFor extends Block {
 
     Token label;
     Token paramToken;
-    TokenGroup contentTokenGroup;
+    TokenGroup contentToken;
 
     Line firstLine;
     Expression condition, loop;
@@ -33,7 +33,7 @@ public class BlockFor extends Block {
             next = token.getNext();
             if (state == 0 && token.key == Key.FOR) {
                 state = 1;
-            } else if (state == 1 && token.key == Key.PARAM) {
+            } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
                 paramToken = token;
                 Token colon = readIsForeach(paramToken.getChild(), paramToken.getLastChild());
                 if (colon != null) {
@@ -55,8 +55,16 @@ public class BlockFor extends Block {
                 } else if (state == 3) {
                     cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
                 }
-                // state == 2 || state == 4 (correct)
-                contentTokenGroup = new TokenGroup(token.getChild(), token.getLastChild());
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
                 state = 5;
             } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.SEMICOLON) {
                 if (state == 1) {
@@ -64,10 +72,9 @@ public class BlockFor extends Block {
                 } else if (state == 3) {
                     cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
                 }
-                // state == 2 || state == 4 (correct) -> empty for [for][()][;] || [for][()][:][label][;]
                 state = 5;
             } else if (state == 2 || state == 4) {
-                contentTokenGroup = new TokenGroup(token, end);
+                contentToken = new TokenGroup(token, end);
                 next = end;
                 state = 5;
             } else {
@@ -80,8 +87,8 @@ public class BlockFor extends Block {
             token = next;
         }
 
-        if (contentTokenGroup != null) {
-            Parser.parseLines(this, contentTokenGroup.start, contentTokenGroup.end);
+        if (contentToken != null) {
+            Parser.parseLines(this, contentToken.start, contentToken.end);
         }
     }
 

@@ -94,9 +94,14 @@ public class Token {
         return lastChild;
     }
 
+    public boolean isOpen() {
+        return getLastChild() == null;
+    }
+
     public boolean isEmptyParent() {
         return child != null && child == lastChild;
     }
+
     public char at(int index) {
         return source.charAt(start + index);
     }

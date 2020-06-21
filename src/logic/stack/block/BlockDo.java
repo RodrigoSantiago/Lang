@@ -10,7 +10,7 @@ import logic.stack.Line;
 public class BlockDo extends Block {
 
     Token label;
-    TokenGroup contentTokenGroup;
+    TokenGroup contentToken;
     BlockWhile blockWhile;
 
     public BlockDo(Block block, Token start, Token end) {
@@ -33,7 +33,16 @@ public class BlockDo extends Block {
                 if (state == 2) {
                     cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
                 }
-                contentTokenGroup = new TokenGroup(token.getChild(), token.getLastChild());
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
                 state = 4;
             } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.SEMICOLON) {
                 if (state == 2) {
@@ -41,7 +50,7 @@ public class BlockDo extends Block {
                 }
                 state = 4;
             } else if (state == 1 || state == 3) {
-                contentTokenGroup = new TokenGroup(token, end);
+                contentToken = new TokenGroup(token, end);
                 next = end;
                 state = 4;
             } else {
@@ -53,8 +62,8 @@ public class BlockDo extends Block {
             token = next;
         }
 
-        if (contentTokenGroup != null) {
-            Parser.parseLines(this, contentTokenGroup.start, contentTokenGroup.end);
+        if (contentToken != null) {
+            Parser.parseLines(this, contentToken.start, contentToken.end);
         }
     }
 
@@ -86,8 +95,8 @@ public class BlockDo extends Block {
             cFile.erro(start, "While Statment expected", this);
         } else {
             this.blockWhile = blockWhile;
-            if (blockWhile.contentTokenGroup != null) {
-                cFile.erro(blockWhile.contentTokenGroup.start, "Unexpected do-while inner block", this);
+            if (blockWhile.contentToken != null) {
+                cFile.erro(blockWhile.contentToken.start, "Unexpected do-while inner block", this);
             }
         }
     }

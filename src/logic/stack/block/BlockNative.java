@@ -2,12 +2,13 @@ package logic.stack.block;
 
 import content.Key;
 import content.Token;
+import content.TokenGroup;
 import logic.stack.Block;
 
 public class BlockNative extends Block {
 
     Token paramToken;
-    Token contentToken;
+    TokenGroup contentToken;
 
     public BlockNative(Block block, Token start, Token end) {
         super(block, start, end);
@@ -20,18 +21,23 @@ public class BlockNative extends Block {
             next = token.getNext();
             if (state == 0 && token.key == Key.NATIVE) {
                 state = 1;
-            } else if (state == 1 && token.key == Key.PARAM) {
-                if (token.getChild() != null) {
-                    readSourceToken(token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+            } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
+                readSourceToken(token.getChild(), token.getLastChild());
                 state = 2;
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 if (state == 1) {
                     cFile.erro(token.start, token.start + 1, "Missing parameter", this);
                 }
-                contentToken = token;
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
                 state = 3;
             } else {
                 cFile.erro(token, "Unexpected token", this);

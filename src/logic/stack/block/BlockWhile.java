@@ -12,7 +12,7 @@ public class BlockWhile extends Block {
 
     Token label;
     Token paramToken;
-    TokenGroup contentTokenGroup;
+    TokenGroup contentToken;
     Expression expression;
 
     public BlockWhile(Block block, Token start, Token end) {
@@ -26,13 +26,9 @@ public class BlockWhile extends Block {
             next = token.getNext();
             if (state == 0 && token.key == Key.WHILE) {
                 state = 1;
-            } else if (state == 1 && token.key == Key.PARAM) {
+            } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
                 paramToken = token;
-                if (paramToken.getChild() != null) {
-                    expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+                expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
                 state = 2;
             } else if (state == 2 && token.key == Key.COLON) {
                 state = 3;
@@ -46,7 +42,16 @@ public class BlockWhile extends Block {
                 } else if (state == 3) {
                     cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
                 }
-                contentTokenGroup = new TokenGroup(token.getChild(), token.getLastChild());
+                if (token.getChild() == null) {
+                    if (next != end) {
+                        contentToken = new TokenGroup(next, end);
+                        next = end;
+                    }
+                    cFile.erro(token, "Brace closure expected", this);
+                } else {
+                    if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
+                    contentToken = new TokenGroup(token.getChild(), token.getLastChild());
+                }
                 state = 5;
             } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.SEMICOLON) {
                 if (state == 1) {
@@ -56,7 +61,7 @@ public class BlockWhile extends Block {
                 }
                 state = 5;
             } else if (state == 2 || state == 4) {
-                contentTokenGroup = new TokenGroup(token, end);
+                contentToken = new TokenGroup(token, end);
                 next = end;
                 state = 5;
             } else {
@@ -68,8 +73,8 @@ public class BlockWhile extends Block {
             token = next;
         }
 
-        if (contentTokenGroup != null) {
-            Parser.parseLines(this, contentTokenGroup.start, contentTokenGroup.end);
+        if (contentToken != null) {
+            Parser.parseLines(this, contentToken.start, contentToken.end);
         }
     }
 

@@ -116,9 +116,8 @@ public class CppBuilder {
         for (Type type : hDependences) {
             if (type.template != null) {
                 dBuilder.append("template<");
-                ArrayList<Generic> generics = type.template.generics;
-                for (int i = 0; i < generics.size(); i++) {
-                    dBuilder.append(i > 0 ? ", typename g_" : "typename g_").append(generics.get(i).nameToken);
+                for (int i = 0; i < type.template.getCount(); i++) {
+                    dBuilder.append(i > 0 ? ", typename g_" : "typename g_").append(type.template.getNameToken(i));
                 }
                 dBuilder.append(">\n");
             }
@@ -343,9 +342,9 @@ public class CppBuilder {
         if (template != null) {
             useTemplates = true;
             add("template<");
-            for (int i = 0; i < template.generics.size(); i++) {
+            for (int i = 0; i < template.getCount(); i++) {
                 if (i != 0) add(", ");
-                add("typename ").nameGeneric(template.generics.get(i).nameToken);
+                add("typename ").nameGeneric(template.getNameToken(i));
             }
             add(">").ln().idt(indent);
         }
@@ -353,9 +352,9 @@ public class CppBuilder {
     }
 
     public CppBuilder add(Parameters params) {
-        for (int i = 0; i < params.args.size(); i++) {
+        for (int i = 0; i < params.getCount(); i++) {
             if (i > 0) add(", ");
-            add(params.args.get(i).typePtr).add(" v_").add(params.args.get(i).nameToken);
+            add(params.getTypePtr(i)).add(" v_").add(params.getNameToken(i));
         }
         return this;
     }

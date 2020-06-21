@@ -27,12 +27,8 @@ public class MethodCall extends Call {
             if (state == 0 && token.key == Key.WORD) {
                 this.nameToken = token;
                 state = 1;
-            } else if (state == 1 && token.key == Key.PARAM) {
-                if (token.getChild() != null) {
-                    readArguments(token.getChild(), token.getLastChild());
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
-                }
+            } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
+                readArguments(token.getChild(), token.getLastChild());
                 state = 2;
             } else {
                 cFile.erro(token, "Unexpected token", this);

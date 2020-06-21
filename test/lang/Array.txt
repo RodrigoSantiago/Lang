@@ -23,21 +23,24 @@ public class Array<T> : List<T> {
     }
 
     native (header) {
-        g_T* data;
-        lang_Array<g_T>* create(g_T* list, lang_int size);
+        GPtr<g_T>* data;
+        lang_Array<g_T>* create(lang_int size, lang_bool init);
     }
 
     native (source) {
         template <typename g_T>
-        lang_Array<g_T>* lang_Array<g_T>::create(g_T* list, lang_int size) {
-            this->data = sCast(g_T*, lang::memory::array(sizeof(g_T), size));
+        lang_Array<g_T>* lang_Array<g_T>::create(lang_int size, lang_bool init) {
+            lang_Object::create();
+            this->data = sCast(GPtr<g_T>*, lang::memory::array(sizeof(GPtr<g_T>), v_length));
 
             if (this->data == nullptr) {
                 this->f_length = 0;
             } else {
                 this->f_length = size;
-                for (long i = 0; i < size; i++) {
-                    this->data[i] = list[i];
+                if (init) {
+                    for (long i = 0; i < size; i++) {
+                        this->data[i] = lang::generic<GPtr<g_T>>::def();
+                    }
                 }
             }
             return this;
@@ -54,14 +57,14 @@ public class Array<T> : List<T> {
 
     public this(int length) {
         native (source) {
-            this->data = sCast(g_T*, lang::memory::array(sizeof(g_T), v_length));
+            this->data = sCast(g_T*, lang::memory::array(sizeof(GPtr<g_T>), v_length));
 
             if (this->data == nullptr) {
                 this->f_length = 0;
             } else {
                 this->f_length = v_length;
                 for (long i = 0; i < v_length; i++) {
-                    this->data[i] = lang::generic<g_T>::def();
+                    this->data[i] = lang::generic<GPtr<g_T>>::def();
                 }
             }
         }

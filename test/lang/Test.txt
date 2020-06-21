@@ -1,0 +1,9 @@
+namespace lang;
+
+public class Test {
+
+    int method() {
+        int(();
+        int b;
+    }
+}

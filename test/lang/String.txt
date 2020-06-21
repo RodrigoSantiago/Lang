@@ -26,7 +26,7 @@ public static struct string : String {
     public int Length {
         get {
             native (source) {
-                return data->length;
+                return data == nullptr ? 0 : data->length;
             }
         }
     }
@@ -34,7 +34,7 @@ public static struct string : String {
     public int CodePoints {
         get {
             native (source) {
-                return data->cp;
+                return data == nullptr ? 0 : data->cp;
             }
         }
     }
@@ -42,7 +42,7 @@ public static struct string : String {
     public byte this[int i] {
         get {
             native (return) {
-                return data->chars[ ARRAY_ACESS(v_i, data->length) ];
+                return data == nullptr ? 0 : data->chars[ ARRAY_ACESS(v_i, data->length) ];
             }
         }
     }
@@ -53,6 +53,7 @@ public static struct string : String {
         lang_string(const lang_string& str);
         lang_string(lang::string* data);
         lang_string(const char* str);
+        ~lang_string();
     }
 
     native (source) {
@@ -67,11 +68,14 @@ public static struct string : String {
         lang_string::lang_string(const char* str) {
             this->data = lang::text::cstr(str);
         }
+        lang_string::~lang_string() {
+            lang::text::dsg(data);
+        }
     }
 
     public this() {
         native (source) {
-            this->data = lang::text::str(nullptr, 0, 0);
+            this->data = nullptr;
         }
     }
 
@@ -128,15 +132,10 @@ public static struct string : String {
         }
     }
 
-    public ~this() {
-        native (source) {
-            lang::text::dsg(data);
-        }
-    }
-
     public bool equalsIgnoreCase(string other) {
         native (return) {
             if (this->data == v_other->data) return true;
+            if (this->data == nullptr || v_other->data == nullptr) return false;
         }
 
         if (other.CodePoints != CodePoints) return false;
@@ -199,6 +198,7 @@ public static struct string : String {
     bool operator ==(string value, string other) {
         native (return) {
             if (this->data == v_other->data) return true;
+            if (this->data == nullptr || v_other->data == nullptr) return false;
             if (this->data.length != v_other.data.length) return false;
 
             for (int i = 0, len = this->data.length; i < len; i++) {
@@ -227,7 +227,7 @@ public static struct string : String {
 
     string operator =(string other) {
         native (source) {
-            if (this->Data != other->data) {
+            if (this->data != other->data) {
                 lang::text::dsg(data);
                 this->data = other->data;
                 lang::text::asg(data);

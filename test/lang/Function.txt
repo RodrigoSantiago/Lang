@@ -68,7 +68,10 @@ public class Function {
 
 public struct function<T> : Function {
 
-    public bool valid { get; }
+    public bool valid {
+        get {
+        }
+    }
 
     private this() {
     }

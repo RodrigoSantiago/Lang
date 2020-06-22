@@ -8,7 +8,6 @@ import logic.stack.Context;
 
 public class InnerCall extends Call {
 
-    Token token;
     Expression innerExpression;
 
     public InnerCall(CallGroup group, Token start, Token end) {
@@ -42,6 +41,11 @@ public class InnerCall extends Call {
             context.resolve(innerExpression);
             context.jumpTo(innerExpression.getReturnType());
         }
+    }
+
+    @Override
+    public int verify(Pointer pointer) {
+        return innerExpression == null ? -1 : pointer.canReceive(innerExpression.getReturnType());
     }
 
     @Override

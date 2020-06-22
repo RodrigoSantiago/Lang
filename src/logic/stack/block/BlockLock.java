@@ -5,13 +5,14 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.expression.Expression;
 
 public class BlockLock extends Block {
 
-    Token paramToken;
+    Token lockerToken;
+    Expression lockerExp;
     TokenGroup contentToken;
-    Expression expression;
 
     public BlockLock(Block block, Token start, Token end) {
         super(block, start, end);
@@ -25,8 +26,8 @@ public class BlockLock extends Block {
             if (state == 0 && token.key == Key.LOCK) {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
-                paramToken = token;
-                expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
+                lockerToken = token;
+                lockerExp = new Expression(this, lockerToken.getChild(), lockerToken.getLastChild());
                 state = 2;
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 if (state == 1) {
@@ -64,5 +65,16 @@ public class BlockLock extends Block {
         if (contentToken != null) {
             Parser.parseLines(this, contentToken.start, contentToken.end);
         }
+    }
+
+    @Override
+    public void load() {
+        if (lockerExp != null) {
+            lockerExp.load(new Context(stack));
+            if (!lockerExp.request(cFile.langLockerPtr().toLet())) {
+                cFile.erro(lockerToken, "The locker must be a instance of a Locker", this);
+            }
+        }
+        super.load();
     }
 }

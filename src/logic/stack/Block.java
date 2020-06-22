@@ -125,9 +125,9 @@ public abstract class Block extends Line {
     }
 
     @Override
-    public void make() {
+    public void load() {
         for (Line line : lines) {
-            line.make();
+            line.load();
         }
     }
 }

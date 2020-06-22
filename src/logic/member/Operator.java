@@ -151,6 +151,18 @@ public class Operator extends Member {
         cBuilder.toHeader();
     }
 
+    public Token getOperator() {
+        return operator;
+    }
+
+    public Pointer getTypePtr() {
+        return typePtr;
+    }
+
+    public Parameters getParams() {
+        return params;
+    }
+
     @Override
     public String toString() {
         return "operator " + op + " (" + params + ") : " + typePtr;

@@ -76,6 +76,12 @@ public class BlockSwitch extends Block {
     }
 
     @Override
+    public void load() {
+        super.load();
+        // TODO Check (Literal Cast OR Static Final)
+    }
+
+    @Override
     public Line isBreakble(Token label) {
         if (label == this.label || (this.label != null && this.label.equals(label))) {
             return this;

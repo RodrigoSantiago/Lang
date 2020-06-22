@@ -139,9 +139,9 @@ public class Method extends Member implements GenericOwner {
     public void make() {
         if (nameToken.equals("method")) {
             if (contentToken != null) {
-                Stack stack = new Stack(cFile, false);
-                stack.read(contentToken.start, contentToken.end);
-                stack.make();
+                Stack stack = new Stack(cFile, type.self, typePtr, false, isStatic(), false);
+                stack.read(contentToken.start, contentToken.end, true);
+                stack.load();
             }
         }
     }

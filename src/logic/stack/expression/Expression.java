@@ -141,14 +141,92 @@ public class Expression {
     }
 
     public void load(Context context) {
+        int maxLevel = 1;
+
+        // Level [Right Operators]
         for (int i = 0; i < groups.size(); i++) {
             CallGroup group = groups.get(i);
-            if (group.isOperator()) {
-                // ordem aqui ?
-            } else {
-                group.load(context);
+            CallGroup next = i == groups.size() - 1 ? null : groups.get(i + 1);
+
+            if (group.isOperator() && group.getOperatorPriority() > maxLevel) {
+                maxLevel = group.getOperatorPriority();
+            }
+            if (!group.isOperator() && next != null && next.isOperatorRight()) {
+                CallGroup groupMerge = new CallGroup(this, group, next);
+                groups.remove(i);
+                groups.set(i, groupMerge);
+                i --;
             }
         }
+
+        // Level [Left Operators]
+        for (int i = 0; i < groups.size(); i++) {
+            CallGroup prev = i > 0 ? groups.get(i - 1) : null;
+            CallGroup group = groups.get(i);
+            CallGroup next = i == groups.size() - 1 ? null : groups.get(i + 1);
+            if (next != null && !next.isOperator()) {
+                if (group.isOperatorLeft() || (group.isOperatorBoth() && (prev == null || prev.isOperator()))) {
+                    CallGroup groupMerge = new CallGroup(this, group, next);
+                    groups.remove(i);
+                    groups.set(i - 1, groupMerge);
+                    i -= 1;
+                }
+            }
+        }
+
+        // Level 1-10 [Bi-Operators]
+        for (int level = 1; level < maxLevel; level++) {
+            int i = 0;
+            int state = 0;
+            CallGroup init = null, op = null;
+            while (i < groups.size()) {
+                CallGroup group = groups.get(i);
+                if (state == 0 && !group.isOperator()) {
+                    init = group;
+                    state = 1;
+                } else if (state == 1 && group.isOperator()) {
+                    op = group;
+                    state = 2;
+                } else if (state == 2 && !group.isOperator()) {
+                    if (op.getOperatorPriority() == level) {
+                        CallGroup groupMerge = new CallGroup(this, init, op, group);
+                        groups.remove(i - 2);
+                        groups.remove(i - 2);
+                        groups.set(i - 2, groupMerge);
+                        i -= 2;
+                        init = groupMerge;
+                    } else {
+                        init = group;
+                        op = null;
+                    }
+                    state = 1;
+                } else if (group.isOperator()) {
+                    cFile.erro(group.getToken(), "Unexpected Operator", this);
+                    groups.remove(i);
+                    i -= 1;
+                } else {
+                    cFile.erro(group.getToken(), "Unexpected line", this);
+                    groups.remove(i);
+                    i -= 1;
+                }
+                i += 1;
+                if (state == 2 && i == groups.size()) {
+                    cFile.erro(group.getToken(), "Unexpected Operator", this);
+                    groups.remove(i);
+                    i -= 1;
+                }
+            }
+        }
+
+        if (groups.size() > 1) {
+            System.out.println("HOW ?");
+        } else if (groups.size() > 0) {
+            groups.get(0).load(context);
+        }
+    }
+
+    public int verify(Pointer pointer) {
+        return groups.size() == 0 ? -1 : groups.get(0).verify(pointer);
     }
 
     public boolean request(Pointer pointer) {

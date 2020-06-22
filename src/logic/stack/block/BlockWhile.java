@@ -5,15 +5,16 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.Line;
 import logic.stack.expression.Expression;
 
 public class BlockWhile extends Block {
 
     Token label;
-    Token paramToken;
+    Token conditionToken;
+    Expression conditionExp;
     TokenGroup contentToken;
-    Expression expression;
 
     public BlockWhile(Block block, Token start, Token end) {
         super(block, start, end);
@@ -27,8 +28,8 @@ public class BlockWhile extends Block {
             if (state == 0 && token.key == Key.WHILE) {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
-                paramToken = token;
-                expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
+                conditionToken = token;
+                conditionExp = new Expression(this, conditionToken.getChild(), conditionToken.getLastChild());
                 state = 2;
             } else if (state == 2 && token.key == Key.COLON) {
                 state = 3;
@@ -76,6 +77,17 @@ public class BlockWhile extends Block {
         if (contentToken != null) {
             Parser.parseLines(this, contentToken.start, contentToken.end);
         }
+    }
+
+    @Override
+    public void load() {
+        if (conditionExp != null) {
+            conditionExp.load(new Context(stack));
+            if (!conditionExp.request(cFile.langBoolPtr())) {
+                cFile.erro(conditionToken, "The condition must be a bool", this);
+            }
+        }
+        super.load();
     }
 
     @Override

@@ -238,6 +238,10 @@ public class ContentFile {
         return new Pointer(mark(getCompiler().getLangBool()));
     }
 
+    public Pointer langLockerPtr() {
+        return new Pointer(mark(getCompiler().getLangLocker()));
+    }
+
     public Pointer langArrayPtr(Pointer pointer) {
         return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer}, false);
     }
@@ -369,11 +373,11 @@ public class ContentFile {
                         iNext = TokenGroup.nextType(iNext, iEnd);
                         Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner, hasLet);
                         if (index >= type.template.getCount() && !type.isFunction()) {
-                            erro(iToken, iNext, "Unexpected generic");
+                            erro(iToken, iNext, "Unexpected generic", this);
                         } else {
                             if (!type.isFunction() && genPtr.isDerivedFrom(type.template.getBasePtr(index)) == -1) {
                                 genPtr = type.template.getDefaultPtr(index);
-                                erro(iToken, iNext, "Invalid generic");
+                                erro(iToken, iNext, "Invalid generic", this);
                             }
                             index++;
                             iPointers.add(genPtr);
@@ -432,14 +436,18 @@ public class ContentFile {
         erros.add(new Error(Error.ERROR, token.start, token.end, message + " > from " + sender.getClass().getSimpleName()));
     }
 
-    public void erro(Token token, Token tokenEnd, String message) {
+    public void erro(TokenGroup token, String message, Object sender) {
+        erro(token.start, token.end, message, sender);
+    }
+
+    public void erro(Token token, Token tokenEnd, String message, Object sender) {
         int start = token.start;
         int end = start;
         while (token != null && token != tokenEnd) {
             end = token.end;
             token = token.getNext();
         }
-        erros.add(new Error(Error.ERROR, start, end, message));
+        erros.add(new Error(Error.ERROR, start, end, message + " > from " + sender.getClass().getSimpleName()));
     }
 
     public void warning(int start, int end, String message) {

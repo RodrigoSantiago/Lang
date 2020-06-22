@@ -5,6 +5,7 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.Line;
 import logic.stack.expression.Expression;
 import logic.stack.line.LineExpression;
@@ -17,7 +18,8 @@ public class BlockFor extends Block {
     TokenGroup contentToken;
 
     Line firstLine;
-    Expression condition, loop;
+    Expression conditionExp, loopExp;
+    TokenGroup conditionToken, loopToken;
     LineVar foreachVar;
 
     // TODO - Priorizar braces !!!
@@ -93,6 +95,34 @@ public class BlockFor extends Block {
     }
 
     @Override
+    public void load() {
+        if (firstLine != null) {
+            firstLine.load();
+        }
+        if (foreachVar != null) {
+            foreachVar.load();
+        }
+        if (conditionExp != null) {
+            conditionExp.load(new Context(stack));
+            if (!conditionExp.request(cFile.langBoolPtr())) {
+                cFile.erro(conditionToken, "The condition must be a bool", this);
+            }
+        }
+        if (loopExp != null) {
+            loopExp.load(new Context(stack));
+            if (foreachVar != null) {
+                // verify string
+                // verify NULL == iterable
+                // cFile.erro(loopToken, "The foreach be a string or must implements Iterable", this);
+                loopExp.request(null);
+            } else {
+                loopExp.request(null);
+            }
+        }
+        super.load();
+    }
+
+    @Override
     public boolean isLoopStatment() {
         return true;
     }
@@ -154,11 +184,15 @@ public class BlockFor extends Block {
                 contentStart = next;
                 state = 1;
             } else if (state == 1 && token.key == Key.SEMICOLON) {
-                if (contentStart != token) condition = new Expression(this, contentStart, token);
+                if (contentStart != token) {
+                    conditionToken = new TokenGroup(contentStart, token);
+                    conditionExp = new Expression(this, contentStart, token);
+                }
                 contentStart = next;
                 state = 2;
             } else if (state == 2 && next == end) {
-                loop = new Expression(this, contentStart, next);
+                loopToken = new TokenGroup(contentStart, next);
+                loopExp = new Expression(this, contentStart, next);
                 state = 3;
             }
             if (next == end) {
@@ -170,7 +204,10 @@ public class BlockFor extends Block {
                         cFile.erro(token, "Unexpected end of tokens", this);
                     }
                 } else if (state == 1) {
-                    if (contentStart != token) condition = new Expression(this, contentStart, token);
+                    if (contentStart != token) {
+                        conditionToken = new TokenGroup(contentStart, token);
+                        conditionExp = new Expression(this, contentStart, token);
+                    }
                     cFile.erro(token, "Unexpected end of tokens", this);
                 } else if (state == 2) {
                     // empty loop
@@ -208,7 +245,8 @@ public class BlockFor extends Block {
     private void readForeach(Token start, Token end, Token colon) {
         foreachVar = new LineVar(this, start, colon, false);
         if (colon.getNext() != end) {
-            loop = new Expression(this, colon.getNext(), end);
+            loopToken = new TokenGroup(colon.getNext(), end);
+            loopExp = new Expression(this, colon.getNext(), end);
         } else {
             cFile.erro(colon, "Unexpected end of tokens", this);
         }

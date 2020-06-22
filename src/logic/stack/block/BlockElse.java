@@ -5,12 +5,14 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.expression.Expression;
 
 public class BlockElse extends Block {
 
     TokenGroup contentToken;
-    Expression condition;
+    Token conditionToken;
+    Expression conditionExp;
     private boolean isElseIf;
 
     public BlockElse(Block block, Token start, Token end) {
@@ -31,7 +33,8 @@ public class BlockElse extends Block {
                 isElseIf = true;
                 state = 2;
             } else if (state == 2 && token.key == Key.PARAM && token.getChild() != null) {
-                condition = new Expression(this, token.getChild(), token.getLastChild());
+                conditionToken = token;
+                conditionExp = new Expression(this, token.getChild(), token.getLastChild());
                 state = 3;
             } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.BRACE) {
                 if (state == 2) {
@@ -69,6 +72,17 @@ public class BlockElse extends Block {
         if (contentToken != null) {
             Parser.parseLines(this, contentToken.start, contentToken.end);
         }
+    }
+
+    @Override
+    public void load() {
+        if (conditionExp != null) {
+            conditionExp.load(new Context(stack));
+            if (!conditionExp.request(cFile.langBoolPtr())) {
+                cFile.erro(conditionToken, "The condition must be a bool", this);
+            }
+        }
+        super.load();
     }
 
     @Override

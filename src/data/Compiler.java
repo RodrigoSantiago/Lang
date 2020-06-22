@@ -14,7 +14,7 @@ public class Compiler {
     private HashMap<String, Library> libraries = new HashMap<>();
 
     private Namespace langSpace;
-    private Type langObject, langWrapper, langArray, langString, langInt, langBool;
+    private Type langObject, langWrapper, langArray, langString, langInt, langBool, langLocker;
 
     public void setMainFile(ContentFile main) {
 
@@ -127,6 +127,14 @@ public class Compiler {
         }
 
         return langBool;
+    }
+
+    public Type getLangLocker() {
+        if (langLocker == null) {
+            langLocker = getLangType(new Token("Locker"));
+        }
+
+        return langLocker;
     }
 
     public Type getLangWrapper() {

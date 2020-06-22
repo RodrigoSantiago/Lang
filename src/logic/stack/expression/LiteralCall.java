@@ -8,7 +8,6 @@ import logic.stack.Context;
 
 public class LiteralCall extends Call {
 
-    Token token;
     Pointer typePtr;
 
     public LiteralCall(CallGroup group, Token start, Token end) {
@@ -53,6 +52,11 @@ public class LiteralCall extends Call {
     @Override
     public void load(Context context) {
         context.jumpTo(typePtr);
+    }
+
+    @Override
+    public int verify(Pointer pointer) {
+        return typePtr == null ? -1 : pointer.canReceive(typePtr);
     }
 
     @Override

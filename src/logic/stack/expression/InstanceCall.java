@@ -39,6 +39,7 @@ public class InstanceCall extends Call {
                 if (next != end && next.key == Key.GENERIC) {
                     next = next.getNext();
                 }
+                this.token = token;
                 typeToken = new TokenGroup(token, next);
 
                 while (next != end && next.key == Key.INDEX) {
@@ -56,7 +57,7 @@ public class InstanceCall extends Call {
                 readArguments(getLine(), this.arguments, token.getChild(), token.getLastChild());
                 state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.BRACE && token.getChild() != null) {
-                initStack = new StackExpansion(getStack());
+                initStack = new StackExpansion(getStack(), Pointer.voidPointer);
                 initStack.read(token.getChild(), token.getLastChild(), false);
                 readArguments(initStack.block, this.initArguments, token.getChild(), token.getLastChild());
 
@@ -101,20 +102,25 @@ public class InstanceCall extends Call {
         if (typeToken == null) {
             context.jumpTo(null);
         } else {
-            Pointer typePtr = context.getPointer(typeToken);
+            typePtr = context.getPointer(typeToken);
 
             // TODO - ARRAY/INIT BEHAVIOR
             ArrayList<ConstructorView> constructors = context.findConstructor(typePtr, arguments);
             if (constructors.size() == 0) {
-                // erro
+                cFile.erro(token, "Constructor Not Found", this);
             } else if (constructors.size() > 1) {
-                // erro
+                cFile.erro(token, "Ambigous Constructor Call", this);
                 constructorView = constructors.get(0);
             } else {
                 constructorView = constructors.get(0);
             }
             context.jumpTo(typePtr);
         }
+    }
+
+    @Override
+    public int verify(Pointer pointer) {
+        return typePtr == null ? -1 : pointer.canReceive(typePtr);
     }
 
     @Override

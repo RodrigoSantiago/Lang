@@ -3,6 +3,7 @@ package logic.stack.line;
 import content.Key;
 import content.Token;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.Line;
 import logic.stack.expression.Expression;
 
@@ -29,5 +30,13 @@ public class LineExpression extends Line {
             token = next;
         }
         expression = new Expression(this, start, last);
+    }
+
+    @Override
+    public void load() {
+        if (expression != null) {
+            expression.load(new Context(stack));
+            // TODO - WARNING USELESS OPERATIONS
+        }
     }
 }

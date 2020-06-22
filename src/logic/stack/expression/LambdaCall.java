@@ -32,7 +32,7 @@ public class LambdaCall extends Call {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 3;
             } else if ((state == 2 || state == 3) && token.key == Key.BRACE && token.getChild() != null) {
-                innerStack = new StackExpansion(getStack());
+                innerStack = new StackExpansion(getStack(), Pointer.voidPointer);
                 innerStack.read(token.getChild(), token.getLastChild(), true);
                 state = 4;
             } else {
@@ -51,7 +51,23 @@ public class LambdaCall extends Call {
     }
 
     @Override
+    public int verify(Pointer pointer) {
+        if (pointer == null) {
+            // auto : show error !!! [make variables objects]
+        } else {
+            // count parameters
+        }
+        return -1;
+    }
+
+    @Override
     public Pointer request(Pointer pointer) {
+        if (pointer == null) {
+            // auto : show error !!! [make variables objects]
+        } else {
+            // count parameters
+        }
+        // load STACK [com as variaveis e tipo de retorno definido]
         return null;
     }
 }

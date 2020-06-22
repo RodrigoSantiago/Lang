@@ -2,22 +2,23 @@ package logic;
 
 import content.Token;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 
 public class ViewList<T> implements Iterable<T> {
 
-    private LinkedList<T> empty = new LinkedList<>();
-    private HashMap<Token, LinkedList<T>> source = new HashMap<>();
+    private ArrayList<T> empty = new ArrayList<>();
+    private HashMap<Token, ArrayList<T>> source = new HashMap<>();
     private int size;
 
     public ViewList() {
 
     }
 
-    public Iterable<T> get(Token token) {
-        LinkedList<T> list = source.get(token);
+    public ArrayList<T> get(Token token) {
+        ArrayList<T> list = source.get(token);
         if (list != null) {
             return list;
         } else {
@@ -28,9 +29,9 @@ public class ViewList<T> implements Iterable<T> {
     public void put(Token token, T value) {
         size++;
 
-        LinkedList<T> list = source.get(token);
+        ArrayList<T> list = source.get(token);
         if (list == null) {
-            list = new LinkedList<>();
+            list = new ArrayList<>(1);
             source.put(token, list);
         }
         list.add(value);
@@ -48,9 +49,9 @@ public class ViewList<T> implements Iterable<T> {
     public static class It<T> implements Iterator<T> {
         private Iterator<Token> itName;
         private Iterator<T> itValues;
-        private HashMap<Token, LinkedList<T>> source;
+        private HashMap<Token, ArrayList<T>> source;
 
-        public It(HashMap<Token, LinkedList<T>> source) {
+        public It(HashMap<Token, ArrayList<T>> source) {
             this.source = source;
             itName = source.keySet().iterator();
             if (itName.hasNext()) {

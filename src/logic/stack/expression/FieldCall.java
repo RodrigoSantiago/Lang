@@ -10,7 +10,6 @@ import logic.stack.LocalVar;
 
 public class FieldCall extends Call {
 
-    Token token;
     FieldView field;
 
     public FieldCall(CallGroup group, Token start, Token end) {
@@ -42,10 +41,15 @@ public class FieldCall extends Call {
         } else {
             field = context.findField(token);
             if (field == null) {
-                // erro
+                cFile.erro(token, "Field Not Found", this);
             }
             context.jumpTo(field == null ? null : field.getTypePtr());
         }
+    }
+
+    @Override
+    public int verify(Pointer pointer) {
+        return field == null ? -1 : pointer.canReceive(field.getTypePtr());
     }
 
     @Override

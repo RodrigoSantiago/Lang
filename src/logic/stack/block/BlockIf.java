@@ -5,13 +5,14 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.expression.Expression;
 
 public class BlockIf extends Block {
 
-    Token paramToken;
+    Token conditionToken;
+    Expression conditionExp;
     TokenGroup contentToken;
-    Expression expression;
 
     public BlockIf(Block block, Token start, Token end) {
         super(block, start, end);
@@ -25,8 +26,8 @@ public class BlockIf extends Block {
             if (state == 0 && token.key == Key.IF) {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
-                paramToken = token;
-                expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
+                conditionToken = token;
+                conditionExp = new Expression(this, conditionToken.getChild(), conditionToken.getLastChild());
                 state = 2;
             } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
                 if (state == 1) {
@@ -66,6 +67,17 @@ public class BlockIf extends Block {
                 Parser.parseLines(this, contentToken.start.getChild(), contentToken.start.getLastChild());
             }
         }
+    }
+
+    @Override
+    public void load() {
+        if (conditionExp != null) {
+            conditionExp.load(new Context(stack));
+            if (!conditionExp.request(cFile.langBoolPtr())) {
+                cFile.erro(conditionToken, "The condition must be a bool", this);
+            }
+        }
+        super.load();
     }
 
     @Override

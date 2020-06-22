@@ -67,39 +67,39 @@ public enum Key {
     COMMA(","),
     QUEST("?",                false, false, true, false),
     LAMBDA("->"),
-    ADD("+",                  false, false, true, true),
-    SUB("-",                  false, false, true, true),
-    MUL("*",                  false, false, true, true),
-    DIV("/",                  false, false, true, true),
-    MOD("%",                  false, false, true, true),
-    RSHIFT(">>",              false, false, true, true),
-    LSHIFT("<<",              false, false, true, true),
+    MUL("*",                  false, false, true, true, false, 1),
+    DIV("/",                  false, false, true, true, false, 1),
+    MOD("%",                  false, false, true, true, false, 1),
+    ADD("+",                  false, false, true, true, false, 2),
+    SUB("-",                  false, false, true, true, false, 2),
     INC("++",                 false, false, true, true),
     DEC("--",                 false, false, true, true),
-    SETVAL("=",               false, false, true, true),
-    SETADD("+=",              false, false, true, false),
-    SETSUB("-=",              false, false, true, false),
-    SETDIV("/=",              false, false, true, false),
-    SETMOD("%=",              false, false, true, false),
-    SETRSHIFT(">>=",          false, false, true, false),
-    SETLSHIFT("<<=",          false, false, true, false),
-    BITAND("&",               false, false, true, true),
-    BITOR("|",                false, false, true, true),
+    RSHIFT(">>",              false, false, true, true, false, 3),
+    LSHIFT("<<",              false, false, true, true, false, 3),
+    MORE(">",                 false, false, true, true, false, 4),
+    LESS("<",                 false, false, true, true, false, 4),
+    EMORE(">=",               false, false, true, true, false, 4),
+    ELESS("<=",               false, false, true, true, false, 4),
+    EQUAL("==",               false, false, true, true, false, 5),
+    DIF("!=",                 false, false, true, true, false, 5),
+    BITAND("&",               false, false, true, true, false, 6),
+    BITXOR("^",               false, false, true, true, false, 7),
+    BITOR("|",                false, false, true, true, false, 8),
     BITNOT("~",               false, false, true, true),
-    BITXOR("^",               false, false, true, true),
-    SETAND("&=",              false, false, true, false),
-    SETOR("|=",               false, false, true, false),
-    SETNOT("~=",              false, false, true, false),
-    SETXOR("^=",              false, false, true, false),
-    EQUAL("==",               false, false, true, true),
-    MORE(">",                 false, false, true, true),
-    LESS("<",                 false, false, true, true),
-    EMORE(">=",               false, false, true, true),
-    ELESS("<=",               false, false, true, true),
-    DIF("!=",                 false, false, true, true),
-    AND("&&",                 false, false, true, true),
-    OR("||",                  false, false, true, true),
+    AND("&&",                 false, false, true, true, false, 9),
+    OR("||",                  false, false, true, true, false, 10),
     NOT("!",                  false, false, true, true),
+    SETVAL("=",               false, false, true, true, false, 11),
+    SETADD("+=",              false, false, true, false, false, 11),
+    SETSUB("-=",              false, false, true, false, false, 11),
+    SETDIV("/=",              false, false, true, false, false, 11),
+    SETMOD("%=",              false, false, true, false, false, 11),
+    SETRSHIFT(">>=",          false, false, true, false, false, 11),
+    SETLSHIFT("<<=",          false, false, true, false, false, 11),
+    SETAND("&=",              false, false, true, false, false, 11),
+    SETOR("|=",               false, false, true, false, false, 11),
+    SETNOT("~=",              false, false, true, false, false, 11),
+    SETXOR("^=",              false, false, true, false, false, 11),
 
     // GET("get"),
     // SET("set"),
@@ -112,6 +112,7 @@ public enum Key {
     public final boolean isOperator;
     public final boolean isOverridable;
     public final boolean isBlock;
+    public final int priority;
 
     private Key(String string) {
         this(string, false);
@@ -124,16 +125,25 @@ public enum Key {
     private Key(String string, boolean isNamespace, boolean isAttribute) {
         this(string, isNamespace, isAttribute, false, false);
     }
+
     private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator, boolean isOverridable) {
         this(string, isNamespace, isAttribute, isOperator, isOverridable, false);
     }
-    private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator, boolean isOverridable, boolean isBlock) {
+
+    private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator, boolean isOverridable,
+                boolean isBlock) {
+        this(string, isNamespace, isAttribute, isOperator, isOverridable, isBlock, 0);
+    }
+
+    private Key(String string, boolean isNamespace, boolean isAttribute, boolean isOperator, boolean isOverridable,
+                boolean isBlock, int priority) {
         this.string = string;
         this.isNamespace = isNamespace;
         this.isAttribute = isAttribute;
         this.isOperator = isOperator;
         this.isOverridable = isOverridable;
         this.isBlock = isBlock;
+        this.priority = priority;
     }
 
     // TODO - MODIFICAR PARA TOKEN E USAR HASH

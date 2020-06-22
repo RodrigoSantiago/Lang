@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.Line;
 import logic.stack.expression.Expression;
 
@@ -84,5 +85,17 @@ public class LineVar extends Line {
             }
             token = next;
         }
+        // READ TYPE
+        // TODO - ADD VARS TO STACK
+    }
+
+    @Override
+    public void load() {
+        for (Expression expresion : expresions) {
+            if (expresion != null) {
+                expresion.load(new Context(stack));
+            }
+        }
+        // READ TYPE [AUTO VAR/LET]
     }
 }

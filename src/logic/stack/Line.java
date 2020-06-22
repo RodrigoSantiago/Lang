@@ -28,11 +28,7 @@ public abstract class Line {
         this.parent = null;
     }
 
-    public void make() {
-    }
-
-    public void load(Pointer request) {
-
+    public void load() {
     }
 
     public boolean isIfStatment() {

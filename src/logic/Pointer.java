@@ -7,7 +7,8 @@ public class Pointer {
 
     public static final Pointer nullPointer = new Pointer(null); // Value
     public static final Pointer voidPointer = new Pointer(null); // No type
-    public static final Pointer openPointer = new Pointer(null); // Empty generic
+
+    public static final Pointer openPointer = new Pointer(null); // Empty generic [do not use as mark]
 
     public Type type;
     public boolean let;
@@ -28,9 +29,13 @@ public class Pointer {
 
     public Pointer(Type type, Pointer[] pointers, Generic typeSource, boolean let) {
         this.type = type;
-        this.pointers = pointers;
+        this.pointers = pointers != null && pointers.length == 0 ? null : pointers;
         this.typeSource = typeSource;
         this.let = let;
+    }
+
+    public boolean isOpen() {
+        return type == null;
     }
 
     public boolean isDefault() {
@@ -77,18 +82,65 @@ public class Pointer {
     }
 
     public int isDerivedFrom(Pointer other) {
-        if (other == openPointer) return 0;
         if (other == nullPointer) throw new RuntimeException("null é valor");
-        if (other.type == null) throw new RuntimeException("other nao pode ter type null");
-        if (this.type == other.type) return 1;
+        if (other == voidPointer) throw new RuntimeException("other nao pode ser void");
+        if (other.isOpen()) return 0;
+        if (this.equals(other)) return 1;
         if (other.type.isValue()) return -1;
         for (Pointer p : type.parents) {
             int d = p.isDerivedFrom(other);
             if (d >= 0) {
-                return d;
+                return d + 1;
             }
         }
 
+        return -1;
+    }
+
+    // T this = other;
+    public int canReceive(Pointer other) {
+        int checkLet = !let && other.let ? -1 : 0;
+
+        // Void Never
+        if (other == voidPointer) return -1;
+
+        // Null Aways enter on Pointers parameters
+        if (other == nullPointer) return type != null && type.isPointer() ? 0 : -1;
+
+        // A 'default' can aways enter
+        if (other.isOpen() && other.typeSource == null) return 0;
+
+        // IF i'm a Generic, only generics can enter
+        if (typeSource != null) return typeSource == other.typeSource ? checkLet : -1;
+
+        // If the argument is a generic
+        if (other.typeSource != null) {
+            if (checkLet < 0) return -1;
+            if (this.isDerivedFrom(other.typeSource.basePtr) > -1) return 0;
+            return other.isDerivedFrom(this);
+        }
+
+        if (this.equals(other)) return 0;
+
+        if (other.type.isEnum() && type.isEnum()) {
+            return type == other.type ? 0 : -1;
+        }
+        if (other.type.isValue()) {
+            for (Pointer p : other.type.casts) {
+                p = byGeneric(p, other);
+                int d = this.canReceive(p);
+                if (d == 0) {
+                    return 1;
+                }
+            }
+            return -1;
+        }
+        for (Pointer p : other.type.parents) { // Ironicamente ignora o caminho das interfaces para Object !
+            int d = this.canReceive(p);
+            if (d >= 0) {
+                return d + 1;
+            }
+        }
         return -1;
     }
 

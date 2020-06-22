@@ -11,6 +11,17 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 
 public class Main {
+    static class classA<T> {
+        public void method(Object o) {
+            System.out.println("object");
+        }
+        public void method(Integer o) {
+            System.out.println("integer");
+        }
+        public void work(T t) {
+            method(t);
+        }
+    }
     public static void main(String... args) {
         Library lang = new Library("lang", 0);
         File dir = new File(System.getProperty("user.dir"), "test/lang/");

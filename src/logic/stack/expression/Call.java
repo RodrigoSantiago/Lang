@@ -12,10 +12,12 @@ import logic.stack.Stack;
 public abstract class Call {
     public final ContentFile cFile;
     public final CallGroup group;
+    public Token token;
 
     public Call(CallGroup group, Token start, Token end) {
         this.cFile = group.cFile;
         this.group = group;
+        this.token = start;
     }
 
     public Stack getStack() {
@@ -30,6 +32,10 @@ public abstract class Call {
         return group.parent.parent;
     }
 
+    public Token getToken() {
+        return token;
+    }
+
     public void make() {
 
     }
@@ -38,8 +44,8 @@ public abstract class Call {
 
     }
 
-    public boolean verify(Pointer pointer) {
-        return false;
+    public int verify(Pointer pointer) {
+        return -1;
     }
 
     public Pointer request(Pointer pointer) {

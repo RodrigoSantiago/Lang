@@ -37,6 +37,7 @@ public abstract class Type implements GenericOwner {
     ArrayList<Token> parentTokens = new ArrayList<>();
 
     public ArrayList<Pointer> parents = new ArrayList<>();
+    public ArrayList<Pointer> casts = new ArrayList<>();
     ArrayList<TokenGroup> parentTypeTokens = new ArrayList<>();
 
     ArrayList<Property> properties = new ArrayList<>();
@@ -580,9 +581,7 @@ public abstract class Type implements GenericOwner {
                     .ln();
         }
         for (Constructor constructor : constructors) {
-            if (!constructor.isStatic()) {
-                constructor.build(cBuilder);
-            }
+            constructor.build(cBuilder);
         }
 
         // Destructor
@@ -953,6 +952,9 @@ public abstract class Type implements GenericOwner {
                     }
                 }
 
+                if (operator.op == Key.CAST) {
+                    casts.add(operator.getTypePtr());
+                }
                 operators.add(operator);
             }
         }
@@ -1016,43 +1018,15 @@ public abstract class Type implements GenericOwner {
         }
     }
 
-    public int getVariablesCount() {
-        return variables.size() + (parent != null && parent.type != null ? parent.type.getVariablesCount() : 0);
-    }
-
-    public Variable getVariable(int index) {
-        if (index < variables.size()) {
-            return variables.get(index);
-        } else {
-            return parent.type.getVariable(index - variables.size());
-        }
-    }
-
-    public int getMethodsCount() {
-        return methods.size() + (parent != null && parent.type != null ? parent.type.getMethodsCount() : 0);
-    }
-
-    public Method getMethod(int index) {
-        if (index < methods.size()) {
-            return methods.get(index);
-        } else {
-            return parent.type.getMethod(index - methods.size());
-        }
+    public ArrayList<MethodView> getMethod(Token nameToken) {
+        return methodView.get(nameToken);
     }
 
     public int getIndexersCount() {
-        return indexers.size() + (parent != null && parent.type != null ? parent.type.getIndexersCount() : 0);
+        return indexerView.size();
     }
 
-    public Indexer getIndexer(int index) {
-        if (index < indexers.size()) {
-            return indexers.get(index);
-        } else {
-            return parent.type.getIndexer(index - indexers.size());
-        }
-    }
-
-    public IndexerView getIndexerView(int index) {
+    public IndexerView getIndexer(int index) {
         return indexerView.get(index);
     }
 
@@ -1063,6 +1037,18 @@ public abstract class Type implements GenericOwner {
     public Operator getOperator(int index) {
         if (index < operators.size()) {
             return operators.get(index);
+        } else {
+            return null;
+        }
+    }
+
+    public int getConstructorsCount() {
+        return constructors.size();
+    }
+
+    public Constructor getConstructor(int index) {
+        if (index < constructors.size()) {
+            return constructors.get(index);
         } else {
             return null;
         }

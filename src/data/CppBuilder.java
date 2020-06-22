@@ -211,6 +211,7 @@ public class CppBuilder {
 
     private CppBuilder _namePtr(Pointer typePtr) {
         if (typePtr == Pointer.voidPointer) return add("void");
+        if (typePtr.isOpen()) return add("open");
         add(typePtr.type.pathToken);
         if (typePtr.pointers != null) {
             for (Pointer pointer : typePtr.pointers) {
@@ -231,7 +232,7 @@ public class CppBuilder {
         if (pointer == Pointer.nullPointer) return add("nullptr");
         if (pointer == Pointer.voidPointer) return add("void");
         if (pointer.typeSource != null) {
-            if (pointer.typeSource.basePtr == Pointer.openPointer) {
+            if (pointer.typeSource.basePtr.isOpen()) {
                 if (pointer.let) {
                     add("GLet<").nameGeneric(pointer.typeSource.nameToken).add(">");
                 } else {

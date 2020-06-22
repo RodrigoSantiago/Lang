@@ -12,7 +12,6 @@ import java.util.ArrayList;
 
 public class IndexerCall extends Call {
 
-    Token token;
     IndexerView indexerView;
     ArrayList<Expression> arguments = new ArrayList<>();
 
@@ -68,14 +67,19 @@ public class IndexerCall extends Call {
     public void load(Context context) {
         ArrayList<IndexerView> indexers = context.findIndexer(arguments);
         if (indexers.size() == 0) {
-            // erro
+            cFile.erro(token, "Indexer not found", this);
         } else if (indexers.size() > 1) {
-            // erro
+            cFile.erro(token, "Ambigous Indexer Call", this);
             indexerView = indexers.get(0);
         } else {
             indexerView = indexers.get(0);
         }
         context.jumpTo(indexerView == null ? null : indexerView.getTypePtr());
+    }
+
+    @Override
+    public int verify(Pointer pointer) {
+        return indexerView == null ? -1 : pointer.canReceive(indexerView.getTypePtr());
     }
 
     @Override

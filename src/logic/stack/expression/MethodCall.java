@@ -25,6 +25,7 @@ public class MethodCall extends Call {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.WORD) {
+                this.token = token;
                 this.nameToken = token;
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
@@ -74,15 +75,20 @@ public class MethodCall extends Call {
             // TODO - INNER CONSTRUCTOR BEHAVIOR
             ArrayList<MethodView> methods = context.findMethod(nameToken, arguments);
             if (methods.size() == 0) {
-                // erro
+                cFile.erro(token, "Method Not Found", this);
             } else if (methods.size() > 1) {
-                // erro
+                cFile.erro(token, "Ambigous Method Call", this);
                 methodView = methods.get(0);
             } else {
                 methodView = methods.get(0);
             }
             context.jumpTo(methodView == null ? null : methodView.getTypePtr());
         }
+    }
+
+    @Override
+    public int verify(Pointer pointer) {
+        return methodView == null ? -1 : pointer.canReceive(methodView.getTypePtr());
     }
 
     @Override

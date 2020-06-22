@@ -77,4 +77,9 @@ public class BlockNative extends Block {
             cFile.erro(token, "The parameter should not be empty", this);
         }
     }
+
+    @Override
+    public void load() {
+
+    }
 }

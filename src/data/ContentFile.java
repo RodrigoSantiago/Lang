@@ -210,6 +210,34 @@ public class ContentFile {
         return getCompiler().getLangObject();
     }
 
+    public Type langBool() {
+        return getCompiler().getLangBool();
+    }
+
+    public Type langByte() {
+        return getCompiler().getLangByte();
+    }
+
+    public Type langShort() {
+        return getCompiler().getLangShort();
+    }
+
+    public Type langInt() {
+        return getCompiler().getLangInt();
+    }
+
+    public Type langLong() {
+        return getCompiler().getLangLong();
+    }
+
+    public Type langFloat() {
+        return getCompiler().getLangFloat();
+    }
+
+    public Type langDouble() {
+        return getCompiler().getLangDouble();
+    }
+
     public Type langString() {
         return getCompiler().getLangString();
     }
@@ -230,8 +258,28 @@ public class ContentFile {
         return new Pointer(mark(getCompiler().getLangString()));
     }
 
+    public Pointer langBytePtr() {
+        return new Pointer(mark(getCompiler().getLangByte()));
+    }
+
+    public Pointer langShortPtr() {
+        return new Pointer(mark(getCompiler().getLangShort()));
+    }
+
     public Pointer langIntPtr() {
         return new Pointer(mark(getCompiler().getLangInt()));
+    }
+
+    public Pointer langLongPtr() {
+        return new Pointer(mark(getCompiler().getLangLong()));
+    }
+
+    public Pointer langFloatPtr() {
+        return new Pointer(mark(getCompiler().getLangFloat()));
+    }
+
+    public Pointer langDoublePtr() {
+        return new Pointer(mark(getCompiler().getLangDouble()));
     }
 
     public Pointer langBoolPtr() {
@@ -375,7 +423,7 @@ public class ContentFile {
                         if (index >= type.template.getCount() && !type.isFunction()) {
                             erro(iToken, iNext, "Unexpected generic", this);
                         } else {
-                            if (!type.isFunction() && genPtr.isDerivedFrom(type.template.getBasePtr(index)) == -1) {
+                            if (!type.isFunction() && genPtr.isDerivedFrom(type.template.getBasePtr(index)) == 0) {
                                 genPtr = type.template.getDefaultPtr(index);
                                 erro(iToken, iNext, "Invalid generic", this);
                             }

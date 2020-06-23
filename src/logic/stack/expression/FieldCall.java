@@ -6,11 +6,15 @@ import content.TokenGroup;
 import logic.Pointer;
 import logic.member.view.FieldView;
 import logic.stack.Context;
+import logic.stack.Field;
 import logic.stack.LocalVar;
+import logic.typdef.Type;
 
 public class FieldCall extends Call {
 
-    FieldView field;
+    Type staticCall;
+    FieldView fieldView;
+    Field field;
 
     public FieldCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -39,23 +43,53 @@ public class FieldCall extends Call {
         if (token == null) {
             context.jumpTo(null);
         } else {
-            field = context.findField(token);
+            field = token.isComplex() ? null : context.findLocalField(token);
             if (field == null) {
-                cFile.erro(token, "Field Not Found", this);
+                fieldView = token.isComplex() ? null : context.findField(token);
+                if (fieldView == null) {
+                    staticCall = context.findType(token);
+                    if (staticCall == null) {
+                        if (token.isComplex()) {
+                            cFile.erro(token, "Type Not Found", this);
+                        } else {
+                            cFile.erro(token, "Field Not Found", this);
+                        }
+                    } else {
+                        context.jumpTo(staticCall, true);
+                    }
+                } else {
+                    context.jumpTo(fieldView.getTypePtr());
+                }
+            } else {
+                if (!getLine().isChildOf(field.getSource())) {
+                    cFile.erro(token, "Field Not acessible", this);
+                }
+                context.jumpTo(field.getTypePtr());
             }
-            context.jumpTo(field == null ? null : field.getTypePtr());
         }
     }
 
     @Override
     public int verify(Pointer pointer) {
-        return field == null ? -1 : pointer.canReceive(field.getTypePtr());
+        return staticCall != null ? 0 : field != null ? pointer.canReceive(field.getTypePtr()) :
+                fieldView != null ? pointer.canReceive(fieldView.getTypePtr()) : 0;
     }
 
     @Override
     public Pointer request(Pointer pointer) {
-        if (field == null) return null;
+        if (staticCall != null || (field == null && fieldView == null)) return null;
+        if (returnPtr == null) {
+            returnPtr = field != null ? field.getTypePtr() : fieldView.getTypePtr();
+            if (returnPtr != null && pointer != null) {
+                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
+            }
+        }
+        return returnPtr;
+    }
 
-        return field.getTypePtr();
+    @Override
+    public Pointer requestSet(Pointer pointer) {
+        // show set acess error
+        return super.requestSet(pointer);
     }
 }

@@ -45,13 +45,18 @@ public class InnerCall extends Call {
 
     @Override
     public int verify(Pointer pointer) {
-        return innerExpression == null ? -1 : pointer.canReceive(innerExpression.getReturnType());
+        return innerExpression == null ? 0 : pointer.canReceive(innerExpression.getReturnType());
     }
 
     @Override
     public Pointer request(Pointer pointer) {
         if (innerExpression == null) return null;
-
-        return innerExpression.getReturnType();
+        if (returnPtr == null) {
+            returnPtr = innerExpression.getReturnType();
+            if (returnPtr != null && pointer != null) {
+                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
+            }
+        }
+        return returnPtr;
     }
 }

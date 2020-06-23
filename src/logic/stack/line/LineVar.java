@@ -3,6 +3,7 @@ package logic.stack.line;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Context;
 import logic.stack.Line;
@@ -15,6 +16,10 @@ public class LineVar extends Line {
     TokenGroup typeToken;
     ArrayList<Token> nameTokens = new ArrayList<>();
     ArrayList<Expression> expresions = new ArrayList<>();
+    ArrayList<Pointer> typePtrs = new ArrayList<>();
+
+    public boolean isFinal, isLet;
+    public Pointer typePtr;
 
     public LineVar(Block block, Token start, Token end) {
         this(block, start, end, false);
@@ -24,8 +29,7 @@ public class LineVar extends Line {
         super(block, start, end);
         System.out.println("VAR");
 
-        boolean isLet = false, isFinal = false;
-
+        Token init = null;
         Token nameToken = null;
         Token token = start;
         Token next;
@@ -58,15 +62,17 @@ public class LineVar extends Line {
             } else if (state == 2 && token.key == Key.WORD) {
                 nameToken = token;
                 state = 3;
-            } else if (state == 3 && token.key == Key.SETVAL) {
+            } else if (!foreachVar && state == 3 && token.key == Key.SETVAL) {
+                init = next;
                 while (next != end && next.key != Key.COMMA && next.key != Key.SEMICOLON) {
                     next = next.getNext();
                 }
                 state = 4;
-            } else if ((state == 3 || state == 4) && token.key == Key.COMMA) {
+            } else if (!foreachVar && (state == 3 || state == 4) && token.key == Key.COMMA) {
                 nameTokens.add(nameToken);
-                expresions.add(state == 4 ? new Expression(this, nameToken, token) : null);
+                expresions.add(state == 4 ? new Expression(this, init, token) : null);
                 nameToken = null;
+                init = null;
                 state = 2;
             } else if ((state == 3 || state == 4) && (token.key == Key.SEMICOLON || next == end)) {
                 if (token.key != Key.SEMICOLON && !foreachVar) {
@@ -74,28 +80,56 @@ public class LineVar extends Line {
                 }
 
                 nameTokens.add(nameToken);
-                expresions.add(state == 4 ? new Expression(this, nameToken, token.key == Key.SEMICOLON ? token : next) : null);
+                expresions.add(state == 4 ? new Expression(this, init, token.key == Key.SEMICOLON ? token : next) : null);
                 nameToken = null;
-                state = 4;
+                init = null;
+                state = 5;
             } else if (state != 1) {
                 cFile.erro(token, "Unexpected token", this);
             }
-            if (state != 4 && next == end && (state != 3 || foreachVar)) {
+            if (state != 5 && next == end && (state != 3 || foreachVar)) {
+                if (nameToken != null) {
+                    nameTokens.add(nameToken);
+                    expresions.add(null);
+                }
                 cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
-        // READ TYPE
-        // TODO - ADD VARS TO STACK
     }
 
     @Override
     public void load() {
-        for (Expression expresion : expresions) {
+        if (typeToken != null) {
+            typePtr = stack.getPointer(typeToken, isLet);
+        }
+
+        for (int i = 0; i < expresions.size(); i++) {
+            Expression expresion = expresions.get(i);
             if (expresion != null) {
                 expresion.load(new Context(stack));
+                expresion.request(typePtr);
+                if (isLet && expresion.getReturnType() != null && expresion.getReturnType().let) {
+                    cFile.erro(expresion.getTokenGroup(), "A Strong value cannot recive a Weak value", this);
+                }
+                if (typePtr == null) {
+                    typePtrs.add(expresion.getReturnType());
+                }
+            } else if (typePtr == null) {
+                typePtrs.add(cFile.langObjectPtr());
+                cFile.erro(nameTokens.get(i), "Cannot determine a Type without an initialization", this);
             }
         }
-        // READ TYPE [AUTO VAR/LET]
+
+        try {
+            for (int i = 0; i < nameTokens.size(); i++) {
+                Token nameToken = nameTokens.get(i);
+                if (!stack.addField(nameToken, typePtr == null ? typePtrs.get(i) : typePtr, isFinal, parent)) {
+                    cFile.erro(nameToken, "Repeated field name", this);
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

@@ -1,5 +1,6 @@
 package logic.member.view;
 
+import content.Key;
 import content.Token;
 import logic.Pointer;
 import logic.member.Operator;
@@ -7,12 +8,20 @@ import logic.member.Operator;
 import logic.typdef.Type;
 
 public class OperatorView {
+    public static final OperatorView OR = new OperatorView(Key.OR);
+    public static final OperatorView AND = new OperatorView(Key.AND);
+    public static final OperatorView CAST = new OperatorView(Key.CAST);
+
     public final Pointer caller;
     public final Operator operator;
     public final ParamView paramView;
     private Pointer typePtr;
 
-    public OperatorView overrided;
+    private OperatorView(Key key) {
+        this.caller = null;
+        this.operator = null;
+        this.paramView = null;
+    }
 
     public OperatorView(Pointer caller, Operator operator) {
         this.caller = caller;
@@ -21,16 +30,6 @@ public class OperatorView {
             typePtr = Pointer.byGeneric(operator.getTypePtr(), caller);
         }
         paramView = new ParamView(caller, operator.getParams());
-    }
-
-    public OperatorView(Pointer caller, OperatorView operatorView) {
-        this.caller = caller;
-        this.operator = operatorView.operator;
-        if (operatorView.typePtr != null) {
-            typePtr = Pointer.byGeneric(operatorView.getTypePtr(), caller);
-        }
-        paramView = new ParamView(caller, operatorView.getParams());
-        this.overrided = operatorView.overrided;
     }
 
     public boolean isFrom(Type type) {

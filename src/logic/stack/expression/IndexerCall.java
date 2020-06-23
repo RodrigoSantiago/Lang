@@ -79,13 +79,18 @@ public class IndexerCall extends Call {
 
     @Override
     public int verify(Pointer pointer) {
-        return indexerView == null ? -1 : pointer.canReceive(indexerView.getTypePtr());
+        return indexerView == null ? 0 : pointer.canReceive(indexerView.getTypePtr());
     }
 
     @Override
     public Pointer request(Pointer pointer) {
         if (indexerView == null) return null;
-
-        return indexerView.getTypePtr();
+        if (returnPtr == null) {
+            returnPtr = indexerView.getTypePtr();
+            if (returnPtr != null && pointer != null) {
+                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
+            }
+        }
+        return returnPtr;
     }
 }

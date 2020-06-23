@@ -2,8 +2,8 @@ package logic.member.view;
 
 import content.Token;
 import logic.Pointer;
-import logic.params.Arg;
 import logic.params.Parameters;
+import logic.stack.expression.CallGroup;
 import logic.stack.expression.Expression;
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public class ParamView {
             for (int i = 0; i < getArgsCount(); i++) {
                 Pointer ptrA = getArgTypePtr(i);
                 Pointer ptrB = other.getArgTypePtr(i);
-                if (!ptrA.isGenericEquivalent(ptrB) && !ptrA.overloadEquals(ptrB)) {
+                if (!ptrA.isEquivalent(ptrB)) {
                     dif = true;
                     break;
                 }
@@ -74,9 +74,51 @@ public class ParamView {
     public int verifyArguments(int[] closer, int[] result, ArrayList<Expression> arguments, boolean exists) {
         for (int i = 0; i < params.getCount(); i++) {
             int dist = arguments.get(i).verify(getArgTypePtr(i));
-            if (dist == -1) return 0; // can handle (-2)?
+            if (dist == 0) return 0; // can handle (-2)?
             result[i] = dist;
         }
+        int isCloser = 2;
+        if (exists) {
+            for (int i = 0; i < closer.length; i++) {
+                if (result[i] < closer[i]) {
+                    if (isCloser == 0) {
+                        isCloser = 2;
+                        break;
+                    }
+                    isCloser = 1;
+                } else if (closer[i] < result[i]) {
+                    if (isCloser == 1) {
+                        isCloser = 2;
+                        break;
+                    }
+                    isCloser = 0;
+                }
+            }
+        }
+        if (isCloser == 2) {
+            for (int i = 0; i < closer.length; i++) {
+                closer[i] = Math.min(result[i], closer[i]);
+            }
+            return 2;
+        } else if (isCloser == 1) {
+            for (int i = 0; i < closer.length; i++) {
+                closer[i] = result[i];
+            }
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    public int verifyArguments(int[] closer, int[] result, CallGroup left, CallGroup right, boolean exists) {
+        int dist = left.verify(getArgTypePtr(0));
+        if (dist == 0) return 0; // can handle [negatives]?
+        result[0] = dist;
+
+        dist = right.verify(getArgTypePtr(1));
+        if (dist == 0) return 0; // can handle [negatives]?
+        result[1] = dist;
+
         int isCloser = 2;
         if (exists) {
             for (int i = 0; i < closer.length; i++) {

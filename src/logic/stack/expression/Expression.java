@@ -16,6 +16,7 @@ public class Expression {
     public final ContentFile cFile;
     public final Stack stack;
     public final Line parent;
+    TokenGroup tokenGroup;
     Pointer returnPtr;
     Token start, end;
 
@@ -27,6 +28,7 @@ public class Expression {
         this.parent = line;
         this.start = start;
         this.end = end;
+        tokenGroup = new TokenGroup(start, end);
         System.out.println("EXPR: "+ TokenGroup.toString(start, end));
 
         CallGroup group = new CallGroup(this);
@@ -140,6 +142,10 @@ public class Expression {
         }
     }
 
+    public TokenGroup getTokenGroup() {
+        return tokenGroup;
+    }
+
     public void load(Context context) {
         int maxLevel = 1;
 
@@ -219,18 +225,22 @@ public class Expression {
         }
 
         if (groups.size() > 1) {
-            System.out.println("HOW ?");
+            System.out.println("INVALID MULT GROUP EXPRESSION ?");
         } else if (groups.size() > 0) {
             groups.get(0).load(context);
         }
     }
 
     public int verify(Pointer pointer) {
-        return groups.size() == 0 ? -1 : groups.get(0).verify(pointer);
+        return groups.size() == 0 ? 0 : groups.get(0).verify(pointer);
     }
 
-    public boolean request(Pointer pointer) {
-        return false;
+    public Pointer request(Pointer pointer) {
+        return groups.size() == 0 ? null : groups.get(0).request(pointer);
+    }
+
+    public Pointer requestSet(Pointer pointer) {
+        return groups.size() == 0 ? null : groups.get(0).requestSet(pointer);
     }
 
     public void add(CallGroup group) {

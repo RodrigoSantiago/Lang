@@ -13,6 +13,7 @@ public abstract class Call {
     public final ContentFile cFile;
     public final CallGroup group;
     public Token token;
+    Pointer returnPtr;
 
     public Call(CallGroup group, Token start, Token end) {
         this.cFile = group.cFile;
@@ -36,23 +37,24 @@ public abstract class Call {
         return token;
     }
 
-    public void make() {
-
-    }
-
     public void load(Context context) {
 
     }
 
     public int verify(Pointer pointer) {
-        return -1;
+        return 0;
     }
 
     public Pointer request(Pointer pointer) {
         return null;
     }
 
-    public Pointer getReturnType() {
+    public Pointer requestSet(Pointer pointer) {
+        request(pointer);
         return null;
+    }
+
+    public Pointer getReturnType() {
+        return returnPtr;
     }
 }

@@ -31,7 +31,7 @@ public class Pointer {
         this.type = type;
         this.pointers = pointers != null && pointers.length == 0 ? null : pointers;
         this.typeSource = typeSource;
-        this.let = let;
+        this.let = (type == null || !type.isValue()) && let;
     }
 
     public boolean isOpen() {
@@ -44,7 +44,7 @@ public class Pointer {
     }
 
     public Pointer toLet() {
-        if (let) return this;
+        if (let || (type != null && type.isValue())) return this;
         return new Pointer(type, pointers == null ? null : pointers.clone(), typeSource, true);
     }
 
@@ -58,90 +58,117 @@ public class Pointer {
         return false;
     }
 
-    public boolean isGenericEquivalent(Pointer other) {
+    public boolean isEquivalent(Pointer other) {
         if (this == other) return true;
         if (typeSource != null && other.typeSource != null) return true;
-        if (isDefault()) return other.isDefault();
+        if (other.typeSource != null && pointers != null) return !this.contains(other);
+        if (typeSource != null && other.pointers != null) return !other.contains(this);
 
-        if (type == other.type && pointers != null && pointers.length == other.pointers.length) {
+        if (type == other.type && pointers != null && other.pointers != null &&
+                pointers.length == other.pointers.length) {
             for (int i = 0; i < pointers.length; i++) {
-                if (pointers[i].isGenericEquivalent(other.pointers[i])) return true;
+                if (!pointers[i].isEquivalent(other.pointers[i])) {
+                    return false;
+                }
             }
+            return true;
         }
         return false;
     }
 
-    public boolean contains(Type type) {
-        if (this.type == type) return true;
+    public boolean contains(Pointer other) {
+        if (this.equals(other)) return true;
         if (pointers != null) {
             for (Pointer pointer : pointers) {
-                if (pointer.contains(type)) return true;
+                if (pointer.contains(other)) return true;
             }
         }
         return false;
     }
 
     public int isDerivedFrom(Pointer other) {
-        if (other == nullPointer) throw new RuntimeException("null é valor");
-        if (other == voidPointer) throw new RuntimeException("other nao pode ser void");
-        if (other.isOpen()) return 0;
+        // null|void|struct|enums [nunca podem entrar neste metodo]
+        if (other == nullPointer || other == voidPointer || (other.type != null && other.type.isValue()))
+            throw new RuntimeException("Invalid Argument");
+
+        if (other.isOpen()) return 1;
         if (this.equals(other)) return 1;
-        if (other.type.isValue()) return -1;
         for (Pointer p : type.parents) {
-            int d = p.isDerivedFrom(other);
-            if (d >= 0) {
+            int d = byGeneric(this, p).isDerivedFrom(other);
+            if (d > 0) {
                 return d + 1;
             }
         }
 
-        return -1;
+        return 0;
     }
 
-    // T this = other;
     public int canReceive(Pointer other) {
-        int checkLet = !let && other.let ? -1 : 0;
-
         // Void Never
-        if (other == voidPointer) return -1;
+        if (other == voidPointer) return 0;
 
-        // Null Aways enter on Pointers parameters
-        if (other == nullPointer) return type != null && type.isPointer() ? 0 : -1;
+        // Null Aways (Pointers)
+        if (other == nullPointer) return type != null && type.isPointer() ? 1 : 0;
 
-        // A 'default' can aways enter
+        // Default Aways (Non-generic Open)
         if (other.isOpen() && other.typeSource == null) return 0;
 
-        // IF i'm a Generic, only generics can enter
-        if (typeSource != null) return typeSource == other.typeSource ? checkLet : -1;
+        int checkLet = !let && other.let ? 0 : 1;
 
-        // If the argument is a generic
+        // Generic Reciver (Includes Open Pointer) - Only allow the same Generic
+        if (typeSource != null) return typeSource == other.typeSource ? checkLet : 0;
+
+        // If the source is a generic
         if (other.typeSource != null) {
-            if (checkLet < 0) return -1;
-            if (this.isDerivedFrom(other.typeSource.basePtr) > -1) return 0;
-            return other.isDerivedFrom(this);
+            // Open Generic
+            if (other.isOpen()) {
+                return -1; // [Negative] - I can become you !
+            } else {
+                // Any Generic
+                int sourceToDestin = other.typeSource.basePtr.isDerivedFrom(this);
+                if (sourceToDestin > 0) {
+                    return checkLet;
+                } else if (type.isClass()) {
+                    int derived = this.isDerivedFrom(other.typeSource.basePtr);
+                    if (derived > 0) {
+                        return - derived * checkLet; // [Negative] - I can become you !
+                    }
+                } else if (type.isInterface()) {
+                    return -1 * checkLet; // [Negative] - I can become you !
+                }
+                return 0;
+            }
         }
 
-        if (this.equals(other)) return 0;
+        if (other.equals(this)) return checkLet;
 
-        if (other.type.isEnum() && type.isEnum()) {
-            return type == other.type ? 0 : -1;
-        }
-        if (other.type.isValue()) {
-            for (Pointer p : other.type.casts) {
-                p = byGeneric(p, other);
-                int d = this.canReceive(p);
-                if (d == 0) {
-                    return 1;
+        int typeDistance = 0;
+
+        if (other.type.isStruct()) {
+            for (Pointer p : other.type.autoCast) {
+                int d = this.canReceive(byGeneric(p, other));
+                if (d > 0) {
+                    typeDistance = d + 1;
+                    break;
                 }
             }
-            return -1;
         }
-        for (Pointer p : other.type.parents) { // Ironicamente ignora o caminho das interfaces para Object !
-            int d = this.canReceive(p);
-            if (d >= 0) {
-                return d + 1;
+
+        if (typeDistance == 0) {
+            for (Pointer p : other.type.parents) {
+                p = byGeneric(p, other);
+                int d = this.canReceive(p);
+                if (d > 0) {
+                    typeDistance = d + 1;
+                    break;
+                }
+            }
+            if (type.isValue() && contains(type.parent)) {
+                return 1;
             }
         }
-        return -1;
+
+        return typeDistance * checkLet;
     }
 
     public static Pointer byGeneric(Pointer source, Pointer caller) {
@@ -230,7 +257,17 @@ public class Pointer {
     public String toString() {
         if (this == voidPointer) return "void";
         if (this == nullPointer) return "null";
-        if (this == openPointer) return "any";
-        return "Ptr[" + type + "]";
+        if (this.isOpen()) return "open";
+        String s = (let ? "Let" : "Ptr") + "<" + type;
+        if (pointers != null) {
+            s += "<";
+            for (int i = 0; i < pointers.length; i++) {
+                if (i > 0) s += ", ";
+                s += pointers[i];
+            }
+            s += ">";
+        }
+        s += ">";
+        return s;
     }
 }

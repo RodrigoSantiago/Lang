@@ -3,10 +3,14 @@ package logic.stack;
 import content.Key;
 import content.Parser;
 import content.Token;
+import content.TokenGroup;
 import data.ContentFile;
 import logic.Pointer;
 import logic.stack.block.*;
 import logic.stack.line.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Stack {
 
@@ -20,6 +24,8 @@ public class Stack {
     private boolean isExpression;
     private boolean isStatic;
     private boolean isConstructor;
+
+    HashMap<Token, Field> fields = new HashMap<>();
 
     Stack(Stack source, Pointer returnPtr) {
         this.cFile = source.cFile;
@@ -61,5 +67,21 @@ public class Stack {
 
     public Pointer getReturnPtr() {
         return returnPtr;
+    }
+
+    public boolean addField(Token nameToken, Pointer typePtr, boolean isFinal, Block block) {
+        if (fields.containsKey(nameToken)) {
+            return false;
+        }
+        fields.put(nameToken, new Field(this, nameToken, typePtr, isFinal, block));
+        return true;
+    }
+
+    public Field findField(Token nameToken) {
+        return fields.get(nameToken);
+    }
+
+    public Pointer getPointer(TokenGroup tokenGroup, boolean isLet) {
+        return cFile.getPointer(tokenGroup.start, tokenGroup.end, null, null, isLet);
     }
 }

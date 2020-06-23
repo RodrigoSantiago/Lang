@@ -57,7 +57,7 @@ public class LambdaCall extends Call {
         } else {
             // count parameters
         }
-        return -1;
+        return 0;
     }
 
     @Override

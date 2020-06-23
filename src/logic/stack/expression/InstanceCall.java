@@ -120,11 +120,17 @@ public class InstanceCall extends Call {
 
     @Override
     public int verify(Pointer pointer) {
-        return typePtr == null ? -1 : pointer.canReceive(typePtr);
+        return typePtr == null ? 0 : pointer.canReceive(typePtr);
     }
 
     @Override
     public Pointer request(Pointer pointer) {
-        return typePtr;
+        if (returnPtr == null) {
+            returnPtr = typePtr;
+            if (returnPtr != null && pointer != null) {
+                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
+            }
+        }
+        return returnPtr;
     }
 }

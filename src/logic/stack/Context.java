@@ -6,6 +6,7 @@ import logic.Pointer;
 import logic.member.Constructor;
 import logic.member.Operator;
 import logic.member.view.*;
+import logic.stack.expression.CallGroup;
 import logic.stack.expression.Expression;
 import logic.typdef.Type;
 
@@ -18,12 +19,21 @@ public class Context {
     public Pointer pointer;
     private boolean isStatic;
     private boolean isIncorrect;
+    private boolean isBegin;
 
     public Context(Stack stack) {
         this.stack = stack;
         this.pointer = stack.getSourcePtr();
         this.isStatic = stack.isStatic();
         this.type = pointer.type;
+        isBegin = true;
+    }
+
+    public void jumpTo(Type type, boolean isStatic) {
+        this.isStatic = isStatic;
+        this.pointer = type.self;
+        this.type = type;
+        isBegin = false;
     }
 
     public void jumpTo(Pointer pointer) {
@@ -36,6 +46,7 @@ public class Context {
             this.pointer = pointer;
             this.type = pointer.type;
         }
+        isBegin = false;
     }
 
     public boolean isStatic() {
@@ -47,12 +58,25 @@ public class Context {
     }
 
     public Pointer getPointer(TokenGroup typeToken) {
-        return null;
+        return getPointer(typeToken, false);
+    }
+
+    public Pointer getPointer(TokenGroup typeToken, boolean isLet) {
+        return stack.cFile.getPointer(typeToken.start, typeToken.end, null, null, isLet);
+    }
+
+    public Type findType(Token typeName) {
+        return stack.cFile.findType(typeName);
     }
 
     public void resolve(Expression expression) {
         expression.load(new Context(stack));
         expression.request(null);
+    }
+
+    public Field findLocalField(Token nameToken) {
+        if (!isBegin) return null;
+        return stack.findField(nameToken);
     }
 
     public FieldView findField(Token nameToken) {
@@ -188,44 +212,67 @@ public class Context {
         return null;
     }
 
-    public ArrayList<OperatorView> findOperator(Token opToken, Expression exp) {
+    public OperatorView findOperator(CallGroup opToken, CallGroup exp) {
         exp.load(new Context(stack));
         exp.request(null);
         Pointer ptr = exp.getReturnType();
-        if (ptr.type != null) {
-            ArrayList<OperatorView> found = null;
-            int closer = 0;
 
-            for (int it = 0; it < ptr.type.getOperatorsCount(); it++) {
-                Operator operator = ptr.type.getOperator(it);
-                if (operator.getOperator().equals(opToken) && operator.getParams().getCount() == 1) {
-                    OperatorView ov = new OperatorView(pointer, operator);
-                }
+        if (opToken.isCastingOperator()) {
+            Pointer castPtr = opToken.getCastPtr();
+            if (castPtr.toLet().canReceive(ptr) != 0) return OperatorView.CAST;
+            if (castPtr.type != null && castPtr.type.isInterface()) return OperatorView.CAST;
+            if (ptr.type != null && ptr.type.casts.contains(castPtr)) return OperatorView.CAST;
+            if (ptr.type != null && ptr.type.autoCast.contains(castPtr)) return OperatorView.CAST;
+        } else if (ptr != null && ptr.type != null) {
+            ArrayList<OperatorView> found = ptr.type.getOperator(opToken.getOperatorToken());
+            if (found != null && found.size() == 1) {
+                return found.get(0);
             }
-            return found;
         }
         return null;
     }
 
-    public ArrayList<OperatorView> findOperator(Token opToken, Expression left, Expression right) {
+    public ArrayList<OperatorView> findOperator(CallGroup left, CallGroup opToken, CallGroup right) {
         left.load(new Context(stack));
         right.load(new Context(stack));
         left.request(null);
-        right.request(null);
 
         Pointer ptr = left.getReturnType();
-        if (ptr.type != null) {
-            ArrayList<OperatorView> found = null;
-            int closer = 0;
+        if (ptr != null && ptr.type != null) {
+            int repeat = 0;
+            do {
+                ArrayList<OperatorView> found = null;
+                final int[] closer = new int[2];
+                final int[] result = new int[2];
 
-            for (int it = 0; it < ptr.type.getOperatorsCount(); it++) {
-                Operator operator = ptr.type.getOperator(it);
-                if (operator.getOperator().equals(opToken) && operator.getParams().getCount() == 1) {
-                    OperatorView ov = new OperatorView(pointer, operator);
+                ArrayList<OperatorView> operators = ptr.type.getOperator(opToken.getOperatorToken());
+                for (OperatorView ov : operators) {
+                    if (ov.getParams().getArgsCount() == 2) {
+                        int ret = ov.getParams().verifyArguments(closer, result, left, right, found == null);
+                        if (ret == 0) {
+                            // invalid
+                        } else if (ret == 1) {
+                            if (found == null) found = new ArrayList<>();
+                            found.clear();
+                            found.add(ov);
+                        } else if (ret == 2) {
+                            if (found == null) found = new ArrayList<>();
+                            found.add(ov);
+                        }
+                    }
                 }
-            }
-            return found;
+                if (found != null && found.size() == 1) {
+                    right.request(found.get(0).getParams().getArgTypePtr(1));
+                    return found;
+                } else {
+                    CallGroup swip = left;
+                    left = right;
+                    right = swip;
+                    repeat += 1;
+                }
+            } while (repeat == 1);
         }
+        right.request(null);
         return null;
     }
 }

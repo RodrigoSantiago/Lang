@@ -8,13 +8,10 @@ import data.ContentFile;
 import data.CppBuilder;
 import logic.GenericOwner;
 import logic.ViewList;
-import logic.member.view.IndexerView;
-import logic.member.view.MethodView;
-import logic.member.view.ParamView;
+import logic.member.view.*;
 import logic.templates.Template;
 import logic.Pointer;
 import logic.member.*;
-import logic.member.view.FieldView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +34,7 @@ public abstract class Type implements GenericOwner {
     ArrayList<Token> parentTokens = new ArrayList<>();
 
     public ArrayList<Pointer> parents = new ArrayList<>();
+    public ArrayList<Pointer> autoCast = new ArrayList<>();
     public ArrayList<Pointer> casts = new ArrayList<>();
     ArrayList<TokenGroup> parentTypeTokens = new ArrayList<>();
 
@@ -58,6 +56,7 @@ public abstract class Type implements GenericOwner {
 
     private HashMap<Token, FieldView> fields = new HashMap<>();
     private ViewList<MethodView> methodView = new ViewList<>();
+    private ViewList<OperatorView> operatorView = new ViewList<>();
     private ArrayList<IndexerView> indexerView = new ArrayList<>();
 
     private ArrayList<MethodView> methodViewImpl = new ArrayList<>();
@@ -888,12 +887,10 @@ public abstract class Type implements GenericOwner {
             if (method.isAbstract() && ((method.isPrivate() && !isPrivate()) || (!method.isPublic() && isPublic()))) {
                 cFile.erro(method.getName(), "A abstract method cannot have a strong acess modifier than the type", this);
             }
-            for (Method methodB : methods) {
-                if (method.getName().equals(methodB.getName())) {
-                    if (!method.getParams().canOverload(methodB.getParams())) {
-                        cFile.erro(method.getName(), "Invalid overloading", this);
-                        return;
-                    }
+            for (MethodView methodB : methodView.get(method.getName())) {
+                if (!method.getParams().canOverload(methodB.method.getParams())) {
+                    cFile.erro(method.getName(), "Invalid overloading", this);
+                    return;
                 }
             }
 
@@ -951,11 +948,15 @@ public abstract class Type implements GenericOwner {
                         }
                     }
                 }
-
-                if (operator.op == Key.CAST) {
-                    casts.add(operator.getTypePtr());
-                }
                 operators.add(operator);
+
+                if (operator.op == Key.AUTO) {
+                    autoCast.add(operator.getTypePtr());
+                } else if (operator.op == Key.CAST) {
+                    casts.add(operator.getTypePtr());
+                } else {
+                    operatorView.put(operator.getOperator(), new OperatorView(self, operator));
+                }
             }
         }
     }
@@ -1034,6 +1035,10 @@ public abstract class Type implements GenericOwner {
         return operators.size();
     }
 
+    public ArrayList<OperatorView> getOperator(Token operatorToken) {
+        return operatorView.get(operatorToken);
+    }
+
     public Operator getOperator(int index) {
         if (index < operators.size()) {
             return operators.get(index);
@@ -1056,6 +1061,6 @@ public abstract class Type implements GenericOwner {
 
     @Override
     public String toString() {
-        return nameToken+"["+hashCode()+"]";
+        return nameToken == null ? "[empty]" : nameToken.toString();
     }
 }

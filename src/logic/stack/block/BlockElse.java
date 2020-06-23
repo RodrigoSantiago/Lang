@@ -78,7 +78,7 @@ public class BlockElse extends Block {
     public void load() {
         if (conditionExp != null) {
             conditionExp.load(new Context(stack));
-            if (!conditionExp.request(cFile.langBoolPtr())) {
+            if (conditionExp.request(cFile.langBoolPtr()) == null) {
                 cFile.erro(conditionToken, "The condition must be a bool", this);
             }
         }

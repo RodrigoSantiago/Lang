@@ -71,7 +71,7 @@ public class BlockLock extends Block {
     public void load() {
         if (lockerExp != null) {
             lockerExp.load(new Context(stack));
-            if (!lockerExp.request(cFile.langLockerPtr().toLet())) {
+            if (lockerExp.request(cFile.langLockerPtr().toLet()) == null) {
                 cFile.erro(lockerToken, "The locker must be a instance of a Locker", this);
             }
         }

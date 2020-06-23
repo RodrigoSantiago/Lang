@@ -97,7 +97,7 @@ public class Parameters {
             for (int i = 0; i < args.size(); i++) {
                 Arg argA = args.get(i);
                 Arg argB = other.args.get(i);
-                if (!argA.typePtr.isGenericEquivalent(argB.typePtr) && !argA.typePtr.overloadEquals(argB.typePtr)) {
+                if (!argA.typePtr.isEquivalent(argB.typePtr)) {
                     dif = true;
                     break;
                 }

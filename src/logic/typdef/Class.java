@@ -29,7 +29,7 @@ public class Class extends Type {
                 cFile.erro(pTypeToken.start, "Invalid acess permisison", this);
             } else if (parents.contains(parent)) {
                 cFile.erro(pTypeToken.start, "Repeated parent", this);
-            } else if (this.parent != null && this.parent.isDerivedFrom(parent) > -1) {
+            } else if (this.parent != null && this.parent.isDerivedFrom(parent) >= 0) {
                 cFile.erro(pTypeToken.start, "Repeated parent", this);
             }else if (parent.typeSource != null) {
                 cFile.erro(pTypeToken.start, "A class could not inherit it's generic", this);

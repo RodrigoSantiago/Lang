@@ -14,7 +14,8 @@ public class Compiler {
     private HashMap<String, Library> libraries = new HashMap<>();
 
     private Namespace langSpace;
-    private Type langObject, langWrapper, langArray, langString, langInt, langBool, langLocker;
+    private Type langObject, langWrapper, langArray, langString,
+            langByte, langShort, langInt, langLong, langFloat, langDouble, langBool, langLocker;
 
     public void setMainFile(ContentFile main) {
 
@@ -113,12 +114,52 @@ public class Compiler {
         return langString;
     }
 
+    public Type getLangByte() {
+        if (langByte == null) {
+            langByte = getLangType(new Token("byte"));
+        }
+
+        return langByte;
+    }
+
+    public Type getLangShort() {
+        if (langShort == null) {
+            langShort = getLangType(new Token("byte"));
+        }
+
+        return langShort;
+    }
+
     public Type getLangInt() {
         if (langInt == null) {
             langInt = getLangType(new Token("int"));
         }
 
         return langInt;
+    }
+
+    public Type getLangLong() {
+        if (langLong == null) {
+            langLong = getLangType(new Token("long"));
+        }
+
+        return langLong;
+    }
+
+    public Type getLangFloat() {
+        if (langFloat == null) {
+            langFloat = getLangType(new Token("float"));
+        }
+
+        return langFloat;
+    }
+
+    public Type getLangDouble() {
+        if (langDouble == null) {
+            langDouble = getLangType(new Token("double"));
+        }
+
+        return langDouble;
     }
 
     public Type getLangBool() {

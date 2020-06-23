@@ -46,4 +46,10 @@ public abstract class Line {
     public Line isContinuable(Token label) {
         return parent != null ? parent.isContinuable(label) : null;
     }
+
+    public boolean isChildOf(Block source) {
+        if (this == source) return true;
+        if (parent != null) return parent.isChildOf(source);
+        return false;
+    }
 }

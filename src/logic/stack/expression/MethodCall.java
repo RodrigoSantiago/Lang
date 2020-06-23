@@ -88,13 +88,18 @@ public class MethodCall extends Call {
 
     @Override
     public int verify(Pointer pointer) {
-        return methodView == null ? -1 : pointer.canReceive(methodView.getTypePtr());
+        return methodView == null ? 0 : pointer.canReceive(methodView.getTypePtr());
     }
 
     @Override
     public Pointer request(Pointer pointer) {
         if (methodView == null) return null;
-
-        return methodView.getTypePtr();
+        if (returnPtr == null) {
+            returnPtr = methodView.getTypePtr();
+            if (returnPtr != null && pointer != null) {
+                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
+            }
+        }
+        return returnPtr;
     }
 }

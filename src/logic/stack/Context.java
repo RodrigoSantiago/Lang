@@ -1,10 +1,10 @@
 package logic.stack;
 
+import content.Key;
 import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
 import logic.member.Constructor;
-import logic.member.Operator;
 import logic.member.view.*;
 import logic.stack.expression.CallGroup;
 import logic.stack.expression.Expression;
@@ -49,6 +49,14 @@ public class Context {
         isBegin = false;
     }
 
+    public void jumpToContext(Context context) {
+        this.isIncorrect = context.isIncorrect;
+        this.isStatic = context.isStatic;
+        this.pointer = context.pointer;
+        this.type = context.type;
+        isBegin = false;
+    }
+
     public boolean isStatic() {
         return isStatic;
     }
@@ -76,11 +84,13 @@ public class Context {
 
     public Field findLocalField(Token nameToken) {
         if (!isBegin) return null;
+
         return stack.findField(nameToken);
     }
 
     public FieldView findField(Token nameToken) {
         if (type == null) return null;
+
         FieldView fieldView = type.getField(nameToken);
         if (fieldView != null) {
             if (isStatic && !fieldView.isStatic()) return null;
@@ -103,7 +113,7 @@ public class Context {
                 if (!isStatic && pointer.pointers != null) mv = new MethodView(pointer, mv);
 
                 if (mv.getParams().getArgsCount() == arguments.size()) {
-                    int ret = mv.getParams().verifyArguments(closer, result, arguments, found == null);
+                    int ret = mv.getParams().verifyArguments(closer, result, arguments, found != null);
                     if (ret == 0) {
                         // invalid
                     } else if (ret == 1) {
@@ -144,7 +154,7 @@ public class Context {
                 if (!isStatic && pointer.pointers != null) iv = new IndexerView(pointer, iv);
 
                 if (iv.getParams().getArgsCount() == arguments.size()) {
-                    int ret = iv.getParams().verifyArguments(closer, result, arguments, found == null);
+                    int ret = iv.getParams().verifyArguments(closer, result, arguments, found != null);
                     if (ret == 0) {
                         // invalid
                     } else if (ret == 1) {
@@ -185,7 +195,7 @@ public class Context {
                 if (constructor.getParams().getCount() == arguments.size()) {
                     ConstructorView cv = new ConstructorView(typePtr, typePtr.type.getConstructor(it));
 
-                    int ret = cv.getParams().verifyArguments(closer, result, arguments, found == null);
+                    int ret = cv.getParams().verifyArguments(closer, result, arguments, found != null);
                     if (ret == 0) {
                         // invalid
                     } else if (ret == 1) {
@@ -212,30 +222,57 @@ public class Context {
         return null;
     }
 
-    public OperatorView findOperator(CallGroup opToken, CallGroup exp) {
-        exp.load(new Context(stack));
-        exp.request(null);
-        Pointer ptr = exp.getReturnType();
+    public OperatorView findOperator(CallGroup left, CallGroup center) {
+        center.load(new Context(stack));
+        center.request(null);
+        Pointer ptr = center.getReturnType();
+        Token opToken = left.getOperatorToken();
 
-        if (opToken.isCastingOperator()) {
-            Pointer castPtr = opToken.getCastPtr();
+        if (opToken != null && opToken.key == Key.IS) {
+            return OperatorView.IS;
+        } else if (opToken != null && opToken.key == Key.ISNOT) {
+            return OperatorView.ISNOT;
+        }
+
+        if (left.isCastingOperator()) {
+            Pointer castPtr = left.getCastPtr();
             if (castPtr.toLet().canReceive(ptr) != 0) return OperatorView.CAST;
             if (castPtr.type != null && castPtr.type.isInterface()) return OperatorView.CAST;
             if (ptr.type != null && ptr.type.casts.contains(castPtr)) return OperatorView.CAST;
             if (ptr.type != null && ptr.type.autoCast.contains(castPtr)) return OperatorView.CAST;
         } else if (ptr != null && ptr.type != null) {
-            ArrayList<OperatorView> found = ptr.type.getOperator(opToken.getOperatorToken());
-            if (found != null && found.size() == 1) {
-                return found.get(0);
+            ArrayList<OperatorView> operators = ptr.type.getOperator(opToken);
+            for (OperatorView ov : operators) {
+                if (ov.getParams().getArgsCount() == 1) {
+                    return ov;
+                }
             }
         }
         return null;
     }
 
-    public ArrayList<OperatorView> findOperator(CallGroup left, CallGroup opToken, CallGroup right) {
+    public ArrayList<OperatorView> findOperator(CallGroup left, CallGroup center, CallGroup right) {
         left.load(new Context(stack));
         right.load(new Context(stack));
-        left.request(null);
+
+        Token opToken = center.getOperatorToken();
+        if (opToken.key == Key.SETVAL) {
+            if (left.requestSet(null) == null) {
+                stack.cFile.erro(left.getToken(), "This value cannot be SET", this);
+            }
+            if (right.request(left.getReturnType()) == null && left.getReturnType() != null) {
+                stack.cFile.erro(right.getToken(), "Incompatible casting operation", this);
+            }
+            ArrayList<OperatorView> operators = new ArrayList<>();
+            operators.add(OperatorView.SET);
+            return operators;
+        } else if (Key.getComposite(opToken.key) != opToken.key) {
+            left.requestSet(null);
+            opToken.key = Key.getComposite(opToken.key);
+            opToken = new Token(opToken.key.string);
+        } else {
+            left.request(null);
+        }
 
         Pointer ptr = left.getReturnType();
         if (ptr != null && ptr.type != null) {
@@ -245,10 +282,10 @@ public class Context {
                 final int[] closer = new int[2];
                 final int[] result = new int[2];
 
-                ArrayList<OperatorView> operators = ptr.type.getOperator(opToken.getOperatorToken());
+                ArrayList<OperatorView> operators = ptr.type.getOperator(opToken);
                 for (OperatorView ov : operators) {
                     if (ov.getParams().getArgsCount() == 2) {
-                        int ret = ov.getParams().verifyArguments(closer, result, left, right, found == null);
+                        int ret = ov.getParams().verifyArguments(closer, result, left, right, found != null);
                         if (ret == 0) {
                             // invalid
                         } else if (ret == 1) {

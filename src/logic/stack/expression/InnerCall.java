@@ -38,25 +38,27 @@ public class InnerCall extends Call {
         if (innerExpression == null) {
             context.jumpTo(null);
         } else {
-            context.resolve(innerExpression);
-            context.jumpTo(innerExpression.getReturnType());
+            Context internal = new Context(getStack());
+            innerExpression.load(internal);
+            context.jumpToContext(internal);
         }
     }
 
     @Override
     public int verify(Pointer pointer) {
-        return innerExpression == null ? 0 : pointer.canReceive(innerExpression.getReturnType());
+        return innerExpression == null ? 0 : innerExpression.verify(pointer);
     }
 
     @Override
     public Pointer request(Pointer pointer) {
         if (innerExpression == null) return null;
-        if (returnPtr == null) {
-            returnPtr = innerExpression.getReturnType();
-            if (returnPtr != null && pointer != null) {
-                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
-            }
-        }
+        returnPtr = innerExpression.request(pointer);
         return returnPtr;
+    }
+
+    @Override
+    public Pointer requestSet(Pointer pointer) {
+        request(pointer);
+        return null;
     }
 }

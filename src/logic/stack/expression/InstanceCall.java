@@ -106,7 +106,7 @@ public class InstanceCall extends Call {
 
             // TODO - ARRAY/INIT BEHAVIOR
             ArrayList<ConstructorView> constructors = context.findConstructor(typePtr, arguments);
-            if (constructors.size() == 0) {
+            if (constructors == null || constructors.size() == 0) {
                 cFile.erro(token, "Constructor Not Found", this);
             } else if (constructors.size() > 1) {
                 cFile.erro(token, "Ambigous Constructor Call", this);
@@ -132,5 +132,11 @@ public class InstanceCall extends Call {
             }
         }
         return returnPtr;
+    }
+
+    @Override
+    public Pointer requestSet(Pointer pointer) {
+        request(pointer);
+        return null;
     }
 }

@@ -35,6 +35,7 @@ public class BlockWhile extends Block {
                 state = 3;
             } else if (state == 3 && token.key == Key.WORD) {
                 System.out.println("LABEL :"+ token);
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 label = token;
                 state = 4;
             } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.BRACE) {

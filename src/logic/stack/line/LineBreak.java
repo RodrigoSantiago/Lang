@@ -22,6 +22,7 @@ public class LineBreak extends Line {
             if (state == 0 && token.key == Key.BREAK) {
                 state = 1;
             } else if (state == 1 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 label = token;
                 state = 2;
             } else if ((state == 1 || state == 2) && (token.key == Key.SEMICOLON || next == end)) {

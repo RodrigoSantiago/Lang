@@ -16,8 +16,8 @@ public class Expression {
     public final ContentFile cFile;
     public final Stack stack;
     public final Line parent;
-    TokenGroup tokenGroup;
-    Pointer returnPtr;
+    private TokenGroup tokenGroup;
+    private Pointer returnPtr;
     Token start, end;
 
     ArrayList<CallGroup> groups = new ArrayList<>();
@@ -115,12 +115,21 @@ public class Expression {
                 } else if (state == 3) {
                     cFile.erro(dot, "Unexpected end of tokens", this);
                 }
+                TokenGroup typeGroup = null;
+                if (token.key == Key.IS || token.key == Key.ISNOT) {
+                    if (next != end && next.key == Key.WORD) {
+                        Token it = next;
+                        typeGroup = new TokenGroup(it, next = TokenGroup.nextType(next.getNext(), end));
+                    } else {
+                        cFile.erro(token, "Type identifier expected", this);
+                    }
+                }
                 if (group.isEmpty()) {
-                    group.setOperator(token);
+                    group.setOperator(token, typeGroup);
                 } else {
                     add(group);
                     group = new CallGroup(this);
-                    group.setOperator(token);
+                    group.setOperator(token, typeGroup);
                 }
                 add(group);
                 group = new CallGroup(this);
@@ -134,16 +143,24 @@ public class Expression {
                 } else if (state == 3) {
                     cFile.erro(dot, "Unexpected end of tokens", this);
                 }
+                if (!group.isEmpty()) {
+                    add(group);
+                }
             }
             token = next;
-        }
-        if (start == end) {
-            System.out.println("EMPTY");
         }
     }
 
     public TokenGroup getTokenGroup() {
         return tokenGroup;
+    }
+
+    public void add(CallGroup group) {
+        groups.add(group);
+    }
+
+    public Pointer getReturnType() {
+        return returnPtr;
     }
 
     public void load(Context context) {
@@ -174,14 +191,15 @@ public class Expression {
                 if (group.isOperatorLeft() || (group.isOperatorBoth() && (prev == null || prev.isOperator()))) {
                     CallGroup groupMerge = new CallGroup(this, group, next);
                     groups.remove(i);
-                    groups.set(i - 1, groupMerge);
-                    i -= 1;
+                    groups.set(i, groupMerge);
+                    i --;
+                    if (i > -1) i--;
                 }
             }
         }
 
-        // Level 1-10 [Bi-Operators]
-        for (int level = 1; level < maxLevel; level++) {
+        // Level 1-11 [Bi-Operators]
+        for (int level = 1; level < maxLevel + 1; level++) {
             int i = 0;
             int state = 0;
             CallGroup init = null, op = null;
@@ -236,18 +254,7 @@ public class Expression {
     }
 
     public Pointer request(Pointer pointer) {
-        return groups.size() == 0 ? null : groups.get(0).request(pointer);
-    }
-
-    public Pointer requestSet(Pointer pointer) {
-        return groups.size() == 0 ? null : groups.get(0).requestSet(pointer);
-    }
-
-    public void add(CallGroup group) {
-        groups.add(group);
-    }
-
-    public Pointer getReturnType() {
+        returnPtr = groups.size() == 0 ? null : groups.get(0).request(pointer);
         return returnPtr;
     }
 }

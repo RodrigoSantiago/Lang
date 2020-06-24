@@ -107,10 +107,12 @@ public abstract class Type implements GenericOwner {
                     cFile.erro(token, "Unexpected modifier", this);
                 }
             } else if (state == 1 && token.key == Key.WORD) {
-                nameToken = token;
                 if (token.startsWith('_')) {
                     cFile.erro(nameToken, "Type names cannot start with underline (_)", this);
+                } else {
+                    if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 }
+                nameToken = token;
                 state = 2;
             } else if (state == 2 && token.key == Key.GENERIC && token.getChild() != null) {
                 if (isEnum()) {
@@ -1015,7 +1017,7 @@ public abstract class Type implements GenericOwner {
         if (field == null && (parent != null && parent.type != null)) {
             return parent.type.getField(nameToken);
         } else {
-            return null;
+            return field;
         }
     }
 

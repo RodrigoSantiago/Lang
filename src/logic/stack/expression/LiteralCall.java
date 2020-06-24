@@ -3,6 +3,7 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.Error;
 import logic.Pointer;
 import logic.stack.Context;
 
@@ -10,7 +11,11 @@ public class LiteralCall extends Call {
 
     Pointer typePtr;
 
-    private boolean isByte, isShort, isInt, isLong, isFloat, isDouble, isString, isBool, isNull, isDefault;
+    public String strVal;
+    public long val = 0;
+    public boolean isByte, isShort, isInt, isLong, isFloat, isDouble, isString, isBool, isNull, isDefault;
+    public boolean endL , endF, endD;
+    public Error longLimit;
 
     public LiteralCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -58,7 +63,7 @@ public class LiteralCall extends Call {
         int start = 0;
         int end = tokenNumber.length;
         int state = 0;
-        boolean incorrect = false, dot = false, exp = false, endL = false, endF = false, endD = false;
+        boolean incorrect = false, dot = false, exp = false;
         for (int i = start; i < end; i++) {
             char chr = tokenNumber.at(i);
             if (state == 0 && isNumber(chr)) {
@@ -107,7 +112,7 @@ public class LiteralCall extends Call {
         if (incorrect) {
             cFile.erro(token, "Malformated number", this);
         }
-        String value = builder.toString();
+        strVal = builder.toString();
         if (endL) {
             isLong = true;
             typePtr = cFile.langLongPtr();
@@ -122,18 +127,20 @@ public class LiteralCall extends Call {
             isDouble = true;
             typePtr = cFile.langDoublePtr();
         } else {
-            long val = 0;
             if (!incorrect) {
                 try {
-                    val = Long.parseLong(value);
+                    if (strVal.equals("9223372036854775808")) {
+                        longLimit = cFile.revesible(token, this);
+                    } else {
+                        val = Long.parseLong(strVal);
+                    }
                 } catch (Exception e) {
                     cFile.erro(token, "Malformated number", this);
-                    e.printStackTrace();
                 }
             }
-            isByte = val <= 127;
-            isShort = val <= 32767;
-            isInt = val <= 2147483647;
+            isByte = val < 128;
+            isShort = val < 32768;
+            isInt = val < 2147483648L;
             isLong = true;
             isFloat = true;
             isDouble = true;
@@ -141,16 +148,15 @@ public class LiteralCall extends Call {
         }
         if (!incorrect && !isLong && (isFloat || isDouble)) {
             try {
-                Double.parseDouble(value);
+                Double.parseDouble(strVal);
             } catch (Exception e) {
                 cFile.erro(token, "Malformated number", this);
-                e.printStackTrace();
             }
         }
     }
 
     private boolean isNumber(int chr) {
-        return chr >= '0' && chr <= '0';
+        return chr >= '0' && chr <= '9';
     }
 
     @Override
@@ -195,5 +201,11 @@ public class LiteralCall extends Call {
             returnPtr = pointer;
         }
         return returnPtr;
+    }
+
+    @Override
+    public Pointer requestSet(Pointer pointer) {
+        request(pointer);
+        return null;
     }
 }

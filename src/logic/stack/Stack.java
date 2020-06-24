@@ -1,15 +1,10 @@
 package logic.stack;
 
-import content.Key;
-import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
 import logic.Pointer;
 import logic.stack.block.*;
-import logic.stack.line.*;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Stack {

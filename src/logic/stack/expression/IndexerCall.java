@@ -66,7 +66,7 @@ public class IndexerCall extends Call {
     @Override
     public void load(Context context) {
         ArrayList<IndexerView> indexers = context.findIndexer(arguments);
-        if (indexers.size() == 0) {
+        if (indexers == null || indexers.size() == 0) {
             cFile.erro(token, "Indexer not found", this);
         } else if (indexers.size() > 1) {
             cFile.erro(token, "Ambigous Indexer Call", this);
@@ -92,5 +92,10 @@ public class IndexerCall extends Call {
             }
         }
         return returnPtr;
+    }
+
+    @Override
+    public Pointer requestSet(Pointer pointer) {
+        return request(pointer);
     }
 }

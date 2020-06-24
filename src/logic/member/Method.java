@@ -46,6 +46,7 @@ public class Method extends Member implements GenericOwner {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 2;
             } else if (state == 2 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 this.token = token;
                 nameToken = token;
                 state = 3;

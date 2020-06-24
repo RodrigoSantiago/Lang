@@ -36,6 +36,7 @@ public class LineExpression extends Line {
     public void load() {
         if (expression != null) {
             expression.load(new Context(stack));
+            expression.request(null);
             // TODO - WARNING USELESS OPERATIONS
         }
     }

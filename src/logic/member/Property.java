@@ -37,6 +37,7 @@ public class Property extends Member {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
             } else if (state == 1 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 this.token = token;
                 nameToken = token;
                 state = 2;

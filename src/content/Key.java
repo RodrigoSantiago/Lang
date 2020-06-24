@@ -92,6 +92,7 @@ public enum Key {
     SETVAL("=",               false, false, true, false, false, 11),
     SETADD("+=",              false, false, true, false, false, 11),
     SETSUB("-=",              false, false, true, false, false, 11),
+    SETMUL("*=",              false, false, true, false, false, 11),
     SETDIV("/=",              false, false, true, false, false, 11),
     SETMOD("%=",              false, false, true, false, false, 11),
     SETRSHIFT(">>=",          false, false, true, false, false, 11),
@@ -189,7 +190,7 @@ public enum Key {
                     : SETXOR.isEqual(str, start, end) ? SETXOR : EQUAL.isEqual(str, start, end) ? EQUAL
                     : EMORE.isEqual(str, start, end) ? EMORE : ELESS.isEqual(str, start, end) ? ELESS
                     : DIF.isEqual(str, start, end) ? DIF : AND.isEqual(str, start, end) ? AND
-                    : OR.isEqual(str, start, end) ? OR : IOP;
+                    : OR.isEqual(str, start, end) ? OR : SETMUL.isEqual(str, start, end) ? SETMUL : IOP;
         } else if (len == 3) {
             return SETRSHIFT.isEqual(str, start, end) ? SETRSHIFT
                     : SETLSHIFT.isEqual(str, start, end) ? SETLSHIFT : IOP;
@@ -230,6 +231,23 @@ public enum Key {
             return  NAMESPACE.isEqual(str, start, end) ? NAMESPACE : INTERFACE.isEqual(str, start, end) ? INTERFACE : NOONE;
         }
         return NOONE;
+    }
+
+    public static Key getComposite(Key key) {
+        switch (key) {
+            case SETADD: return ADD;
+            case SETSUB: return SUB;
+            case SETMUL: return MUL;
+            case SETDIV: return DIV;
+            case SETMOD: return MOD;
+            case SETLSHIFT: return LSHIFT;
+            case SETRSHIFT: return RSHIFT;
+            case SETAND: return BITAND;
+            case SETOR: return BITOR;
+            case SETNOT: return BITNOT;
+            case SETXOR: return BITXOR;
+            default: return key;
+        }
     }
 
     private boolean isEqual(String str, int start, int end) {

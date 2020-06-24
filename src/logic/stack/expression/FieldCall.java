@@ -38,6 +38,10 @@ public class FieldCall extends Call {
         }
     }
 
+    public boolean isStaticCall() {
+        return staticCall != null;
+    }
+
     @Override
     public void load(Context context) {
         if (token == null) {
@@ -89,7 +93,6 @@ public class FieldCall extends Call {
 
     @Override
     public Pointer requestSet(Pointer pointer) {
-        // show set acess error
-        return super.requestSet(pointer);
+        return request(pointer);
     }
 }

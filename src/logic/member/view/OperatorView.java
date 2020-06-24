@@ -11,6 +11,9 @@ public class OperatorView {
     public static final OperatorView OR = new OperatorView(Key.OR);
     public static final OperatorView AND = new OperatorView(Key.AND);
     public static final OperatorView CAST = new OperatorView(Key.CAST);
+    public static final OperatorView SET = new OperatorView(Key.SETVAL);
+    public static final OperatorView IS = new OperatorView(Key.IS);
+    public static final OperatorView ISNOT = new OperatorView(Key.ISNOT);
 
     public final Pointer caller;
     public final Operator operator;

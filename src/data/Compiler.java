@@ -124,7 +124,7 @@ public class Compiler {
 
     public Type getLangShort() {
         if (langShort == null) {
-            langShort = getLangType(new Token("byte"));
+            langShort = getLangType(new Token("short"));
         }
 
         return langShort;

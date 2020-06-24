@@ -74,7 +74,7 @@ public class MethodCall extends Call {
 
             // TODO - INNER CONSTRUCTOR BEHAVIOR
             ArrayList<MethodView> methods = context.findMethod(nameToken, arguments);
-            if (methods.size() == 0) {
+            if (methods == null || methods.size() == 0) {
                 cFile.erro(token, "Method Not Found", this);
             } else if (methods.size() > 1) {
                 cFile.erro(token, "Ambigous Method Call", this);
@@ -101,5 +101,11 @@ public class MethodCall extends Call {
             }
         }
         return returnPtr;
+    }
+
+    @Override
+    public Pointer requestSet(Pointer pointer) {
+        request(pointer);
+        return null;
     }
 }

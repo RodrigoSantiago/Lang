@@ -170,7 +170,6 @@ public class Indexer extends Member {
             }
             token = next;
         }
-
     }
 
     public void toAbstract() {

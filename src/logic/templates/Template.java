@@ -33,6 +33,7 @@ public class Template {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 nameToken = token;
                 if (next == end) {
                     generics.add(new Generic(this, generics.size(), nameToken, null));

@@ -49,6 +49,7 @@ public class LineVar extends Line {
             } else if (state == 1 && token.key == Key.WORD) {
                 if (isLet) {
                     if (next == end || next.key == Key.SEMICOLON || next.key == Key.SETVAL || next.key == Key.COMMA) {
+                        if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                         nameToken = token;
                         state = 3;
                     } else {
@@ -56,10 +57,12 @@ public class LineVar extends Line {
                         state = 2;
                     }
                 } else {
+                    if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                     nameToken = token;
                     state = 3;
                 }
             } else if (state == 2 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 nameToken = token;
                 state = 3;
             } else if (!foreachVar && state == 3 && token.key == Key.SETVAL) {
@@ -108,9 +111,8 @@ public class LineVar extends Line {
             Expression expresion = expresions.get(i);
             if (expresion != null) {
                 expresion.load(new Context(stack));
-                expresion.request(typePtr);
-                if (isLet && expresion.getReturnType() != null && expresion.getReturnType().let) {
-                    cFile.erro(expresion.getTokenGroup(), "A Strong value cannot recive a Weak value", this);
+                if (expresion.request(typePtr) == null) {
+                    cFile.erro(expresion.getTokenGroup(), "incompatible Value", this);
                 }
                 if (typePtr == null) {
                     typePtrs.add(expresion.getReturnType());
@@ -121,15 +123,11 @@ public class LineVar extends Line {
             }
         }
 
-        try {
-            for (int i = 0; i < nameTokens.size(); i++) {
-                Token nameToken = nameTokens.get(i);
-                if (!stack.addField(nameToken, typePtr == null ? typePtrs.get(i) : typePtr, isFinal, parent)) {
-                    cFile.erro(nameToken, "Repeated field name", this);
-                }
+        for (int i = 0; i < nameTokens.size(); i++) {
+            Token nameToken = nameTokens.get(i);
+            if (!stack.addField(nameToken, typePtr == null ? typePtrs.get(i) : typePtr, isFinal, parent)) {
+                cFile.erro(nameToken, "Repeated field name", this);
             }
-        }catch (Exception e){
-            e.printStackTrace();
         }
     }
 }

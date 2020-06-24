@@ -27,6 +27,7 @@ public class BlockDo extends Block {
             } else if (state == 1 && token.key == Key.COLON) {
                 state = 2;
             } else if (state == 2 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 label = token;
                 state = 3;
             } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.BRACE) {

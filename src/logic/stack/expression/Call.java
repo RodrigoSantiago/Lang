@@ -37,24 +37,15 @@ public abstract class Call {
         return token;
     }
 
-    public void load(Context context) {
-
-    }
-
-    public int verify(Pointer pointer) {
-        return 0;
-    }
-
-    public Pointer request(Pointer pointer) {
-        return null;
-    }
-
-    public Pointer requestSet(Pointer pointer) {
-        request(pointer);
-        return null;
-    }
-
     public Pointer getReturnType() {
         return returnPtr;
     }
+
+    public abstract void load(Context context);
+
+    public abstract int verify(Pointer pointer);
+
+    public abstract Pointer request(Pointer pointer);
+
+    public abstract Pointer requestSet(Pointer pointer);
 }

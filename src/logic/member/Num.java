@@ -22,6 +22,7 @@ public class Num extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 nameTokens.add(token);
                 state = 1;
             } else if (state == 1 && token.key == Key.COMMA) {

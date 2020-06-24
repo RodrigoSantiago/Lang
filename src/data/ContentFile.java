@@ -498,6 +498,16 @@ public class ContentFile {
         erros.add(new Error(Error.ERROR, start, end, message + " > from " + sender.getClass().getSimpleName()));
     }
 
+    public Error revesible(Token token, Object sender) {
+        Error error = new Error(Error.ERROR, token.start, token.end, "Malformated number > from " + sender.getClass().getSimpleName());
+        erros.add(error);
+        return error;
+    }
+
+    public void reverse(Error error) {
+        erros.remove(error);
+    }
+
     public void warning(int start, int end, String message) {
         erros.add(new Error(Error.WARNING, start, end, message));
     }

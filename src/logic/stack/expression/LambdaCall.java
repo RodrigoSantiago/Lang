@@ -70,4 +70,10 @@ public class LambdaCall extends Call {
         // load STACK [com as variaveis e tipo de retorno definido]
         return null;
     }
+
+    @Override
+    public Pointer requestSet(Pointer pointer) {
+        request(pointer);
+        return null;
+    }
 }

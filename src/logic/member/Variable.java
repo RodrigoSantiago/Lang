@@ -33,6 +33,7 @@ public class Variable extends Member {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
             } else if (state == 1 && token.key == Key.WORD) {
+                if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 nameTokens.add(token);
                 state = 2;
             } else if (state == 2 && token.key == Key.SETVAL) {

@@ -41,11 +41,27 @@ public abstract class Call {
         return returnPtr;
     }
 
+    public boolean isTypeCall() {
+        return false;
+    }
+
+    public boolean isLiteral() {
+        return false;
+    }
+
+    public int getLiteralType() {
+        return 0;
+    }
+
+    public Pointer getTypePtr() {
+        return null;
+    }
+
     public abstract void load(Context context);
 
     public abstract int verify(Pointer pointer);
 
     public abstract Pointer request(Pointer pointer);
 
-    public abstract Pointer requestSet(Pointer pointer);
+    public abstract boolean requestSet(Pointer pointer);
 }

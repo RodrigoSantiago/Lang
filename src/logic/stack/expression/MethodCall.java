@@ -104,8 +104,8 @@ public class MethodCall extends Call {
     }
 
     @Override
-    public Pointer requestSet(Pointer pointer) {
+    public boolean requestSet(Pointer pointer) {
         request(pointer);
-        return null;
+        return false;
     }
 }

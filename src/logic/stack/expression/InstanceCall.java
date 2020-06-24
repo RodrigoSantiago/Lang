@@ -135,8 +135,8 @@ public class InstanceCall extends Call {
     }
 
     @Override
-    public Pointer requestSet(Pointer pointer) {
+    public boolean requestSet(Pointer pointer) {
         request(pointer);
-        return null;
+        return false;
     }
 }

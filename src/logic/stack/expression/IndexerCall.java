@@ -95,7 +95,8 @@ public class IndexerCall extends Call {
     }
 
     @Override
-    public Pointer requestSet(Pointer pointer) {
-        return request(pointer);
+    public boolean requestSet(Pointer pointer) {
+        request(pointer);
+        return true;
     }
 }

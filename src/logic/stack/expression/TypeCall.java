@@ -5,23 +5,25 @@ import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
 import logic.stack.Context;
+import logic.typdef.Type;
 
-public class InnerCall extends Call {
+public class TypeCall extends Call {
 
-    Expression innerExpression;
+    TokenGroup typeToken;
+    Pointer typePtr;
 
-    public InnerCall(CallGroup group, Token start, Token end) {
+    public TypeCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
-        System.out.println("INNER : ("+ TokenGroup.toString(start, end)+")");
+        System.out.println("TYPE : " + TokenGroup.toString(start, end));
+
         Token token = start;
         Token next;
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && token.key == Key.PARAM && token.getChild() != null) {
+            if (state == 0 && (token.key == Key.WORD)) {
                 this.token = token;
-                // TODO - EMPTY CALL
-                innerExpression = new Expression(getLine(), token.getChild(), token.getLastChild());
+                typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
             } else {
                 cFile.erro(token, "Unexpected token", this);
@@ -34,26 +36,35 @@ public class InnerCall extends Call {
     }
 
     @Override
+    public boolean isTypeCall() {
+        return true;
+    }
+
+    public Pointer getTypePtr() {
+        return typePtr;
+    }
+
+    @Override
     public void load(Context context) {
-        if (innerExpression == null) {
+        if (token == null) {
             context.jumpTo(null);
         } else {
-            Context internal = new Context(getStack());
-            innerExpression.load(internal);
-            context.jumpToContext(internal);
+            typePtr = context.getPointer(typeToken);
+            if (typePtr == null) {
+                cFile.erro(token, "Type Not Found", this);
+            }
         }
     }
 
     @Override
     public int verify(Pointer pointer) {
-        return innerExpression == null ? 0 : innerExpression.verify(pointer);
+        return 0;
     }
 
     @Override
     public Pointer request(Pointer pointer) {
-        if (innerExpression == null) return null;
-        returnPtr = innerExpression.request(pointer);
-        return returnPtr;
+        cFile.erro(getToken(), "Unexpected identifier", this);
+        return null;
     }
 
     @Override

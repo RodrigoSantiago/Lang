@@ -115,6 +115,16 @@ public class Expression {
                 } else if (state == 3) {
                     cFile.erro(dot, "Unexpected end of tokens", this);
                 }
+                if (group.isEmpty()) {
+                    group.setOperator(token);
+                } else {
+                    add(group);
+                    group = new CallGroup(this);
+                    group.setOperator(token);
+                }
+                add(group);
+                group = new CallGroup(this);
+
                 TokenGroup typeGroup = null;
                 if (token.key == Key.IS || token.key == Key.ISNOT) {
                     if (next != end && next.key == Key.WORD) {
@@ -124,16 +134,15 @@ public class Expression {
                         cFile.erro(token, "Type identifier expected", this);
                     }
                 }
-                if (group.isEmpty()) {
-                    group.setOperator(token, typeGroup);
-                } else {
+                if (typeGroup != null) {
+                    group.add(new TypeCall(group, typeGroup.start, typeGroup.end));
                     add(group);
+
                     group = new CallGroup(this);
-                    group.setOperator(token, typeGroup);
+                    state = 4;
+                } else {
+                    state = 0;
                 }
-                add(group);
-                group = new CallGroup(this);
-                state = 0;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
@@ -163,7 +172,12 @@ public class Expression {
         return returnPtr;
     }
 
+    public boolean isLiteral() {
+        return groups.size() == 1 && groups.get(0).isLiteral();
+    }
+
     public void load(Context context) {
+        boolean ternary = false;
         int maxLevel = 1;
 
         // Level [Right Operators]
@@ -171,8 +185,13 @@ public class Expression {
             CallGroup group = groups.get(i);
             CallGroup next = i == groups.size() - 1 ? null : groups.get(i + 1);
 
-            if (group.isOperator() && group.getOperatorPriority() > maxLevel) {
-                maxLevel = group.getOperatorPriority();
+            if (group.isOperator()) {
+                if (group.getOperatorPriority() > maxLevel) {
+                    maxLevel = group.getOperatorPriority();
+                }
+                if (group.getOperatorToken().key == Key.COLON || group.getOperatorToken().key == Key.QUEST) {
+                    ternary = true;
+                }
             }
             if (!group.isOperator() && next != null && next.isOperatorRight()) {
                 CallGroup groupMerge = new CallGroup(this, group, next);
@@ -198,54 +217,197 @@ public class Expression {
             }
         }
 
-        // Level 1-11 [Bi-Operators]
-        for (int level = 1; level < maxLevel + 1; level++) {
+        // Level 1-10 [Bi-Operators]
+        for (int level = 1; level < maxLevel + 1 && level < 11; level++) {
+            readOperators(level, 0, groups.size());
+        }
+
+        // entre [?](...)[?] e entre [?](...)[:]
+        boolean preview = ternary;
+        while (preview) {
+            preview = false;
             int i = 0;
             int state = 0;
-            CallGroup init = null, op = null;
+            int init = 0;
             while (i < groups.size()) {
                 CallGroup group = groups.get(i);
-                if (state == 0 && !group.isOperator()) {
-                    init = group;
+                if (state == 0 && group.isOperator() && group.getOperatorToken().key == Key.QUEST) {
+                    init = i;
                     state = 1;
-                } else if (state == 1 && group.isOperator()) {
-                    op = group;
-                    state = 2;
-                } else if (state == 2 && !group.isOperator()) {
-                    if (op.getOperatorPriority() == level) {
-                        CallGroup groupMerge = new CallGroup(this, init, op, group);
-                        groups.remove(i - 2);
-                        groups.remove(i - 2);
-                        groups.set(i - 2, groupMerge);
-                        i -= 2;
-                        init = groupMerge;
+                } else if (state == 1 && group.isOperator() && (group.getOperatorToken().key == Key.QUEST ||
+                        group.getOperatorToken().key == Key.COLON)) {
+                    if (i - (init + 1) > 1) {
+                        readCompositeOperators(init + 1, i);
+                        preview = true;
+                        break;
+                    } else if (group.getOperatorToken().key == Key.QUEST) {
+                        init = i;
                     } else {
-                        init = group;
-                        op = null;
+                        state = 0;
                     }
-                    state = 1;
-                } else if (group.isOperator()) {
-                    cFile.erro(group.getToken(), "Unexpected Operator", this);
-                    groups.remove(i);
-                    i -= 1;
-                } else {
-                    cFile.erro(group.getToken(), "Unexpected line", this);
-                    groups.remove(i);
-                    i -= 1;
+                } else if (state == 1) {
+                    // SAY nothing
                 }
-                i += 1;
-                if (state == 2 && i == groups.size()) {
-                    cFile.erro(group.getToken(), "Unexpected Operator", this);
+                i++;
+            }
+        }
+
+        // Ternary Expression
+        while (ternary) {
+            ternary = false;
+            int i = groups.size() - 1;
+            int state = 0;
+            CallGroup option = null, colon = null, second = null, quest = null;
+            while (i >= 0) {
+                CallGroup group = groups.get(i);
+                if (state == 0 && !group.isOperator()) {
+                    option = group;
+                    state = 1;
+                } else if (state == 1 && group.isOperator() && group.getOperatorToken().key == Key.COLON) {
+                    colon = group;
+                    state = 2;
+                } else if (state == 1 && group.isOperator() && group.getOperatorToken().key != Key.COLON) {
+                    state = 0;
+                } else if (state == 2 && !group.isOperator()) {
+                    second = group;
+                    state = 3;
+                } else if (state == 3 && group.isOperator() && group.getOperatorToken().key == Key.COLON) {
+                    option = second;
+                    colon = group;
+                    ternary = true;
+                    state = 2;
+                }  else if (state == 3 && group.isOperator() && group.getOperatorToken().key == Key.QUEST) {
+                    quest = group;
+                    state = 4;
+                } else if (state == 4 && !group.isOperator()) {
+                    CallGroup groupMerge = new CallGroup(this, group, quest, second, colon, option);
+                    groups.remove(i + 4);
+                    groups.remove(i + 3);
+                    groups.remove(i + 2);
+                    groups.remove(i + 1);
+                    groups.set(i, groupMerge);
+                    option = groupMerge;
+                    state = 1;
+                    if (ternary) break;
+                } else if (group.isOperator()) {
+                    cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
                     groups.remove(i);
-                    i -= 1;
+                } else {
+                    cFile.erro(group.getTokenGroup(), "Unexpected line", this);
+                    groups.remove(i);
+                }
+                i --;
+                if (i < 0) {
+                    if (state == 2) {
+                        cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
+                        groups.remove(0);
+                    } else if (state == 3) {
+                        cFile.erro(group.getTokenGroup(), "Incomplete Ternary Operator", this);
+                        groups.remove(0);
+                        groups.remove(0);
+                    } else if (state == 4) {
+                        cFile.erro(group.getTokenGroup(), "Incomplete Ternary Operator", this);
+                        groups.remove(0);
+                        groups.remove(0);
+                        groups.remove(0);
+                    }
                 }
             }
+        }
+
+        // Set and Composite Set
+        if (maxLevel == 11) {
+            readCompositeOperators(0, groups.size());
         }
 
         if (groups.size() > 1) {
             System.out.println("INVALID MULT GROUP EXPRESSION ?");
         } else if (groups.size() > 0) {
             groups.get(0).load(context);
+        }
+    }
+
+    private void readOperators(int level, int start, int end) {
+        int i = start;
+        int state = 0;
+        CallGroup init = null, op = null;
+        while (i < end) {
+            CallGroup group = groups.get(i);
+            if (state == 0 && !group.isOperator()) {
+                init = group;
+                state = 1;
+            } else if (state == 1 && group.isOperator()) {
+                op = group;
+                state = 2;
+            } else if (state == 2 && !group.isOperator()) {
+                if (op.getOperatorPriority() == level) {
+                    CallGroup groupMerge = new CallGroup(this, init, op, group);
+                    groups.remove(i - 2);
+                    groups.remove(i - 2);
+                    groups.set(i - 2, groupMerge);
+                    i -= 2;
+                    end -= 2;
+                    init = groupMerge;
+                } else {
+                    init = group;
+                    op = null;
+                }
+                state = 1;
+            } else if (group.isOperator()) {
+                cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
+                groups.remove(i);
+                i -= 1;
+                end -= 1;
+            } else {
+                cFile.erro(group.getTokenGroup(), "Unexpected line", this);
+                groups.remove(i);
+                i -= 1;
+                end -= 1;
+            }
+            i += 1;
+            if (state == 2 && i == end) {
+                cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
+                groups.remove(i);
+            }
+        }
+    }
+
+    private void readCompositeOperators(int start, int end) {
+        int i = end - 1;
+        int state = 0;
+        CallGroup init = null, op = null;
+        while (i >= start) {
+            CallGroup group = groups.get(i);
+            if (state == 0 && !group.isOperator()) {
+                init = group;
+                state = 1;
+            } else if (state == 1 && group.isOperator()) {
+                op = group;
+                state = 2;
+            } else if (state == 2 && !group.isOperator()) {
+                if (op.getOperatorPriority() == 11) {
+                    CallGroup groupMerge = new CallGroup(this, group, op, init);
+                    groups.remove(i + 2);
+                    groups.remove(i + 1);
+                    groups.set(i, groupMerge);
+                    init = groupMerge;
+                } else {
+                    init = group;
+                    op = null;
+                }
+                state = 1;
+            } else if (group.isOperator()) {
+                cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
+                groups.remove(i);
+            } else {
+                cFile.erro(group.getTokenGroup(), "Unexpected line", this);
+                groups.remove(i);
+            }
+            i --;
+            if (state == 2 && i < start) {
+                cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
+                groups.remove(i);
+            }
         }
     }
 

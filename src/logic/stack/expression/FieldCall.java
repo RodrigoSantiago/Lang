@@ -38,8 +38,13 @@ public class FieldCall extends Call {
         }
     }
 
-    public boolean isStaticCall() {
+    @Override
+    public boolean isTypeCall() {
         return staticCall != null;
+    }
+
+    public Pointer getTypePtr() {
+        return staticCall == null ? null : staticCall.self;
     }
 
     @Override
@@ -81,7 +86,11 @@ public class FieldCall extends Call {
 
     @Override
     public Pointer request(Pointer pointer) {
-        if (staticCall != null || (field == null && fieldView == null)) return null;
+        if (staticCall != null) {
+            cFile.erro(getToken(), "Unexpected identifier", this);
+            return null;
+        }
+        if (field == null && fieldView == null) return null;
         if (returnPtr == null) {
             returnPtr = field != null ? field.getTypePtr() : fieldView.getTypePtr();
             if (returnPtr != null && pointer != null) {
@@ -92,7 +101,8 @@ public class FieldCall extends Call {
     }
 
     @Override
-    public Pointer requestSet(Pointer pointer) {
-        return request(pointer);
+    public boolean requestSet(Pointer pointer) {
+        request(pointer);
+        return true;
     }
 }

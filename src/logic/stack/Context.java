@@ -224,18 +224,20 @@ public class Context {
 
     public OperatorView findOperator(CallGroup left, CallGroup center) {
         center.load(new Context(stack));
-        center.request(null);
-        Pointer ptr = center.getReturnType();
-        Token opToken = left.getOperatorToken();
 
-        if (opToken != null && opToken.key == Key.IS) {
-            return OperatorView.IS;
-        } else if (opToken != null && opToken.key == Key.ISNOT) {
-            return OperatorView.ISNOT;
+        Token opToken = left.getOperatorToken();
+        if (opToken != null && (opToken.key == Key.INC || opToken.key == Key.DEC)) {
+            if (!center.requestSet(null)) {
+                stack.cFile.erro(center.getTokenGroup(), "This value cannot be SET", this);
+            }
+        } else {
+            center.request(null);
         }
 
+        Pointer ptr = center.getReturnType();
         if (left.isCastingOperator()) {
             Pointer castPtr = left.getCastPtr();
+            if (castPtr == null) return null;
             if (castPtr.toLet().canReceive(ptr) != 0) return OperatorView.CAST;
             if (castPtr.type != null && castPtr.type.isInterface()) return OperatorView.CAST;
             if (ptr.type != null && ptr.type.casts.contains(castPtr)) return OperatorView.CAST;
@@ -255,19 +257,33 @@ public class Context {
         left.load(new Context(stack));
         right.load(new Context(stack));
 
+        boolean isComposite = false;
         Token opToken = center.getOperatorToken();
-        if (opToken.key == Key.SETVAL) {
-            if (left.requestSet(null) == null) {
-                stack.cFile.erro(left.getToken(), "This value cannot be SET", this);
+        if (opToken.key == Key.IS || opToken.key == Key.ISNOT) {
+            left.request(null);
+            // right.request(null); -> no request
+            if (!right.isTypeCall()) {
+                right.request(null);
+                stack.cFile.erro(left.getTokenGroup(), "This value cannot be SET", this);
+            }
+            ArrayList<OperatorView> operators = new ArrayList<>();
+            operators.add(opToken.key == Key.IS ? OperatorView.IS : OperatorView.ISNOT);
+            return operators;
+        } else if (opToken.key == Key.SETVAL) {
+            if (!left.requestSet(null)) {
+                stack.cFile.erro(left.getTokenGroup(), "This value cannot be SET", this);
             }
             if (right.request(left.getReturnType()) == null && left.getReturnType() != null) {
-                stack.cFile.erro(right.getToken(), "Incompatible casting operation", this);
+                stack.cFile.erro(right.getTokenGroup(), "Incompatible casting operation", this);
             }
             ArrayList<OperatorView> operators = new ArrayList<>();
             operators.add(OperatorView.SET);
             return operators;
         } else if (Key.getComposite(opToken.key) != opToken.key) {
-            left.requestSet(null);
+            if (!left.requestSet(null)) {
+                stack.cFile.erro(left.getTokenGroup(), "This value cannot be SET", this);
+            }
+            isComposite = true;
             opToken.key = Key.getComposite(opToken.key);
             opToken = new Token(opToken.key.string);
         } else {
@@ -299,7 +315,11 @@ public class Context {
                     }
                 }
                 if (found != null && found.size() == 1) {
-                    right.request(found.get(0).getParams().getArgTypePtr(1));
+                    Pointer returnType = right.request(found.get(0).getParams().getArgTypePtr(1));
+                    if (isComposite && left.getReturnType() != null && returnType != null &&
+                            left.getReturnType().canReceive(returnType) <= 0) {
+                        stack.cFile.erro(right.getTokenGroup(), "Incompatible casting operation", this);
+                    }
                     return found;
                 } else {
                     CallGroup swip = left;

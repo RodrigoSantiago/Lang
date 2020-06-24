@@ -15,16 +15,18 @@ public class CallGroup {
 
     public final ContentFile cFile;
     public final Expression parent;
-    private TokenGroup typeToken;
-    private Token operatorToken;
 
-    private ArrayList<Call> calls = new ArrayList<>();
-    private CallGroup left, right , center;
+    // Line Calls
+    private final ArrayList<Call> calls = new ArrayList<>();
+
+    // Operator
+    private CallGroup left, center, right, colon, option;
+    private Token operatorToken;
+    private OperatorView operatorView;
+    private Pointer castPtr;
     private boolean setOperator;
 
-    private OperatorView operatorView;
     private Pointer returnPtr;
-    private Pointer castPtr;
 
     public CallGroup(Expression expression) {
         this.cFile = expression.cFile;
@@ -51,9 +53,37 @@ public class CallGroup {
         this.right = right;
     }
 
-    public Token getToken() {
-        return operatorToken != null ? operatorToken : center != null ? center.getToken() :
-                calls.size() > 0 ? calls.get(calls.size() - 1).getToken() : parent.getTokenGroup().start;
+    public CallGroup(Expression expression, CallGroup left, CallGroup center, CallGroup right,
+                     CallGroup colon, CallGroup option) {
+        this.cFile = expression.cFile;
+        this.parent = expression;
+        this.left = left;
+        this.center = center;
+        this.right = right;
+        this.colon = colon;
+        this.option = option;
+    }
+
+    public TokenGroup getTokenGroup() {
+        if (left != null && option != null) {
+            return new TokenGroup(left.getTokenGroup().start, option.getTokenGroup().end);
+        } else if (left != null && right != null) {
+            return new TokenGroup(left.getTokenGroup().start, right.getTokenGroup().end);
+        } else if (left != null && center != null) {
+            TokenGroup lGroup = left.getTokenGroup();
+            TokenGroup cGroup = center.getTokenGroup();
+            if (lGroup.start.start > cGroup.start.start) {
+                return new TokenGroup(cGroup.start, lGroup.end);
+            } else {
+                return new TokenGroup(cGroup.end, lGroup.start);
+            }
+        } else if (operatorToken != null) {
+            return new TokenGroup(operatorToken);
+        } else if (calls.size() > 0) {
+            return new TokenGroup(calls.get(calls.size() - 1).getToken());
+        } else {
+            return parent.getTokenGroup();
+        }
     }
 
     public Token getOperatorToken() {
@@ -72,16 +102,31 @@ public class CallGroup {
         return calls.isEmpty();
     }
 
+    public boolean isTypeCall() {
+        return calls.size() == 1 && calls.get(0).isTypeCall();
+    }
+
+    public boolean isLiteral() {
+        if (left != null && center != null && right != null && option != null) {
+            return left.isLiteral() && right.isLiteral() && option.isLiteral();
+        } else if (left != null && center != null && right != null) {
+            return left.isLiteral() && right.isLiteral();
+        } else if (calls.size() > 0) {
+            return calls.get(0).isLiteral();
+        }
+        return false;
+    }
+
     public LiteralCall getLiteral() {
         return calls.size() == 1 && calls.get(0) instanceof LiteralCall ? (LiteralCall) calls.get(0) : null;
     }
 
-    public void setOperator(Token token, TokenGroup typeToken) {
+    public int getLiteralType() {
+        return getLiteral().getLiteralType();
+    }
+
+    public void setOperator(Token token) {
         this.operatorToken = token;
-        this.typeToken = typeToken;
-        if (typeToken != null) {
-            castPtr = getStack().getPointer(typeToken, false);
-        }
     }
 
     public void setCastingOperator(Token operatorToken) {
@@ -115,8 +160,7 @@ public class CallGroup {
     }
 
     public boolean isOperatorRight() {
-        return operatorToken != null && (operatorToken.key == Key.INC || operatorToken.key == Key.DEC ||
-                operatorToken.key == Key.IS || operatorToken.key == Key.ISNOT);
+        return operatorToken != null && (operatorToken.key == Key.INC || operatorToken.key == Key.DEC);
     }
 
     public boolean isOperatorLeft() {
@@ -125,7 +169,7 @@ public class CallGroup {
     }
 
     public boolean isOperatorBoth() {
-        return operatorToken != null && operatorToken.key == Key.ADD || operatorToken.key == Key.SUB;
+        return operatorToken != null && (operatorToken.key == Key.ADD || operatorToken.key == Key.SUB);
     }
 
     public int getOperatorPriority() {
@@ -140,8 +184,20 @@ public class CallGroup {
         return returnPtr;
     }
 
+
     public void load(Context context) {
-        if (left != null && center != null && right != null) {
+        if (left != null && center != null && right != null && colon != null && option != null) {
+            left.load(new Context(getStack()));
+            right.load(new Context(getStack()));
+            option.load(new Context(getStack()));
+
+            if (left.request(cFile.langBoolPtr()) == null) {
+                cFile.erro(center.operatorToken, "The ternary condition must be a bool", this);
+            }
+            if (left.isLiteral() && right.isLiteral() && option.isLiteral()) {
+
+            }
+        } else if (left != null && center != null && right != null) {
             ArrayList<OperatorView> operatos = context.findOperator(left, center, right);
             setOperator = center.getOperatorToken() != null && center.getOperatorToken().key.priority == 11;
 
@@ -152,6 +208,19 @@ public class CallGroup {
                 operatorView = operatos.get(0);
             } else {
                 operatorView = operatos.get(0);
+                if (left.isLiteral() && right.isLiteral()) {
+                    LiteralCall lCall = left.getLiteral();
+                    LiteralCall rCall = right.getLiteral();
+                    Key op = center.getOperatorToken().key;
+                    LiteralCall result = LiteralResolver.resolve(this, lCall, rCall, op);
+                    if (result != null) {
+                        left = null;
+                        center = null;
+                        right = null;
+                        operatorView = null;
+                        calls.add(result);
+                    }
+                }
             }
         } else if (left != null && center != null) {
             OperatorView operator = context.findOperator(left, center);
@@ -159,6 +228,18 @@ public class CallGroup {
                 cFile.erro(left.operatorToken, "Operator Not Found", this);
             } else {
                 operatorView = operator;
+                // [Literal Absortion]
+                if (center.isLiteral()) {
+                    LiteralCall cCall = center.getLiteral();
+                    Key op = left.getOperatorToken().key;
+                    LiteralCall result = LiteralResolver.resolve(this, cCall, op);
+                    if (result != null) {
+                        left = null;
+                        center = null;
+                        operatorView = null;
+                        calls.add(result);
+                    }
+                }
             }
         } else {
             for (int i = 0; i < calls.size(); i++) {
@@ -167,22 +248,19 @@ public class CallGroup {
                 call.load(context);
                 if (!context.isIncorrect() && i < calls.size() - 1) {
                     call.request(null);
-                } else if (!context.isIncorrect()) {
-                    if (call instanceof FieldCall) {
-                        FieldCall field = (FieldCall) call;
-                        if (field.isStaticCall()) {
-                            cFile.erro(field.getToken(), "Unexpected identifier", this);
-                        }
-                    }
                 }
             }
         }
     }
 
     public int verify(Pointer pointer) {
-        if (operatorView != null) {
-            if (pointer == null) return 1;
-
+        if (colon != null) {
+            int r = right.verify(pointer);
+            int o = option.verify(pointer);
+            if (r > 0 && o > 0) {
+                return Math.max(r, o);
+            }
+        } else if (operatorView != null) {
             if (operatorView == OperatorView.OR || operatorView == OperatorView.AND ||
                     operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT) {
                 return pointer.canReceive(cFile.langBoolPtr());
@@ -200,7 +278,19 @@ public class CallGroup {
     }
 
     public Pointer request(Pointer pointer) {
-        if (returnPtr == null) {
+        if (colon != null) {
+            Pointer a = right.request(pointer);
+            Pointer b = option.request(pointer);
+            if (a == null || b == null) {
+                returnPtr = null;
+            } else if (a.canReceive(b) > 0) {
+                returnPtr = a;
+            } else if (b.canReceive(a) > 0) {
+                returnPtr = b;
+            } else {
+                returnPtr = cFile.langObjectPtr();
+            }
+        } else if (returnPtr == null) {
             if (operatorView != null) {
                 if (operatorView == OperatorView.OR || operatorView == OperatorView.AND ||
                         operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT) {
@@ -209,38 +299,6 @@ public class CallGroup {
                     returnPtr = left.getCastPtr();
                 } else if (operatorView == OperatorView.SET || setOperator) {
                     returnPtr = right.getReturnType();
-                } else if (left != null && center != null && right == null && left.isOperatorBoth()) {
-                    Key opKey = left.operatorToken.key;
-                    LiteralCall literal = center.getLiteral();
-                    if (literal != null) {
-                        if (!literal.endL && literal.isLong && opKey == Key.SUB) {
-                            if (literal.val <= 128) {
-                                literal.isByte = true;
-                            }
-                            if (literal.val <= 32768) {
-                                literal.isShort = true;
-                            }
-                            if (literal.val <= 2147483648L) {
-                                literal.isInt = true;
-                            }
-                            if (literal.longLimit != null && literal.strVal.equals("9223372036854775808")) {
-                                cFile.reverse(literal.longLimit);
-                                literal.longLimit = null;
-                            }
-                        }
-                        returnPtr = literal.request(pointer);
-                        if (returnPtr != null) {
-                            ArrayList<OperatorView> operators = returnPtr.type.getOperator(operatorToken);
-                            for (OperatorView ov : operators) {
-                                if (ov.getParams().getArgsCount() == 1) {
-                                    operatorView = ov;
-                                    break;
-                                }
-                            }
-                        }
-                    } else {
-                        returnPtr = operatorView.getTypePtr();
-                    }
                 } else {
                     returnPtr = operatorView.getTypePtr();
                 }
@@ -254,13 +312,19 @@ public class CallGroup {
         return returnPtr;
     }
 
-    public Pointer requestSet(Pointer pointer) {
+    public boolean requestSet(Pointer pointer) {
         if (calls.size() > 0) {
-            returnPtr = calls.get(calls.size() - 1).requestSet(pointer);
-            return returnPtr;
+            boolean canSet = calls.get(calls.size() - 1).requestSet(pointer);
+            returnPtr = calls.get(calls.size() - 1).getReturnType();
+            return canSet;
         } else {
             request(pointer);
-            return null;
+            return false;
         }
+    }
+
+    @Override
+    public String toString() {
+        return getTokenGroup().toString();
     }
 }

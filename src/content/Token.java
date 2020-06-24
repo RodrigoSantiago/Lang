@@ -139,6 +139,10 @@ public class Token {
         }
     }
 
+    public String getSource() {
+        return source;
+    }
+
     @Override
     public int hashCode() {
         if (hash == 0 && length > 0) {

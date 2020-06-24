@@ -59,8 +59,6 @@ public enum Key {
     DEFAULT("default",        false, true),
     VOID("void"),
 
-    IS("is",                  false, false, true, false),
-    ISNOT("isnot",            false, false, true, false),
     SEMICOLON(";"),
     COLON(":"),
     DOT("."),
@@ -82,6 +80,8 @@ public enum Key {
     ELESS("<=",               false, false, true, true, false, 4),
     EQUAL("==",               false, false, true, true, false, 5),
     DIF("!=",                 false, false, true, true, false, 5),
+    IS("is",                  false, false, true, false, false, 5),
+    ISNOT("isnot",            false, false, true, false, false, 5),
     BITAND("&",               false, false, true, true, false, 6),
     BITXOR("^",               false, false, true, true, false, 7),
     BITOR("|",                false, false, true, true, false, 8),

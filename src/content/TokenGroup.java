@@ -4,6 +4,10 @@ public class TokenGroup {
     public final Token start;
     public final Token end;
 
+    public TokenGroup(Token start) {
+        this(start, start.getNext());
+    }
+
     public TokenGroup(Token start, Token end) {
         this.start = start;
         this.end = end;

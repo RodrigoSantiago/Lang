@@ -72,8 +72,8 @@ public class LambdaCall extends Call {
     }
 
     @Override
-    public Pointer requestSet(Pointer pointer) {
+    public boolean requestSet(Pointer pointer) {
         request(pointer);
-        return null;
+        return false;
     }
 }

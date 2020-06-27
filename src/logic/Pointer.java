@@ -177,14 +177,23 @@ public class Pointer {
 
         // Auto Boxing
         if (other.type.isValue()) {
-            int dif = canReceive(other.type.parent);
+            int dif;
+            if (other.type.isFunction()) {
+                dif = canReceive(other.type.parent);
+            } else {
+                dif = canReceive(byGeneric(other.type.parent, other));
+            }
             if (dif > 0) {
                 return dif + 1;
             }
         }
         // Auto Unboxing
         if (other.type.isClass() && this.type.isValue()) {
-            return other.equalsIgnoreLet(byGeneric(this.type.parent, this)) ? 2 : 0;
+            if (this.type.isFunction()) {
+                return other.equalsIgnoreLet(this.type.parent) ? 2 : 0;
+            } else {
+                return other.equalsIgnoreLet(byGeneric(this.type.parent, this)) ? 2 : 0;
+            }
         }
         return 0;
     }
@@ -290,7 +299,7 @@ public class Pointer {
     @Override
     public String toString() {
         if (this == voidPointer) return "void";
-        if (this == nullPointer) return "null";
+        if (this == nullPointer) return "nullptr";
         if (this == openPointer) return "open";
         if (this.isOpen()) return typeSource.nameToken+ ":open";
         String s = (let ? "let " : "") + (typeSource == null ? type.toString() :

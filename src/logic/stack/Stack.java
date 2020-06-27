@@ -5,6 +5,7 @@ import content.TokenGroup;
 import data.ContentFile;
 import logic.GenericOwner;
 import logic.Pointer;
+import logic.params.Parameters;
 import logic.stack.block.*;
 import java.util.HashMap;
 
@@ -67,6 +68,16 @@ public class Stack {
 
     public Pointer getReturnPtr() {
         return returnPtr;
+    }
+
+    public void addParam(Parameters params) {
+        for (int i = 0; i < params.getCount(); i++) {
+            addParam(params.getNameToken(i), params.getTypePtr(i), false);
+        }
+    }
+
+    public void addParam(Token nameToken, Pointer typePtr, boolean isFinal) {
+        fields.put(nameToken, new Field(this, nameToken, typePtr, isFinal, block));
     }
 
     public boolean addField(Token nameToken, Pointer typePtr, boolean isFinal, Block block) {

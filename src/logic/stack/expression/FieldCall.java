@@ -91,6 +91,7 @@ public class FieldCall extends Call {
                 fieldView != null ? pointer.canReceive(fieldView.getTypePtr()) : 0;
     }
 
+    @Override
     public Pointer getNaturalPtr(Pointer convertFlag) {
         if (naturalPtr == null) {
             if (field != null) {

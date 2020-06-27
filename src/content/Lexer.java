@@ -106,9 +106,8 @@ public class  Lexer {
 
                     if (!isType) {
                         Token pp = parent.getParent();
-                        Token pprev = pp.getPrev();
-                        if ((pp.key == Key.PARAM && pprev != null && pprev.key == Key.WORD) ||
-                                (pp.key == Key.INDEX && level > 1) || (isArray(pp))) {
+                        if (!isParameterStatment(level, pp) && !isIndexerStatment(level, pp) &&
+                                (pp.key != Key.BRACE || isArray(pp))) {
                             parent.setNext(parent.getChild());
                             parent.setChild(null);
                             return null;
@@ -393,6 +392,50 @@ public class  Lexer {
                 || chr == '~' || chr == '<' || chr == '>';
     }
 
+    private static boolean isParameterStatment(int level, Token parent) {
+        if (parent == null) return false;
+        if (parent.key != Key.PARAM) return false;
+
+        Token parentPrev = parent.getPrev();
+        if (parentPrev == null || parentPrev.key != Key.WORD) {
+            return true;
+        }
+        if (level > 2) return false;
+
+        Token back = parentPrev.getPrev();
+        while (back != null) {
+            if (back.key == Key.SETVAL) {
+                return false;
+            } else if (back.key == Key.SEMICOLON || back.key == Key.BRACE || back.key == Key.CBRACE) {
+                return true;
+            }
+            back = back.getPrev();
+        }
+
+        return true;
+    }
+
+    private static boolean isIndexerStatment(int level, Token parent) {
+        if (level > 2) return false;
+        if (parent == null) return false;
+        if (parent.key != Key.INDEX) return false;
+
+        Token parentPrev = parent.getPrev();
+        if (parentPrev == null || parentPrev.key != Key.THIS) return false;
+
+        Token back = parentPrev.getPrev();
+        while (back != null) {
+            if (back.key == Key.SETVAL) {
+                return false;
+            } else if (back.key == Key.SEMICOLON || back.key == Key.BRACE || back.key == Key.CBRACE) {
+                return true;
+            }
+            back = back.getPrev();
+        }
+
+        return true;
+    }
+
     private static boolean isArray(Token parent) {
         if (parent == null) return false;
         if (parent.key != Key.BRACE) return false;
@@ -408,26 +451,24 @@ public class  Lexer {
 
         // [new int[][] { }]  vs [-> int[][] { }] vs [this[] { } * not a problem]
         if (parentPrev.key == Key.INDEX) {
-            boolean isArray = false;
             int s = 0;
             Token back = parentPrev.getPrev();
             while (back != null) {
                 if (back.key == Key.NEW) {
-                    isArray = true;
-                    break;
+                    return true;
                 } else if (back.key == Key.INDEX) {
-                    if (s != 0) break;
+                    if (s != 0) return false;
                 } else if (back.key == Key.GENERIC) {
-                    if (s != 0) break;
+                    if (s != 0) return false;
                     s = 1;
                 } else if (back.key == Key.WORD) {
                     s = 2;
                 } else {
-                    break;
+                    return false;
                 }
                 back = back.getPrev();
             }
-            return isArray;
+            return false;
         }
 
         return false;

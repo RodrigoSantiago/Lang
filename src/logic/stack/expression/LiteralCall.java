@@ -276,7 +276,7 @@ public class LiteralCall extends Call {
 
         requestPtr = pointer;
 
-        if (pointer.canReceive(naturalPtr) <= 0) {
+        if (naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
         }
     }
@@ -288,7 +288,7 @@ public class LiteralCall extends Call {
 
         requestPtr = pointer;
 
-        if (pointer.canReceive(naturalPtr) <= 0) {
+        if (naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
         }
     }

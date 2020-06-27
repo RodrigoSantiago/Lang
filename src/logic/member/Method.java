@@ -145,6 +145,7 @@ public class Method extends Member implements GenericOwner {
             if (contentToken != null) {
                 Stack stack = new Stack(cFile, type.self, typePtr, this, false, isStatic(), false);
                 stack.read(contentToken.start, contentToken.end, true);
+                stack.addParam(getParams());
                 stack.load();
             }
         }

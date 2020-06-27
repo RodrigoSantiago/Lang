@@ -3,6 +3,7 @@ package data;
 import content.Key;
 import content.Token;
 import logic.Namespace;
+import logic.Pointer;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public class Compiler {
 
     private Namespace langSpace;
     private Type langObject, langWrapper, langArray, langString,
-            langByte, langShort, langInt, langLong, langFloat, langDouble, langBool, langLocker;
+            langByte, langShort, langInt, langLong, langFloat, langDouble, langBool, langLocker, langFunction;
 
     public void setMainFile(ContentFile main) {
 
@@ -168,6 +169,14 @@ public class Compiler {
         }
 
         return langBool;
+    }
+
+    public Type getLangFunction() {
+        if (langFunction == null) {
+            langFunction = getLangType(new Token("function"));
+        }
+
+        return langFunction;
     }
 
     public Type getLangLocker() {

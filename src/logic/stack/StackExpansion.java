@@ -17,4 +17,14 @@ public class StackExpansion extends Stack {
     public Stack getSource() {
         return source;
     }
+
+    @Override
+    public Field findField(Token nameToken) {
+        Field local = super.findField(nameToken);
+        if (local != null) {
+            return local;
+        } else {
+            return source.findField(nameToken);
+        }
+    }
 }

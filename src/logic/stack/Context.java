@@ -130,13 +130,13 @@ public class Context {
                     }
                 }
             }
-            if (found != null && found.size() > 0) {
+            if (found != null) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
                     arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
                 }
+                return found;
             }
-            return found;
         }
         for (Expression arg : arguments) {
             arg.requestOwn(null);
@@ -171,7 +171,7 @@ public class Context {
                     }
                 }
             }
-            if (found != null && found.size() == 1) {
+            if (found != null) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
                     arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
@@ -221,7 +221,7 @@ public class Context {
                     found.add(cv);
                 }
             }
-            if (found != null && found.size() == 1) {
+            if (found != null) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
                     arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
@@ -333,7 +333,7 @@ public class Context {
                         }
                     }
                 }
-                if (found != null && found.size() == 1) {
+                if (found != null) {
                     left.requestOwn(found.get(0).getParams().getArgTypePtr(0));
                     right.requestOwn(found.get(0).getParams().getArgTypePtr(1));
 

@@ -81,9 +81,14 @@ public class Expression {
                     state = 2;
                 } else if (next.key == Key.LAMBDA) {
                     next = next.getNext();
+                    if (next != end && next.key == Key.LET) {
+                        next = next.getNext();
+                    }
                     if (next != end && next.key == Key.WORD) {
                         next = next.getNext();
                         next = TokenGroup.nextType(next, end);
+                    } else if (next != end && next.key == Key.VOID) {
+                        next = next.getNext();
                     }
                     if (next != end && next.key == Key.BRACE) {
                         next = next.getNext();

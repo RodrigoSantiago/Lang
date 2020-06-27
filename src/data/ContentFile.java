@@ -242,6 +242,10 @@ public class ContentFile {
         return getCompiler().getLangString();
     }
 
+    public Type langFunction() {
+        return getCompiler().getLangFunction();
+    }
+
     public Type langArray() {
         return getCompiler().getLangArray();
     }
@@ -288,6 +292,10 @@ public class ContentFile {
 
     public Pointer langBoolPtr() {
         return new Pointer(mark(getCompiler().getLangBool()));
+    }
+
+    public Pointer langFunctionPtr(Pointer[] pointers) {
+        return new Pointer(mark(getCompiler().getLangFunction()), pointers, false);
     }
 
     public Pointer langLockerPtr() {

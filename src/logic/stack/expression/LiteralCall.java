@@ -79,7 +79,7 @@ public class LiteralCall extends Call {
         super(group, start, end);
         this.token = start;
         if (end != null && (start.getSource() == end.getSource())) {
-            token = new Token(start.getSource(), start.start, TokenGroup.lastToken(start, end).end, Key.NOONE, false);
+            token = new Token(start.getSource(), start.start, end.start, Key.NOONE, false);
         }
         this.literalType = type;
         this.resultBool = resultBool;
@@ -170,6 +170,16 @@ public class LiteralCall extends Call {
         return chr >= '0' && chr <= '9';
     }
 
+    private Pointer getRelativePointer() {
+        return literalType == NULL ? Pointer.nullPointer
+                : literalType == BOOL ? cFile.langBoolPtr()
+                : literalType == LONG && (isLong || resultNum >= 2147483648L || resultNum < -2147483648L) ? cFile.langLongPtr()
+                : literalType == LONG ? cFile.langIntPtr()
+                : literalType == DOUBLE && isFloat ? cFile.langFloatPtr()
+                : literalType == DOUBLE ? cFile.langDoublePtr()
+                : literalType == STRING ? cFile.langStringPtr() : Pointer.openPointer;
+    }
+
     @Override
     public boolean isLiteral() {
         return true;
@@ -193,46 +203,99 @@ public class LiteralCall extends Call {
 
         if (literalType == DEFAULT) return 1;
 
-        if (pointer.type == cFile.langBool()) return literalType == BOOL ? 1 : 0;
-        if (pointer.type == cFile.langString()) return literalType == STRING ? 1 : 0;
-
-        if (pointer.type == cFile.langByte()) {
-            return literalType == LONG && resultNum < 128 && resultNum >= -128 && !isLong ? 1 : 0;
+        if (pointer.type.isPointer()) {
+            if (literalType == NULL || literalType == DEFAULT) {
+                return 1;
+            } else {
+                return pointer.canReceive(getRelativePointer());
+            }
+        } else if (pointer.type == cFile.langBool()) {
+            return literalType == BOOL ? 1 : 0;
+        } else if (pointer.type == cFile.langString()) {
+            return literalType == STRING ? 1 : 0;
+        } else if (pointer.type == cFile.langByte()) {
+            return literalType == LONG && resultNum < 128 && resultNum >= -128 && !isLong ? 6 : 0;
         } else if (pointer.type == cFile.langShort()) {
-            return literalType == LONG && resultNum < 32768 && resultNum >= -32768 && !isLong ? 1 : 0;
+            return literalType == LONG && resultNum < 32768 && resultNum >= -32768 && !isLong ? 5 : 0;
         } else if (pointer.type == cFile.langInt()) {
             return literalType == LONG && resultNum < 2147483648L && resultNum >= -2147483648L && !isLong ? 1 : 0;
         } else if (pointer.type == cFile.langLong()) {
-            return literalType == LONG ? 1 : 0;
+            return literalType == LONG ? isLong ? 1 : 2 : 0;
         } else if (pointer.type == cFile.langFloat()) {
-            return literalType == DOUBLE && !isDouble ? 1 : literalType == LONG ? 2 : 0;
+            return literalType == DOUBLE && isFloat ? 1 :
+                    literalType == DOUBLE && !isDouble ? 2 : literalType == LONG ? 3 : 0;
         } else if (pointer.type == cFile.langDouble()) {
-            return literalType == DOUBLE && !isFloat ? 1 : literalType == DOUBLE || literalType == LONG ? 2 : 0;
-        } else if (pointer.type.isPointer()) {
-            return literalType == NULL ||  literalType == DEFAULT ? 1 : 0;
+            return literalType == DOUBLE && !isFloat ? 1 :
+                    literalType == DOUBLE && isFloat ? 2 : literalType == LONG ? 4 : 0;
+        } else {
+            return 0;
         }
-        return 0;
     }
 
     @Override
-    public Pointer request(Pointer pointer) {
-        if (pointer == null) {
-            returnPtr = literalType == NULL ? Pointer.nullPointer
-                    : literalType == DEFAULT ? Pointer.openPointer
-                    : literalType == BOOL ? cFile.langBoolPtr()
-                    : literalType == LONG ? cFile.langIntPtr()
-                    : literalType == DOUBLE ? cFile.langDoublePtr()
-                    : literalType == STRING ? cFile.langStringPtr() : cFile.langObjectPtr();
-        } else if (verify(pointer) > 0) {
-            returnPtr = pointer;
+    public Pointer getNaturalPtr(Pointer pointer) {
+        if (naturalPtr == null) {
+            if (pointer == null) {
+                naturalPtr = getRelativePointer();
+            } else if (literalType == NULL) {
+                naturalPtr = Pointer.nullPointer;
+            } else if (literalType == DEFAULT) {
+                naturalPtr = Pointer.openPointer;
+            } else if (pointer.type != null && pointer.type.isPointer()) {
+                naturalPtr = getRelativePointer();
+            } else if (literalType == BOOL) {
+                naturalPtr = cFile.langBoolPtr();
+            } else if (literalType == STRING) {
+                naturalPtr = cFile.langStringPtr();
+            } else if (pointer.type == cFile.langByte() && literalType == LONG &&
+                    resultNum < 128 && resultNum >= -128 && !isLong) {
+                naturalPtr = cFile.langBytePtr();
+            } else if (pointer.type == cFile.langShort() && literalType == LONG &&
+                    resultNum < 32768 && resultNum >= -32768 && !isLong) {
+                naturalPtr = cFile.langShortPtr();
+            } else if (pointer.type == cFile.langInt() && literalType == LONG &&
+                    resultNum < 2147483648L && resultNum >= -2147483648L && !isLong) {
+                naturalPtr = cFile.langIntPtr();
+            } else if (literalType == LONG) {
+                naturalPtr = cFile.langLongPtr();
+            } else if (pointer.type == cFile.langFloat() && literalType == DOUBLE &&
+                    (isFloat || !isDouble)) {
+                naturalPtr = cFile.langFloatPtr();
+            } else if (literalType == DOUBLE) {
+                naturalPtr = cFile.langDoublePtr();
+            }
         }
-        return returnPtr;
+        return naturalPtr;
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return false;
+    public void requestGet(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+        pointer = pointer.toLet();
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+        }
+    }
+
+    @Override
+    public void requestOwn(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+        }
+    }
+
+    @Override
+    public void requestSet() {
+        cFile.erro(getToken(), "SET not allowed", this);
     }
 
     @Override

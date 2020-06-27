@@ -5,7 +5,6 @@ import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
 import logic.stack.Context;
-import logic.typdef.Type;
 
 public class TypeCall extends Call {
 
@@ -62,14 +61,23 @@ public class TypeCall extends Call {
     }
 
     @Override
-    public Pointer request(Pointer pointer) {
+    public Pointer getNaturalPtr(Pointer pointer) {
         cFile.erro(getToken(), "Unexpected identifier", this);
         return null;
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return false;
+    public void requestGet(Pointer pointer) {
+        cFile.erro(getToken(), "Unexpected identifier", this);
+    }
+
+    @Override
+    public void requestOwn(Pointer pointer) {
+        cFile.erro(getToken(), "Unexpected identifier", this);
+    }
+
+    @Override
+    public void requestSet() {
+        cFile.erro(getToken(), "Unexpected identifier", this);
     }
 }

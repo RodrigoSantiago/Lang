@@ -19,35 +19,34 @@ public class Class extends Type {
         super.load();
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
-            Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
-            if (parent.typeSource != null) {
+            Pointer pointer = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
+            if (pointer == null) continue;
+            if (pointer.typeSource != null) {
                 cFile.erro(pTypeToken.start, "Cannot inherit it's template", this);
-            } else if (parent.type == null) {
+            } else if (pointer.type == null) {
                 cFile.erro(pTypeToken.start, "Undefined parent", this);
-            } else if ((parent.type.isPrivate() && parent.type.cFile != cFile)
-                    || (!parent.type.isPublic() && parent.type.cFile.library != cFile.library)) {
+            } else if ((pointer.type.isPrivate() && pointer.type.cFile != cFile)
+                    || (!pointer.type.isPublic() && pointer.type.cFile.library != cFile.library)) {
                 cFile.erro(pTypeToken.start, "Invalid acess permisison", this);
-            } else if (parents.contains(parent)) {
+            } else if (parents.contains(pointer)) {
                 cFile.erro(pTypeToken.start, "Repeated parent", this);
-            } else if (this.parent != null && this.parent.isDerivedFrom(parent) >= 0) {
+            } else if (this.parent != null && this.parent.isDerivedFrom(pointer) > 0) {
                 cFile.erro(pTypeToken.start, "Repeated parent", this);
-            }else if (parent.typeSource != null) {
-                cFile.erro(pTypeToken.start, "A class could not inherit it's generic", this);
-            } else if (parent.type.isFinal()) {
-                cFile.erro(pTypeToken.start, "A class could not inherit from a Final Type", this);
-            } else if (parent.type.isClass()) {
+            } else if (pointer.type.isFinal()) {
+                cFile.erro(pTypeToken.start, "A Class could not inherit from a Final Type", this);
+            } else if (pointer.type.isClass()) {
                 if (this.parent == null) {
                     if (parents.size() > 0) {
                         cFile.erro(pTypeToken.start, "The class parent must come before interfaces", this);
                     }
-                    this.parent = parent;
-                    this.parents.add(0, parent);
+                    this.parent = pointer;
+                    this.parents.add(0, pointer);
                     this.parentTokens.add(0, pTypeToken.start);
                 } else {
-                    cFile.erro(pTypeToken.start, "A class cannot have multiple classes", this);
+                    cFile.erro(pTypeToken.start, "A class cannot have multiple parent Classes", this);
                 }
-            } else if (parent.type.isInterface()) {
-                this.parents.add(parent);
+            } else if (pointer.type.isInterface()) {
+                this.parents.add(pointer);
                 this.parentTokens.add(pTypeToken.start);
             } else {
                 cFile.erro(pTypeToken.start, "Undefined type", this);

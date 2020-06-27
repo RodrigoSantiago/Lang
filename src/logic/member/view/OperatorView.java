@@ -35,6 +35,15 @@ public class OperatorView {
         paramView = new ParamView(caller, operator.getParams());
     }
 
+    public OperatorView(Pointer caller, OperatorView operatorView) {
+        this.caller = caller;
+        this.operator = operatorView.operator;
+        if (operatorView.getTypePtr() != null) {
+            typePtr = Pointer.byGeneric(operatorView.getTypePtr(), caller);
+        }
+        paramView = new ParamView(caller, operatorView.getParams());
+    }
+
     public boolean isFrom(Type type) {
         return operator.type == type;
     }

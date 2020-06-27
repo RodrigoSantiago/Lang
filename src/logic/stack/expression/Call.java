@@ -3,8 +3,6 @@ package logic.stack.expression;
 import content.Token;
 import data.ContentFile;
 import logic.Pointer;
-import logic.member.Constructor;
-import logic.member.view.*;
 import logic.stack.Context;
 import logic.stack.Line;
 import logic.stack.Stack;
@@ -13,7 +11,9 @@ public abstract class Call {
     public final ContentFile cFile;
     public final CallGroup group;
     public Token token;
-    Pointer returnPtr;
+
+    Pointer naturalPtr;
+    Pointer requestPtr;
 
     public Call(CallGroup group, Token start, Token end) {
         this.cFile = group.cFile;
@@ -37,8 +37,12 @@ public abstract class Call {
         return token;
     }
 
-    public Pointer getReturnType() {
-        return returnPtr;
+    public Pointer getNaturalPtr() {
+        return naturalPtr;
+    }
+
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        return naturalPtr;
     }
 
     public boolean isTypeCall() {
@@ -61,7 +65,9 @@ public abstract class Call {
 
     public abstract int verify(Pointer pointer);
 
-    public abstract Pointer request(Pointer pointer);
+    public abstract void requestGet(Pointer pointer);
 
-    public abstract boolean requestSet(Pointer pointer);
+    public abstract void requestOwn(Pointer pointer);
+
+    public abstract void requestSet();
 }

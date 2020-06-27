@@ -6,6 +6,7 @@ import content.TokenGroup;
 import logic.stack.Block;
 import logic.stack.Context;
 import logic.stack.Line;
+import logic.stack.block.BlockSwitch;
 import logic.stack.expression.Expression;
 
 public class LineCase extends Line {
@@ -13,6 +14,8 @@ public class LineCase extends Line {
     private boolean isDefault;
     TokenGroup caseToken;
     Expression caseExp;
+
+    private BlockSwitch switchOwner;
 
     public LineCase(Block block, Token start, Token end) {
         super(block, start, end);
@@ -51,11 +54,22 @@ public class LineCase extends Line {
     public void load() {
         if (caseExp != null) {
             caseExp.load(new Context(stack));
-            // TODO -REQUEST LITERAL
+            if (switchOwner != null && switchOwner.getTypePtr() != null) {
+                caseExp.requestGet(switchOwner.getTypePtr());
+            } else {
+                caseExp.requestGet(null);
+            }
+            if (!caseExp.isLiteral()) {
+                cFile.erro(caseToken, "The case value should be Literal", this);
+            }
         }
     }
 
     public boolean isDefault() {
         return isDefault;
+    }
+
+    public void setSwitch(BlockSwitch switchOwner) {
+        this.switchOwner = switchOwner;
     }
 }

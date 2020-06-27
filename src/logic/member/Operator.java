@@ -85,6 +85,9 @@ public class Operator extends Member {
 
         if (typeToken != null) {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type, isLet());
+            if (typePtr == null) {
+                typePtr = cFile.langObjectPtr(isLet());
+            }
 
             if (params != null) {
                 params.load(type);

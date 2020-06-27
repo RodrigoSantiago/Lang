@@ -111,4 +111,9 @@ public class MethodView {
     public boolean isLet() {
         return method.isLet();
     }
+
+    @Override
+    public String toString() {
+        return "MethodView{" +caller + method.getName() + "(" + paramView + ") : " +getTypePtr()+ "}";
+    }
 }

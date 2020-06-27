@@ -3,6 +3,7 @@ package logic.stack;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
+import logic.GenericOwner;
 import logic.Pointer;
 import logic.stack.block.*;
 import java.util.HashMap;
@@ -22,6 +23,8 @@ public class Stack {
 
     HashMap<Token, Field> fields = new HashMap<>();
 
+    private GenericOwner generics;
+
     Stack(Stack source, Pointer returnPtr) {
         this.cFile = source.cFile;
         this.sourcePtr = source.sourcePtr;
@@ -31,10 +34,12 @@ public class Stack {
         this.isConstructor = false;
     }
 
-    public Stack(ContentFile cFile, Pointer sourcePtr, Pointer returnPtr, boolean isExpression, boolean isStatic, boolean isConstructor) {
+    public Stack(ContentFile cFile, Pointer sourcePtr, Pointer returnPtr, GenericOwner generics,
+                 boolean isExpression, boolean isStatic, boolean isConstructor) {
         this.cFile = cFile;
         this.sourcePtr = sourcePtr;
         this.returnPtr = returnPtr;
+        this.generics = generics;
         this.isExpression = isExpression;
         this.isStatic = isStatic;
         this.isConstructor = isConstructor;
@@ -77,6 +82,6 @@ public class Stack {
     }
 
     public Pointer getPointer(TokenGroup tokenGroup, boolean isLet) {
-        return cFile.getPointer(tokenGroup.start, tokenGroup.end, null, null, isLet);
+        return cFile.getPointer(tokenGroup.start, tokenGroup.end, null, generics, isLet);
     }
 }

@@ -61,7 +61,7 @@ public class LambdaCall extends Call {
     }
 
     @Override
-    public Pointer request(Pointer pointer) {
+    public Pointer getNaturalPtr(Pointer pointer) {
         if (pointer == null) {
             // auto : show error !!! [make variables objects]
         } else {
@@ -72,8 +72,17 @@ public class LambdaCall extends Call {
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return false;
+    public void requestGet(Pointer pointer) {
+
+    }
+
+    @Override
+    public void requestOwn(Pointer pointer) {
+
+    }
+
+    @Override
+    public void requestSet() {
+        cFile.erro(getToken(), "SET not allowed", this);
     }
 }

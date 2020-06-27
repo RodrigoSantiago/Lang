@@ -254,6 +254,10 @@ public class ContentFile {
         return new Pointer(mark(getCompiler().getLangObject()));
     }
 
+    public Pointer langObjectPtr(boolean isLet) {
+        return new Pointer(mark(getCompiler().getLangObject()), null, null, isLet);
+    }
+
     public Pointer langStringPtr() {
         return new Pointer(mark(getCompiler().getLangString()));
     }
@@ -360,10 +364,6 @@ public class ContentFile {
         return mark(type);
     }
 
-    public Pointer getPointer(Token typeToken, Token end, boolean isLet) {
-        return getPointer(typeToken, end, null, null, isLet);
-    }
-
     public Pointer getPointer(Token typeToken, Token end, Type cycleOwner, GenericOwner genericOwner, boolean isLet) {
         Pointer ptr = null;
         Type type = null;
@@ -375,17 +375,14 @@ public class ContentFile {
         if (ptr == null) {
             type = findType(typeToken);
             if (type == null) {
-                type = getCompiler().getLangObject();
                 erro(typeToken, "Undefined type", this);
+                return null;
+            } else if (cycleOwner != null && type.cyclicVerify(cycleOwner)) {
+                erro(typeToken, "Cyclic reference", this);
+                return null;
             }
         }
 
-        if (type != null && cycleOwner != null) {
-            if (type.cyclicVerify(cycleOwner)) {
-                type = getCompiler().getLangObject();
-                erro(typeToken, "Cyclic reference", this);
-            }
-        }
 
         int arr = 0;
         ArrayList<Pointer> iPointers = null;
@@ -397,13 +394,12 @@ public class ContentFile {
 
             if (state == 0 && token.key == Key.GENERIC && token.getChild() != null && ptr != null) {
                 erro(token, "Generic types could not apply generic variance", this);
-            } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null && type != null && type.template == null) {
+            } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null && type.template == null) {
                 erro(token, "Unexpected generic variance", this);
             } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null && type != null) {
-                iPointers = new ArrayList<>();
+                iPointers = new ArrayList<>(type.template.getCount());
 
                 boolean hasLet = false;
-                int index = 0;
                 int iState = 0;
                 Token iToken = token.getChild();
                 Token iEnd = token.getLastChild();
@@ -419,36 +415,50 @@ public class ContentFile {
                         iState = 1;
                     } else if ((iState == 0 || iState == 1) && iToken.key == Key.WORD) {
                         iNext = TokenGroup.nextType(iNext, iEnd);
-                        Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner, hasLet);
+
+                        int index = iPointers.size();
                         if (index >= type.template.getCount() && !type.isFunction()) {
                             erro(iToken, iNext, "Unexpected generic", this);
                         } else {
-                            if (!type.isFunction() && genPtr.isDerivedFrom(type.template.getBasePtr(index)) == 0) {
+                            Pointer genPtr = getPointer(iToken, iNext, cycleOwner, genericOwner, hasLet);
+                            if (genPtr == null) {
+                                genPtr = type.isFunction() ? langObjectPtr() : type.template.getDefaultPtr(index);
+                            } else if (!type.isFunction() && genPtr.canSpecify(type.template.getBasePtr(index)) < 0) {
                                 genPtr = type.template.getDefaultPtr(index);
                                 erro(iToken, iNext, "Invalid generic", this);
                             }
-                            index++;
                             iPointers.add(genPtr);
                         }
                         iState = 2;
-                    } else if (iState == 0 && iToken.key == Key.VOID) {
-                        if (type.isFunction() && index == 0) {
-                            iPointers.add(Pointer.voidPointer);
-                            index++;
+                    } else if ((iState == 0 || iState == 1) && iToken.key == Key.VOID) {
+
+                        int index = iPointers.size();
+                        if (index >= type.template.getCount() && !type.isFunction()) {
+                            erro(iToken, iNext, "Unexpected generic", this);
                         } else {
-                            erro(iToken, "Void not allowed here", this);
+                            Pointer genPtr = Pointer.voidPointer;
+                            if (index > 0 || !type.isFunction()) {
+                                genPtr = type.isFunction() ? langObjectPtr() : type.template.getDefaultPtr(index);
+                                erro(iToken, "Void not allowed here", this);
+                            }
+                            iPointers.add(genPtr);
                         }
+                        iState = 2;
                     } else if (iState == 2 && iToken.key == Key.COMMA) {
                         iState = 0;
                     } else {
                         erro(iToken, "Unexpected token", this);
                     }
+                    if (iToken == iNext && iPointers.size() < type.template.getCount()) {
+                        while (iPointers.size() < type.template.getCount()) {
+                            iPointers.add(type.template.getDefaultPtr(iPointers.size()));
+                        }
+                        erro(iToken, "Missing generics", this);
+                    }
                     iToken = iNext;
                 }
                 state = 1;
-            } else if (token.key == Key.INDEX
-                    && token.getChild() != null
-                    && token.getLastChild() == token.getChild()) {
+            } else if (token.key == Key.INDEX && token.isEmptyParent()) {
                 arr++;
                 state = 1;
             } else {
@@ -458,19 +468,19 @@ public class ContentFile {
         }
 
         if (ptr == null) {
+            Pointer[] pointers = null;
             if (iPointers != null) {
-                if (type.template != null && !type.isFunction()) {
-                    if (iPointers.size() < type.template.getCount()) {
-                        type = getCompiler().getLangObject();
-                        iPointers = null;
-                        erro(token, "Missing generics", this);
-                    }
+                pointers = iPointers.toArray(new Pointer[0]);
+            } else if (type.template != null) {
+                pointers = new Pointer[type.template.getCount()];
+                for (int i = 0; i < pointers.length; i++) {
+                    pointers[i] = type.template.getDefaultPtr(i);
                 }
             }
-            ptr = new Pointer(type, iPointers == null ? null : iPointers.toArray(new Pointer[0]), arr == 0 && isLet);
+            ptr = new Pointer(type, pointers, isLet && arr == 0);
         }
         for (int i = 0; i < arr; i++) {
-            ptr = new Pointer(getCompiler().getLangArray(), new Pointer[]{ptr}, i == arr - 1 && isLet);
+            ptr = new Pointer(langArray(), new Pointer[]{ptr}, isLet && (i + 1 == arr));
         }
 
         return ptr;
@@ -496,16 +506,6 @@ public class ContentFile {
             token = token.getNext();
         }
         erros.add(new Error(Error.ERROR, start, end, message + " > from " + sender.getClass().getSimpleName()));
-    }
-
-    public Error revesible(Token token, Object sender) {
-        Error error = new Error(Error.ERROR, token.start, token.end, "Malformated number > from " + sender.getClass().getSimpleName());
-        erros.add(error);
-        return error;
-    }
-
-    public void reverse(Error error) {
-        erros.remove(error);
     }
 
     public void warning(int start, int end, String message) {

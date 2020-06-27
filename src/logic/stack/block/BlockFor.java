@@ -105,9 +105,7 @@ public class BlockFor extends Block {
         }
         if (conditionExp != null) {
             conditionExp.load(new Context(stack));
-            if (conditionExp.request(cFile.langBoolPtr()) == null) {
-                cFile.erro(conditionToken, "The condition must be a bool", this);
-            }
+            conditionExp.requestGet(cFile.langBoolPtr());
         }
         if (loopExp != null) {
             loopExp.load(new Context(stack));
@@ -115,9 +113,9 @@ public class BlockFor extends Block {
                 // verify string
                 // verify NULL == iterable
                 // cFile.erro(loopToken, "The foreach be a string or must implements Iterable", this);
-                loopExp.request(null);
+                loopExp.requestGet(null);
             } else {
-                loopExp.request(null);
+                conditionExp.requestGet(null);
             }
         }
         super.load();

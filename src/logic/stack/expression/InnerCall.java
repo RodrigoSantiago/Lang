@@ -20,8 +20,11 @@ public class InnerCall extends Call {
             next = token.getNext();
             if (state == 0 && token.key == Key.PARAM && token.getChild() != null) {
                 this.token = token;
-                // TODO - EMPTY CALL
-                innerExpression = new Expression(getLine(), token.getChild(), token.getLastChild());
+                if (token.getChild() != token.getLastChild()) {
+                    innerExpression = new Expression(getLine(), token.getChild(), token.getLastChild());
+                } else {
+                    cFile.erro(token, "Empty expression not allowed", this);
+                }
                 state = 1;
             } else {
                 cFile.erro(token, "Unexpected token", this);
@@ -50,15 +53,30 @@ public class InnerCall extends Call {
     }
 
     @Override
-    public Pointer request(Pointer pointer) {
-        if (innerExpression == null) return null;
-        returnPtr = innerExpression.request(pointer);
-        return returnPtr;
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        if (naturalPtr == null) {
+            naturalPtr = innerExpression == null ? null : innerExpression.getNaturalPtr(convertFlag);
+        }
+        return naturalPtr;
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return false;
+    public void requestGet(Pointer pointer) {
+        if (pointer != null) pointer = pointer.toLet();
+        if (innerExpression != null) innerExpression.requestGet(pointer);
+
+        requestPtr = pointer;
+    }
+
+    @Override
+    public void requestOwn(Pointer pointer) {
+        if (innerExpression != null) innerExpression.requestGet(pointer);
+
+        requestPtr = pointer;
+    }
+
+    @Override
+    public void requestSet() {
+        cFile.erro(getToken(), "SET not allowed", this);
     }
 }

@@ -17,7 +17,6 @@ public class Expression {
     public final Stack stack;
     public final Line parent;
     private TokenGroup tokenGroup;
-    private Pointer returnPtr;
     Token start, end;
 
     ArrayList<CallGroup> groups = new ArrayList<>();
@@ -169,11 +168,15 @@ public class Expression {
     }
 
     public Pointer getReturnType() {
-        return returnPtr;
+        return groups.size() == 1 ? groups.get(0).getReturnType() : null;
     }
 
     public boolean isLiteral() {
         return groups.size() == 1 && groups.get(0).isLiteral();
+    }
+
+    public LiteralCall getLiteral() {
+        return groups.size() == 1 ? groups.get(0).getLiteral() : null;
     }
 
     public void load(Context context) {
@@ -320,9 +323,9 @@ public class Expression {
             readCompositeOperators(0, groups.size());
         }
 
-        if (groups.size() > 1) {
+        if (groups.size() != 1) {
             System.out.println("INVALID MULT GROUP EXPRESSION ?");
-        } else if (groups.size() > 0) {
+        } else {
             groups.get(0).load(context);
         }
     }
@@ -415,8 +418,15 @@ public class Expression {
         return groups.size() == 0 ? 0 : groups.get(0).verify(pointer);
     }
 
-    public Pointer request(Pointer pointer) {
-        returnPtr = groups.size() == 0 ? null : groups.get(0).request(pointer);
-        return returnPtr;
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        return groups.size() > 0 ? groups.get(0).getNaturalPtr(convertFlag) : null;
+    }
+
+    public void requestGet(Pointer pointer) {
+        if (groups.size() > 0) groups.get(0).requestGet(pointer);
+    }
+
+    public void requestOwn(Pointer pointer) {
+        if (groups.size() > 0) groups.get(0).requestOwn(pointer);
     }
 }

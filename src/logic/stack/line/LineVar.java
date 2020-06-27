@@ -105,15 +105,16 @@ public class LineVar extends Line {
     public void load() {
         if (typeToken != null) {
             typePtr = stack.getPointer(typeToken, isLet);
+            if (typePtr == null) {
+                typePtr = cFile.langObjectPtr(isLet);
+            }
         }
 
         for (int i = 0; i < expresions.size(); i++) {
             Expression expresion = expresions.get(i);
             if (expresion != null) {
                 expresion.load(new Context(stack));
-                if (expresion.request(typePtr) == null) {
-                    cFile.erro(expresion.getTokenGroup(), "incompatible Value", this);
-                }
+                expresion.requestOwn(typePtr); // TODO - LET/VAR Exception
                 if (typePtr == null) {
                     typePtrs.add(expresion.getReturnType());
                 }

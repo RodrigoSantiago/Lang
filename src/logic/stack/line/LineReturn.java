@@ -3,6 +3,7 @@ package logic.stack.line;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Context;
 import logic.stack.Line;
@@ -49,7 +50,12 @@ public class LineReturn extends Line {
     public void load() {
         if (returnExp != null) {
             returnExp.load(new Context(stack));
-            // TODO -REQUEST STACK RETURN TYPE
+            if (stack.getReturnPtr() == Pointer.voidPointer) {
+                returnExp.requestOwn(null);
+                cFile.erro(returnToken, "Unexpected expression (void return)", this);
+            } else {
+                returnExp.requestOwn(stack.getReturnPtr());
+            }
         }
         super.load();
     }

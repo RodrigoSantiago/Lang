@@ -1,6 +1,7 @@
 package logic.member.view;
 
 import content.Token;
+import data.ContentFile;
 import logic.Pointer;
 import logic.member.Indexer;
 import logic.typdef.Type;
@@ -30,6 +31,18 @@ public class IndexerView {
         srcGet = indexerView.srcGet;
         srcSet = indexerView.srcSet;
         srcOwn = indexerView.srcOwn;
+    }
+
+    public ContentFile getGetFile() {
+        return srcGet != null && srcGet != this ? srcGet.getGetFile() : indexer.cFile;
+    }
+
+    public ContentFile getSetFile() {
+        return srcSet != null && srcSet != this ? srcSet.getGetFile() : indexer.cFile;
+    }
+
+    public ContentFile getOwnFile() {
+        return srcOwn != null && srcOwn != this ? srcOwn.getGetFile() : indexer.cFile;
     }
 
     public boolean isFrom(Type type) {

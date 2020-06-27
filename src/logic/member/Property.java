@@ -211,6 +211,9 @@ public class Property extends Member {
         }
         if (typeToken != null) {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type, isLet());
+            if (typePtr == null) {
+                typePtr = cFile.langObjectPtr(isLet());
+            }
 
             return hasGet || hasSet || hasOwn;
         }

@@ -26,7 +26,8 @@ public class CallGroup {
     private Pointer castPtr;
     private boolean setOperator;
 
-    private Pointer returnPtr;
+    private Pointer naturalPtr;
+    private Pointer requestPtr;
 
     public CallGroup(Expression expression) {
         this.cFile = expression.cFile;
@@ -121,10 +122,6 @@ public class CallGroup {
         return calls.size() == 1 && calls.get(0) instanceof LiteralCall ? (LiteralCall) calls.get(0) : null;
     }
 
-    public int getLiteralType() {
-        return getLiteral().getLiteralType();
-    }
-
     public void setOperator(Token token) {
         this.operatorToken = token;
     }
@@ -140,6 +137,10 @@ public class CallGroup {
             if (state == 0 && token.key == Key.WORD) {
                 TokenGroup tokenGroup = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 castPtr = getStack().getPointer(tokenGroup, false);
+                if (castPtr == null) {
+                    castPtr = cFile.langObjectPtr();
+                }
+
                 state = 1;
             } else {
                 cFile.erro(token, "Unexpected token", this);
@@ -180,10 +181,13 @@ public class CallGroup {
         calls.add(call);
     }
 
-    public Pointer getReturnType() {
-        return returnPtr;
+    public Pointer getNaturalPtr() {
+        return naturalPtr;
     }
 
+    public Pointer getReturnType() {
+        return requestPtr;
+    }
 
     public void load(Context context) {
         if (left != null && center != null && right != null && colon != null && option != null) {
@@ -191,9 +195,7 @@ public class CallGroup {
             right.load(new Context(getStack()));
             option.load(new Context(getStack()));
 
-            if (left.request(cFile.langBoolPtr()) == null) {
-                cFile.erro(center.operatorToken, "The ternary condition must be a bool", this);
-            }
+            // [Literal Resolve]
             if (left.isLiteral() && right.isLiteral() && option.isLiteral()) {
 
             }
@@ -208,6 +210,7 @@ public class CallGroup {
                 operatorView = operatos.get(0);
             } else {
                 operatorView = operatos.get(0);
+                // [Literal Resolve]
                 if (left.isLiteral() && right.isLiteral()) {
                     LiteralCall lCall = left.getLiteral();
                     LiteralCall rCall = right.getLiteral();
@@ -228,7 +231,7 @@ public class CallGroup {
                 cFile.erro(left.operatorToken, "Operator Not Found", this);
             } else {
                 operatorView = operator;
-                // [Literal Absortion]
+                // [Literal Resolve]
                 if (center.isLiteral()) {
                     LiteralCall cCall = center.getLiteral();
                     Key op = left.getOperatorToken().key;
@@ -244,10 +247,26 @@ public class CallGroup {
         } else {
             for (int i = 0; i < calls.size(); i++) {
                 Call call = calls.get(i);
-
                 call.load(context);
+
                 if (!context.isIncorrect() && i < calls.size() - 1) {
-                    call.request(null);
+                    call.requestGet(null);
+                }
+            }
+            if (calls.size() == 1) {
+                Call call = calls.get(0);
+                if (call instanceof InnerCall) {
+                    InnerCall innerCall = (InnerCall) call;
+                    // [Literal Resolve]
+                    if (innerCall.innerExpression.isLiteral()) {
+                        LiteralCall literalCall = innerCall.innerExpression.getLiteral();
+                        calls.set(0, LiteralResolver.resolve(this, literalCall));
+                    }
+                } else if (call instanceof FieldCall) {
+                    FieldCall fieldCall = (FieldCall) call;
+                    if (fieldCall.isTypeCall()) {
+                        // todo [ERRO]
+                    }
                 }
             }
         }
@@ -277,49 +296,109 @@ public class CallGroup {
         return 0;
     }
 
-    public Pointer request(Pointer pointer) {
-        if (colon != null) {
-            Pointer a = right.request(pointer);
-            Pointer b = option.request(pointer);
-            if (a == null || b == null) {
-                returnPtr = null;
-            } else if (a.canReceive(b) > 0) {
-                returnPtr = a;
-            } else if (b.canReceive(a) > 0) {
-                returnPtr = b;
-            } else {
-                returnPtr = cFile.langObjectPtr();
-            }
-        } else if (returnPtr == null) {
-            if (operatorView != null) {
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        if (naturalPtr == null) {
+            if (option != null) {
+                Pointer a = right.getNaturalPtr(convertFlag);
+                Pointer b = option.getNaturalPtr(convertFlag);
+                if (a == null) {
+                    naturalPtr = b;
+                } else if (b == null) {
+                    naturalPtr = a;
+                } else if (a.canReceive(b) > 0) {
+                    naturalPtr = a;
+                } else if (b.canReceive(a) > 0) {
+                    naturalPtr = b;
+                }
+            } else if (operatorView != null) {
                 if (operatorView == OperatorView.OR || operatorView == OperatorView.AND ||
                         operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT) {
-                    returnPtr = cFile.langBoolPtr();
+                    naturalPtr = cFile.langBoolPtr();
                 } else if (operatorView == OperatorView.CAST) {
-                    returnPtr = left.getCastPtr();
+                    naturalPtr = left.getCastPtr();
                 } else if (operatorView == OperatorView.SET || setOperator) {
-                    returnPtr = right.getReturnType();
+                    naturalPtr = right.getNaturalPtr(convertFlag);
                 } else {
-                    returnPtr = operatorView.getTypePtr();
+                    naturalPtr = operatorView.getTypePtr();
                 }
             } else if (calls.size() > 0) {
-                returnPtr = calls.get(calls.size() - 1).request(pointer);
+                naturalPtr = calls.get(calls.size() - 1).getNaturalPtr(convertFlag);
             }
         }
-        if (returnPtr != null && pointer != null) {
-            returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
-        }
-        return returnPtr;
+        return naturalPtr;
     }
 
-    public boolean requestSet(Pointer pointer) {
-        if (calls.size() > 0) {
-            boolean canSet = calls.get(calls.size() - 1).requestSet(pointer);
-            returnPtr = calls.get(calls.size() - 1).getReturnType();
-            return canSet;
+    private void setCastGet(Pointer pointer) {
+
+    }
+
+    private boolean setCastOwn(Pointer pointer) {
+        if (pointer == null || castPtr == null) return true;
+
+        return Pointer.OwnTable(pointer, naturalPtr) == 0;
+    }
+
+    public void requestGet(Pointer pointer) {
+        if (pointer == null) pointer = naturalPtr;
+
+        requestPtr = pointer;
+
+        if (option != null) {
+            left.requestGet(cFile.langBoolPtr());
+            if (pointer != null) {
+                pointer = pointer.toLet(); // [GET CONVERSION]
+
+                right.requestGet(pointer);
+                option.requestGet(pointer);
+            } else {
+                cFile.erro(getTokenGroup(), "Incompatible Ternary Members values", this);
+            }
+        } else if (calls.size() > 0) {
+            calls.get(calls.size() - 1).requestGet(pointer);
+        } else if (operatorView == OperatorView.CAST) {
+            left.setCastGet(pointer);
+            center.requestGet(null);
         } else {
-            request(pointer);
-            return false;
+            if (naturalPtr != null && pointer.canReceive(naturalPtr) <= 0) {
+                cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            }
+        }
+
+    }
+
+    public void requestOwn(Pointer pointer) {
+        if (pointer == null) pointer = naturalPtr;
+
+        requestPtr = pointer;
+
+        if (option != null) {
+            left.requestGet(cFile.langBoolPtr());
+            if (pointer != null) {
+                right.requestOwn(pointer);
+                option.requestOwn(pointer);
+            } else {
+                cFile.erro(getTokenGroup(), "Incompatible Ternary Members values", this);
+            }
+        } else if (calls.size() > 0) {
+            calls.get(calls.size() - 1).requestOwn(pointer);
+        } else if (operatorView == OperatorView.CAST) {
+            if (left.setCastOwn(pointer)) {
+                center.requestOwn(null);
+            } else {
+                center.requestGet(null);
+            }
+        } else {
+            if (naturalPtr != null && pointer.canReceive(naturalPtr) <= 0) {
+                cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            }
+        }
+    }
+
+    public void requestSet() {
+        if (calls.size() > 0) {
+            calls.get(calls.size() - 1).requestSet();
+        } else {
+            cFile.erro(getTokenGroup(), "SET not allowed", this);
         }
     }
 

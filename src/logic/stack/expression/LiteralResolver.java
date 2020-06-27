@@ -201,4 +201,11 @@ public abstract class LiteralResolver {
         }
         return null;
     }
+
+    public static LiteralCall resolve(CallGroup group, LiteralCall inner) {
+        return new LiteralCall(group,
+                inner.getToken(), null,
+                inner.getLiteralType(), inner.resultBool, inner.resultNum, inner.resultDouble, null,
+                inner.isLong, inner.isFloat, inner.isDouble);
+    }
 }

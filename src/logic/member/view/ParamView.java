@@ -77,30 +77,26 @@ public class ParamView {
             if (dist == 0) return 0; // can handle (-2)?
             result[i] = dist;
         }
-        int isCloser = 2;
+        boolean equal = exists;
+        boolean alredyCloser = false;
+        boolean resultCloser = !exists;
         if (exists) {
             for (int i = 0; i < closer.length; i++) {
                 if (result[i] < closer[i]) {
-                    if (isCloser == 0) {
-                        isCloser = 2;
-                        break;
-                    }
-                    isCloser = 1;
+                    resultCloser = true;
+                    equal = false;
                 } else if (closer[i] < result[i]) {
-                    if (isCloser == 1) {
-                        isCloser = 2;
-                        break;
-                    }
-                    isCloser = 0;
+                    alredyCloser = true;
+                    equal = false;
                 }
             }
         }
-        if (isCloser == 2) {
+        if ((alredyCloser && resultCloser) || equal) {
             for (int i = 0; i < closer.length; i++) {
                 closer[i] = Math.min(result[i], closer[i]);
             }
             return 2;
-        } else if (isCloser == 1) {
+        } else if (resultCloser) {
             for (int i = 0; i < closer.length; i++) {
                 closer[i] = result[i];
             }
@@ -119,30 +115,26 @@ public class ParamView {
         if (dist == 0) return 0; // can handle [negatives]?
         result[1] = dist;
 
-        int isCloser = 2;
+        boolean equal = true;
+        boolean alredyCloser = false;
+        boolean resultCloser = !exists;
         if (exists) {
             for (int i = 0; i < closer.length; i++) {
                 if (result[i] < closer[i]) {
-                    if (isCloser == 0) {
-                        isCloser = 2;
-                        break;
-                    }
-                    isCloser = 1;
+                    resultCloser = true;
+                    equal = false;
                 } else if (closer[i] < result[i]) {
-                    if (isCloser == 1) {
-                        isCloser = 2;
-                        break;
-                    }
-                    isCloser = 0;
+                    alredyCloser = true;
+                    equal = false;
                 }
             }
         }
-        if (isCloser == 2) {
+        if ((alredyCloser && resultCloser) || equal) {
             for (int i = 0; i < closer.length; i++) {
                 closer[i] = Math.min(result[i], closer[i]);
             }
             return 2;
-        } else if (isCloser == 1) {
+        } else if (resultCloser) {
             for (int i = 0; i < closer.length; i++) {
                 closer[i] = result[i];
             }
@@ -165,5 +157,15 @@ public class ParamView {
 
     public Token getArgName(int index) {
         return params.getNameToken(index);
+    }
+
+    @Override
+    public String toString() {
+        String s = "";
+        for (int i = 0; i < getArgsCount(); i++) {
+            if (i > 0) s+= ", ";
+            s+= getArgTypePtr(i);
+        }
+        return s;
     }
 }

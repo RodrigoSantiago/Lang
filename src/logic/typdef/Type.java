@@ -109,8 +109,8 @@ public abstract class Type implements GenericOwner {
             } else if (state == 1 && token.key == Key.WORD) {
                 if (token.startsWith('_')) {
                     cFile.erro(nameToken, "Type names cannot start with underline (_)", this);
-                } else {
-                    if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
+                } else if (token.isComplex()) {
+                    cFile.erro(token, "Complex names are not allowed", this);
                 }
                 nameToken = token;
                 state = 2;
@@ -196,7 +196,7 @@ public abstract class Type implements GenericOwner {
         }
 
         if (template != null) {
-            template.load(this, null);
+            template.load(this);
         }
 
         Pointer[] p = template == null ? null : new Pointer[template.getCount()];

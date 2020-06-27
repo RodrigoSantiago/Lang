@@ -20,18 +20,19 @@ public class Struct extends Type {
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
+            if (parent == null) continue;
             if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined wrapper", this);
+                cFile.erro(pTypeToken.start, "Undefined Wrapper", this);
             } else if (parent.typeSource != null) {
-                cFile.erro(pTypeToken.start, "A struct could not have it's generic as wrapper", this);
+                cFile.erro(pTypeToken.start, "A struct could not have it's template as Wrapper", this);
             } else if (parent.type.isClass()) {
                 if (this.parent == null) {
                     this.parent = parent;
                 } else {
-                    cFile.erro(pTypeToken.start, "A struct could not have multiple wrappers", this);
+                    cFile.erro(pTypeToken.start, "A struct could not have multiple Wrappers", this);
                 }
-            } else{
-                cFile.erro(pTypeToken.start, "A struct wrapper should be a class", this);
+            } else {
+                cFile.erro(pTypeToken.start, "A struct Wrapper should be a Class", this);
             }
         }
 

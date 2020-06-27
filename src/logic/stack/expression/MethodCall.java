@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
+import logic.member.Method;
 import logic.member.view.MethodView;
 import logic.stack.Context;
 
@@ -42,25 +43,24 @@ public class MethodCall extends Call {
     }
 
     private void readArguments(Token start, Token end) {
-        Token contentStart = start;
         Token token = start;
         Token next;
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && token.key == Key.COMMA) {
-                arguments.add(new Expression(getLine(), contentStart, token));
-                state = 1;
-            } else if (state == 1 && token.key != Key.COMMA) {
-                contentStart = token;
-                state = 0;
-            }
-            if (next == end) {
-                if (state == 0) {
-                    arguments.add(new Expression(getLine(), contentStart, next));
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
+            if ((state == 0 || state == 2) && token.key != Key.COMMA) {
+                while (next != null && next != end && next.key != Key.COMMA) {
+                    next = next.getNext();
                 }
+                arguments.add(new Expression(getLine(), token, next));
+                state = 1;
+            } else if (state == 1 && token.key == Key.COMMA) {
+                state = 2;
+            } else {
+                cFile.erro(token, "Unexpected token", this);
+            }
+            if (next == end && state == 2) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
@@ -81,6 +81,7 @@ public class MethodCall extends Call {
                 methodView = methods.get(0);
             } else {
                 methodView = methods.get(0);
+                System.out.println(methodView);
             }
             context.jumpTo(methodView == null ? null : methodView.getTypePtr());
         }
@@ -92,20 +93,72 @@ public class MethodCall extends Call {
     }
 
     @Override
-    public Pointer request(Pointer pointer) {
-        if (methodView == null) return null;
-        if (returnPtr == null) {
-            returnPtr = methodView.getTypePtr();
-            if (returnPtr != null && pointer != null) {
-                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
-            }
+    public Pointer getNaturalPtr(Pointer pointer) {
+        if (naturalPtr == null && methodView != null) {
+            naturalPtr = methodView.getTypePtr();
         }
-        return returnPtr;
+        return naturalPtr;
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return false;
+    public void requestGet(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+        pointer = pointer.toLet();
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            return;
+        }
+
+        if (methodView != null) {
+            Method method = methodView.method;
+            if (!methodView.isPublic() && !methodView.isPrivate()) {
+                if (!getStack().cFile.library.equals(method.cFile.library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                }
+            } else if (methodView.isPrivate()) {
+                if (!getStack().cFile.equals(method.cFile)) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void requestOwn(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            return;
+        }
+
+        if (Pointer.OwnTable(pointer, naturalPtr) == -1) {
+            cFile.erro(token, "Cannot convert a STRONG reference to a WEAK reference", this);
+        }
+
+        if (methodView != null) {
+            Method method = methodView.method;
+            if (!methodView.isPublic() && !methodView.isPrivate()) {
+                if (!getStack().cFile.library.equals(method.cFile.library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                }
+            } else if (methodView.isPrivate()) {
+                if (!getStack().cFile.equals(method.cFile)) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void requestSet() {
+        cFile.erro(getToken(), "SET not allowed", this);
     }
 }

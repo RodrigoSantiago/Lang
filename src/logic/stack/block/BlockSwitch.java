@@ -4,7 +4,9 @@ import content.Key;
 import content.Parser;
 import content.Token;
 import content.TokenGroup;
+import logic.Pointer;
 import logic.stack.Block;
+import logic.stack.Context;
 import logic.stack.Line;
 import logic.stack.expression.Expression;
 import logic.stack.line.LineCase;
@@ -77,8 +79,11 @@ public class BlockSwitch extends Block {
 
     @Override
     public void load() {
+        if (expression != null) {
+            expression.load(new Context(stack));
+            expression.requestGet(null);
+        }
         super.load();
-        // TODO Check (Literal Cast OR Static Final)
     }
 
     @Override
@@ -105,6 +110,7 @@ public class BlockSwitch extends Block {
             }
             defaultCase = line;
         } else {
+            line.setSwitch(this);
             caseLines.add(line);
         }
     }
@@ -145,5 +151,9 @@ public class BlockSwitch extends Block {
         if (caseLines.size() == 0) {
             cFile.erro(start, "A Switch Statment must have a case or default", this);
         }
+    }
+
+    public Pointer getTypePtr() {
+        return expression == null ? null : expression.getReturnType();
     }
 }

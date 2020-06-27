@@ -107,10 +107,13 @@ public class Method extends Member implements GenericOwner {
                 typePtr = Pointer.voidPointer;
             } else {
                 typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, this, isLet());
+                if (typePtr == null) {
+                    typePtr = cFile.langObjectPtr(isLet());
+                }
             }
 
             if (template != null) {
-                template.load(null, isStatic() ? null : type);
+                template.load(null);
                 if (!isStatic()) {
                     boolean templateMiss = false;
                     if (type.template != null) {
@@ -140,7 +143,7 @@ public class Method extends Member implements GenericOwner {
     public void make() {
         if (nameToken.equals("method")) {
             if (contentToken != null) {
-                Stack stack = new Stack(cFile, type.self, typePtr, false, isStatic(), false);
+                Stack stack = new Stack(cFile, type.self, typePtr, this, false, isStatic(), false);
                 stack.read(contentToken.start, contentToken.end, true);
                 stack.load();
             }

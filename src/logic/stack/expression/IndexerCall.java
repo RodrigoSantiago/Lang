@@ -5,15 +5,16 @@ import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
 import logic.member.view.IndexerView;
-import logic.member.view.MethodView;
 import logic.stack.Context;
 
 import java.util.ArrayList;
 
 public class IndexerCall extends Call {
 
-    IndexerView indexerView;
-    ArrayList<Expression> arguments = new ArrayList<>();
+    private IndexerView indexerView;
+    private ArrayList<Expression> arguments = new ArrayList<>();
+
+    private boolean useGet, useSet, useOwn;
 
     public IndexerCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -39,25 +40,24 @@ public class IndexerCall extends Call {
     }
 
     private void readArguments(Token start, Token end) {
-        Token contentStart = start;
         Token token = start;
         Token next;
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && token.key == Key.COMMA) {
-                arguments.add(new Expression(getLine(), contentStart, token));
-                state = 1;
-            } else if (state == 1 && token.key != Key.COMMA) {
-                contentStart = token;
-                state = 0;
-            }
-            if (next == end) {
-                if (state == 0) {
-                    arguments.add(new Expression(getLine(), contentStart, next));
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
+            if ((state == 0 || state == 2) && token.key != Key.COMMA) {
+                while (next != null && next != end && next.key != Key.COMMA) {
+                    next = next.getNext();
                 }
+                arguments.add(new Expression(getLine(), token, next));
+                state = 1;
+            } else if (state == 1 && token.key == Key.COMMA) {
+                state = 2;
+            } else {
+                cFile.erro(token, "Unexpected token", this);
+            }
+            if (next == end && state == 2) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
@@ -83,20 +83,115 @@ public class IndexerCall extends Call {
     }
 
     @Override
-    public Pointer request(Pointer pointer) {
-        if (indexerView == null) return null;
-        if (returnPtr == null) {
-            returnPtr = indexerView.getTypePtr();
-            if (returnPtr != null && pointer != null) {
-                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
+    public void requestGet(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+        pointer = pointer.toLet();
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            return;
+        }
+
+        useGet = true;
+
+        if (indexerView != null) {
+            if (!indexerView.hasGet()) {
+                cFile.erro(token, "GET member not defined", this); // [impossible ?]
+            } else if (!indexerView.isGetPublic() && !indexerView.isGetPrivate()) {
+                if (!getStack().cFile.library.equals(indexerView.getGetFile().library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                }
+            } else if (indexerView.isGetPrivate()) {
+                if (!getStack().cFile.equals(indexerView.getGetFile())) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
+                }
             }
         }
-        return returnPtr;
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return true;
+    public void requestOwn(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            return;
+        }
+
+        int table = Pointer.OwnTable(pointer, naturalPtr);
+
+        if (table == 0) useOwn = true;
+        else if (table == 1) useGet = true;
+        else if (table == 2) useOwn = useGet = true;
+        else cFile.erro(token, "Cannot convert a STRONG reference to a WEAK reference", this);
+
+        if (indexerView != null) {
+            if (useOwn && indexerView.hasOwn()) {
+                if (!indexerView.isOwnPublic() && !indexerView.isOwnPrivate()) {
+                    if (!getStack().cFile.library.equals(indexerView.getOwnFile().library)) {
+                        if (useGet) {
+                            useOwn = false;
+                        } else {
+                            cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                        }
+                    }
+                } else if (indexerView.isOwnPrivate()) {
+                    if (!getStack().cFile.equals(indexerView.getOwnFile())) {
+                        if (useGet) {
+                            useOwn = false;
+                        } else {
+                            cFile.erro(token, "Cannot acess a Private member from other file", this);
+                        }
+                    }
+                }
+            } else {
+                if (useGet) {
+                    useOwn = false;
+                } else {
+                    cFile.erro(token, "OWN member not defined", this);
+                }
+            }
+
+            if (useGet && !useOwn) {
+                if (!indexerView.hasGet()) {
+                    cFile.erro(token, "GET member not defined", this); // [impossible ?]
+                } else if (!indexerView.isGetPublic() && !indexerView.isGetPrivate()) {
+                    if (!getStack().cFile.library.equals(indexerView.getGetFile().library)) {
+                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                    }
+                } else if (indexerView.isGetPrivate()) {
+                    if (!getStack().cFile.equals(indexerView.getGetFile())) {
+                        cFile.erro(token, "Cannot acess a Private member from other file", this);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void requestSet() {
+        useSet = true;
+
+        if (indexerView != null) {
+            if (indexerView.hasSet()) {
+                if (!indexerView.isSetPublic() && !indexerView.isSetPrivate()) {
+                    if (!getStack().cFile.library.equals(indexerView.getSetFile().library)) {
+                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                    }
+                } else if (indexerView.isSetPrivate()) {
+                    if (!getStack().cFile.equals(indexerView.getSetFile())) {
+                        cFile.erro(token, "Cannot acess a Private member from other file", this);
+                    }
+                }
+            }  else {
+                cFile.erro(token, "SET member not defined", this);
+            }
+        }
     }
 }

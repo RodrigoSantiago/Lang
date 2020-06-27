@@ -2,6 +2,7 @@ package logic.stack.line;
 
 import content.Key;
 import content.Token;
+import content.TokenGroup;
 import logic.stack.Block;
 import logic.stack.Context;
 import logic.stack.Line;
@@ -10,6 +11,7 @@ import logic.stack.expression.Expression;
 public class LineExpression extends Line {
 
     Expression expression;
+    TokenGroup expressionGroup;
 
     public LineExpression(Block block, Token start, Token end) {
         super(block, start, end);
@@ -29,6 +31,7 @@ public class LineExpression extends Line {
             }
             token = next;
         }
+        expressionGroup = new TokenGroup(start, last);
         expression = new Expression(this, start, last);
     }
 
@@ -36,8 +39,10 @@ public class LineExpression extends Line {
     public void load() {
         if (expression != null) {
             expression.load(new Context(stack));
-            expression.request(null);
-            // TODO - WARNING USELESS OPERATIONS
+            expression.requestGet(null);
+            if (expression.isLiteral()) {
+                cFile.erro(expressionGroup, "Must be a call", this);
+            }
         }
     }
 }

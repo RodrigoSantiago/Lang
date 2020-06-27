@@ -1,10 +1,12 @@
 package logic.member.view;
 
 import content.Token;
+import data.ContentFile;
 import logic.Pointer;
 import logic.member.Property;
 import logic.member.Variable;
 import logic.member.Num;
+import logic.stack.Stack;
 import logic.typdef.Type;
 
 public class FieldView {
@@ -61,6 +63,18 @@ public class FieldView {
         srcGet = fieldView.srcGet;
         srcSet = fieldView.srcSet;
         srcOwn = fieldView.srcOwn;
+    }
+
+    public ContentFile getGetFile() {
+        return srcGet != null ? srcGet.cFile : srcPro != null ? srcPro.cFile : srcVar != null ? srcVar.cFile : srcNum.cFile;
+    }
+
+    public ContentFile getSetFile() {
+        return srcSet != null ? srcSet.cFile : srcPro != null ? srcPro.cFile : srcVar != null ? srcVar.cFile : srcNum.cFile;
+    }
+
+    public ContentFile getOwnFile() {
+        return srcOwn != null ? srcOwn.cFile : srcPro != null ? srcPro.cFile : srcVar != null ? srcVar.cFile : srcNum.cFile;
     }
 
     public Token getName() {
@@ -192,5 +206,9 @@ public class FieldView {
 
     public boolean isOwnPrivate() {
         return srcPro != null ? srcOwn.isOwnPrivate() : srcVar != null ? srcVar.isPrivate() : false;
+    }
+
+    public boolean isReadOnly(Stack stack) {
+        return srcVar != null ? srcVar.isFinal() && !stack.isConstructor() : srcNum != null;
     }
 }

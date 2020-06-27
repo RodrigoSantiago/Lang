@@ -84,11 +84,13 @@ public class Template {
         }
     }
 
-    public void load(Type cycleOwner, GenericOwner genericOwner) {
+    public void load(Type owner) {
         for (Generic generic : generics) {
             if (generic.typeToken != null) {
-                generic.basePtr = cFile.getPointer(generic.typeToken.start, generic.typeToken.end,
-                        cycleOwner, genericOwner, false);
+                generic.basePtr = cFile.getPointer(generic.typeToken.start, generic.typeToken.end, owner, null, false);
+                if (generic.basePtr == null) {
+                    generic.basePtr = cFile.langObjectPtr();
+                }
                 if (generic.basePtr.type != null && generic.basePtr.type.isFinal()) {
                     generic.basePtr = cFile.langObjectPtr();
                     cFile.erro(generic.typeToken.start, "A Generic cannot be a final Type", this);

@@ -13,15 +13,6 @@ public class TokenGroup {
         this.end = end;
     }
 
-    public static Token lastToken(Token next, Token end) {
-        Token last = next;
-        while (last != end) {
-            next = last;
-            last = next.getNext();
-        }
-        return next;
-    }
-
     public static Token nextType(Token next, Token end) {
         if (next != end && (next.key == Key.GENERIC)) {
             next = next.getNext();

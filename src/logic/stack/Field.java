@@ -51,4 +51,8 @@ public class Field {
     public boolean hasOwn() {
         return hasOwn;
     }
+
+    public boolean isReadOnly(Stack stack) {
+        return false;
+    }
 }

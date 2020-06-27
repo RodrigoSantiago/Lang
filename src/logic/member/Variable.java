@@ -70,6 +70,9 @@ public class Variable extends Member {
     public boolean load() {
         if (typeToken != null) {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type, isLet());
+            if (typePtr == null) {
+                typePtr = cFile.langObjectPtr(isLet());
+            }
 
             return nameTokens.size() > 0 ;
         }

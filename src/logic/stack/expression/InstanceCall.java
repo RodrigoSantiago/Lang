@@ -5,10 +5,8 @@ import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
 import logic.member.view.ConstructorView;
-import logic.member.view.MethodView;
 import logic.stack.Context;
 import logic.stack.Line;
-import logic.stack.Stack;
 import logic.stack.StackExpansion;
 
 import java.util.ArrayList;
@@ -73,25 +71,24 @@ public class InstanceCall extends Call {
     }
 
     private void readArguments(Line line, ArrayList<Expression> arguments, Token start, Token end) {
-        Token contentStart = start;
         Token token = start;
         Token next;
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && token.key == Key.COMMA) {
-                arguments.add(new Expression(line, contentStart, token));
-                state = 1;
-            } else if (state == 1 && token.key != Key.COMMA) {
-                contentStart = token;
-                state = 0;
-            }
-            if (next == end) {
-                if (state == 0) {
-                    arguments.add(new Expression(line, contentStart, next));
-                } else {
-                    cFile.erro(token, "Unexpected end of tokens", this);
+            if ((state == 0 || state == 2) && token.key != Key.COMMA) {
+                while (next != null && next != end && next.key != Key.COMMA) {
+                    next = next.getNext();
                 }
+                arguments.add(new Expression(line, token, next));
+                state = 1;
+            } else if (state == 1 && token.key == Key.COMMA) {
+                state = 2;
+            } else {
+                cFile.erro(token, "Unexpected token", this);
+            }
+            if (next == end && state == 2) {
+                cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;
         }
@@ -105,6 +102,7 @@ public class InstanceCall extends Call {
             typePtr = context.getPointer(typeToken);
 
             // TODO - ARRAY/INIT BEHAVIOR
+            // TODO [DEFAULT CONSTRUCTOR PROBLEMATIC]
             ArrayList<ConstructorView> constructors = context.findConstructor(typePtr, arguments);
             if (constructors == null || constructors.size() == 0) {
                 cFile.erro(token, "Constructor Not Found", this);
@@ -124,19 +122,38 @@ public class InstanceCall extends Call {
     }
 
     @Override
-    public Pointer request(Pointer pointer) {
-        if (returnPtr == null) {
-            returnPtr = typePtr;
-            if (returnPtr != null && pointer != null) {
-                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
-            }
-        }
-        return returnPtr;
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        naturalPtr = typePtr;
+        return naturalPtr;
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return false;
+    public void requestGet(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+        pointer = pointer.toLet();
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+        }
+    }
+
+    @Override
+    public void requestOwn(Pointer pointer) {
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+        }
+    }
+
+    @Override
+    public void requestSet() {
+        cFile.erro(getToken(), "SET not allowed", this);
     }
 }

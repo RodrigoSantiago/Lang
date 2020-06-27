@@ -7,14 +7,15 @@ import logic.Pointer;
 import logic.member.view.FieldView;
 import logic.stack.Context;
 import logic.stack.Field;
-import logic.stack.LocalVar;
 import logic.typdef.Type;
 
 public class FieldCall extends Call {
 
-    Type staticCall;
-    FieldView fieldView;
-    Field field;
+    private Type staticCall;
+    private FieldView fieldView;
+    private Field field;
+
+    private boolean useGet, useSet, useOwn;
 
     public FieldCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -67,11 +68,17 @@ public class FieldCall extends Call {
                         context.jumpTo(staticCall, true);
                     }
                 } else {
+                    if (context.isStatic() && !fieldView.isStatic()) {
+                        cFile.erro(token, "Cannot use a Instance Member on a Static Environment", this);
+                    }
+                    if (!context.isStatic() && fieldView.isStatic()) {
+                        cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
+                    }
                     context.jumpTo(fieldView.getTypePtr());
                 }
             } else {
                 if (!getLine().isChildOf(field.getSource())) {
-                    cFile.erro(token, "Field Not acessible", this);
+                    cFile.erro(token, "Field Not Acessible", this);
                 }
                 context.jumpTo(field.getTypePtr());
             }
@@ -84,25 +91,153 @@ public class FieldCall extends Call {
                 fieldView != null ? pointer.canReceive(fieldView.getTypePtr()) : 0;
     }
 
-    @Override
-    public Pointer request(Pointer pointer) {
-        if (staticCall != null) {
-            cFile.erro(getToken(), "Unexpected identifier", this);
-            return null;
-        }
-        if (field == null && fieldView == null) return null;
-        if (returnPtr == null) {
-            returnPtr = field != null ? field.getTypePtr() : fieldView.getTypePtr();
-            if (returnPtr != null && pointer != null) {
-                returnPtr = pointer.canReceive(returnPtr) > 0 ? pointer : null;
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        if (naturalPtr == null) {
+            if (field != null) {
+                naturalPtr = field.getTypePtr();
+            } else if (fieldView != null) {
+                naturalPtr = fieldView.getTypePtr();
             }
         }
-        return returnPtr;
+        return naturalPtr;
     }
 
     @Override
-    public boolean requestSet(Pointer pointer) {
-        request(pointer);
-        return true;
+    public void requestGet(Pointer pointer) {
+        if (staticCall != null) {
+            cFile.erro(getToken(), "Unexpected identifier", this);
+        }
+
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+        pointer = pointer.toLet();
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            return;
+        }
+
+        useGet = true;
+
+        if (fieldView != null) {
+            if (!fieldView.hasGet()) {
+                cFile.erro(token, "GET member not defined", this); // [impossible ?]
+            } else if (!fieldView.isGetPublic() && !fieldView.isGetPrivate()) {
+                if (!getStack().cFile.library.equals(fieldView.getGetFile().library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                }
+            } else if (fieldView.isGetPrivate()) {
+                if (!getStack().cFile.equals(fieldView.getGetFile())) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void requestOwn(Pointer pointer) {
+        if (staticCall != null) {
+            cFile.erro(getToken(), "Unexpected identifier", this);
+        }
+
+        if (getNaturalPtr(pointer) == null) return;
+        if (pointer == null) pointer = naturalPtr;
+
+        requestPtr = pointer;
+
+        if (pointer.canReceive(naturalPtr) <= 0) {
+            cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+            return;
+        }
+
+        int table = Pointer.OwnTable(pointer, naturalPtr);
+
+        if (table == 0) useOwn = true;
+        else if (table == 1) useGet = true;
+        else if (table == 2) useOwn = useGet = true;
+        else cFile.erro(token, "Cannot convert a STRONG reference to a WEAK reference", this);
+
+        if (fieldView != null) {
+            if (useOwn && fieldView.hasOwn()) {
+                if (!fieldView.isOwnPublic() && !fieldView.isOwnPrivate()) {
+                    if (!getStack().cFile.library.equals(fieldView.getOwnFile().library)) {
+                        if (useGet) {
+                            useOwn = false;
+                        } else {
+                            cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                        }
+                    }
+                } else if (fieldView.isOwnPrivate()) {
+                    if (!getStack().cFile.equals(fieldView.getOwnFile())) {
+                        if (useGet) {
+                            useOwn = false;
+                        } else {
+                            cFile.erro(token, "Cannot acess a Private member from other file", this);
+                        }
+                    }
+                } else if (fieldView.isReadOnly(getStack())) {
+                    cFile.erro(token, "Cannot SET a final variable", this);
+                }
+            } else {
+                if (useGet) {
+                    useOwn = false;
+                } else {
+                    cFile.erro(token, "OWN member not defined", this);
+                }
+            }
+
+            if (useGet && !useOwn) {
+                if (!fieldView.hasGet()) {
+                    cFile.erro(token, "GET member not defined", this); // [impossible ?]
+                } else if (!fieldView.isGetPublic() && !fieldView.isGetPrivate()) {
+                    if (!getStack().cFile.library.equals(fieldView.getGetFile().library)) {
+                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                    }
+                } else if (fieldView.isGetPrivate()) {
+                    if (!getStack().cFile.equals(fieldView.getGetFile())) {
+                        cFile.erro(token, "Cannot acess a Private member from other file", this);
+                    }
+                }
+            }
+        } else if (field != null) {
+            if (field.isReadOnly(getStack())) {
+                if (useGet) {
+                    useOwn = false;
+                } else {
+                    cFile.erro(token, "Cannot OWN a final variable", this);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void requestSet() {
+        if (staticCall != null) {
+            cFile.erro(getToken(), "Unexpected identifier", this);
+        }
+
+        useSet = true;
+
+        if (fieldView != null) {
+            if (fieldView.hasSet()) {
+                if (!fieldView.isSetPublic() && !fieldView.isSetPrivate()) {
+                    if (!getStack().cFile.library.equals(fieldView.getSetFile().library)) {
+                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                    }
+                } else if (fieldView.isSetPrivate()) {
+                    if (!getStack().cFile.equals(fieldView.getSetFile())) {
+                        cFile.erro(token, "Cannot acess a Private member from other file", this);
+                    }
+                } else if (fieldView.isReadOnly(getStack())) {
+                    cFile.erro(token, "Cannot SET a final variable", this);
+                }
+            }  else {
+                cFile.erro(token, "SET member not defined", this);
+            }
+        } else if (field.isReadOnly(getStack())) {
+            cFile.erro(token, "Cannot SET a final variable", this);
+        }
     }
 }

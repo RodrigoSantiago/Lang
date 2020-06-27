@@ -77,11 +77,6 @@ public class Context {
         return stack.cFile.findType(typeName);
     }
 
-    public void resolve(Expression expression) {
-        expression.load(new Context(stack));
-        expression.request(null);
-    }
-
     public Field findLocalField(Token nameToken) {
         if (!isBegin) return null;
 
@@ -93,7 +88,6 @@ public class Context {
 
         FieldView fieldView = type.getField(nameToken);
         if (fieldView != null) {
-            if (isStatic && !fieldView.isStatic()) return null;
             if (!isStatic && pointer.pointers != null) fieldView = new FieldView(pointer, fieldView);
         }
         return fieldView;
@@ -110,9 +104,9 @@ public class Context {
 
             ArrayList<MethodView> methods = type.getMethod(nameToken);
             for (MethodView mv : methods) {
-                if (!isStatic && pointer.pointers != null) mv = new MethodView(pointer, mv);
-
                 if (mv.getParams().getArgsCount() == arguments.size()) {
+                    if (!isStatic && pointer.pointers != null) mv = new MethodView(pointer, mv);
+
                     int ret = mv.getParams().verifyArguments(closer, result, arguments, found != null);
                     if (ret == 0) {
                         // invalid
@@ -126,16 +120,16 @@ public class Context {
                     }
                 }
             }
-            if (found != null && found.size() == 1) {
+            if (found != null && found.size() > 0) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
-                    arg.request(found.get(i).getParams().getArgTypePtr(i));
+                    arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
                 }
-                return found;
             }
+            return found;
         }
         for (Expression arg : arguments) {
-            arg.request(null);
+            arg.requestOwn(null);
         }
         return null;
     }
@@ -151,9 +145,9 @@ public class Context {
 
             for (int it = 0; it < type.getIndexersCount(); it++) {
                 IndexerView iv = type.getIndexer(it);
-                if (!isStatic && pointer.pointers != null) iv = new IndexerView(pointer, iv);
-
                 if (iv.getParams().getArgsCount() == arguments.size()) {
+                    if (!isStatic && pointer.pointers != null) iv = new IndexerView(pointer, iv);
+
                     int ret = iv.getParams().verifyArguments(closer, result, arguments, found != null);
                     if (ret == 0) {
                         // invalid
@@ -170,13 +164,13 @@ public class Context {
             if (found != null && found.size() == 1) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
-                    arg.request(found.get(i).getParams().getArgTypePtr(i));
+                    arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
                 }
                 return found;
             }
         }
         for (Expression arg : arguments) {
-            arg.request(null);
+            arg.requestOwn(null);
         }
         return null;
     }
@@ -211,13 +205,13 @@ public class Context {
             if (found != null && found.size() == 1) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
-                    arg.request(found.get(i).getParams().getArgTypePtr(i));
+                    arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
                 }
                 return found;
             }
         }
         for (Expression arg : arguments) {
-            arg.request(null);
+            arg.requestOwn(null);
         }
         return null;
     }
@@ -225,31 +219,38 @@ public class Context {
     public OperatorView findOperator(CallGroup left, CallGroup center) {
         center.load(new Context(stack));
 
-        Token opToken = left.getOperatorToken();
-        if (opToken != null && (opToken.key == Key.INC || opToken.key == Key.DEC)) {
-            if (!center.requestSet(null)) {
-                stack.cFile.erro(center.getTokenGroup(), "This value cannot be SET", this);
-            }
-        } else {
-            center.request(null);
-        }
+        Pointer ptr = center.getNaturalPtr();
 
-        Pointer ptr = center.getReturnType();
         if (left.isCastingOperator()) {
             Pointer castPtr = left.getCastPtr();
-            if (castPtr == null) return null;
-            if (castPtr.toLet().canReceive(ptr) != 0) return OperatorView.CAST;
-            if (castPtr.type != null && castPtr.type.isInterface()) return OperatorView.CAST;
-            if (ptr.type != null && ptr.type.casts.contains(castPtr)) return OperatorView.CAST;
-            if (ptr.type != null && ptr.type.autoCast.contains(castPtr)) return OperatorView.CAST;
-        } else if (ptr != null && ptr.type != null) {
-            ArrayList<OperatorView> operators = ptr.type.getOperator(opToken);
-            for (OperatorView ov : operators) {
-                if (ov.getParams().getArgsCount() == 1) {
-                    return ov;
+            if (castPtr == null || ptr == null) return null;
+            if (castPtr.isOpen()) return OperatorView.CAST;
+            if (castPtr.type != null && castPtr.type.isPointer()) return OperatorView.CAST;
+            if (castPtr.type != null && ptr.type != null && castPtr.type.isValue() && ptr.type.isValue()) {
+                if (ptr.type != null && ptr.type.casts.contains(castPtr)) return OperatorView.CAST;
+                if (ptr.type != null && ptr.type.autoCast.contains(castPtr)) return OperatorView.CAST;
+            } else {
+                if (castPtr.canReceive(ptr) > 0 || ptr.canReceive(castPtr) > 0) return OperatorView.CAST;
+            }
+            return null;
+        } else {
+
+            Token opToken = left.getOperatorToken();
+            if (opToken.key == Key.INC || opToken.key == Key.DEC) {
+                center.requestSet();
+            }
+
+            if (ptr != null && ptr.type != null) {
+                ArrayList<OperatorView> operators = ptr.type.getOperator(opToken);
+                for (OperatorView ov : operators) {
+                    if (ov.getParams().getArgsCount() == 1) {
+                        center.requestOwn(ov.getParams().getArgTypePtr(0));
+                        return ov;
+                    }
                 }
             }
         }
+        center.requestOwn(null);
         return null;
     }
 
@@ -260,40 +261,37 @@ public class Context {
         boolean isComposite = false;
         Token opToken = center.getOperatorToken();
         if (opToken.key == Key.IS || opToken.key == Key.ISNOT) {
-            left.request(null);
-            // right.request(null); -> no request
+            left.requestGet(null);
+            // right.requestGet(null); [TYPE CALL]
+
             if (!right.isTypeCall()) {
-                right.request(null);
-                stack.cFile.erro(left.getTokenGroup(), "This value cannot be SET", this);
+                right.requestGet(null);
+                stack.cFile.erro(left.getTokenGroup(), "Type expected", this);
             }
             ArrayList<OperatorView> operators = new ArrayList<>();
             operators.add(opToken.key == Key.IS ? OperatorView.IS : OperatorView.ISNOT);
             return operators;
         } else if (opToken.key == Key.SETVAL) {
-            if (!left.requestSet(null)) {
-                stack.cFile.erro(left.getTokenGroup(), "This value cannot be SET", this);
-            }
-            if (right.request(left.getReturnType()) == null && left.getReturnType() != null) {
-                stack.cFile.erro(right.getTokenGroup(), "Incompatible casting operation", this);
-            }
+            left.requestSet();
+            right.requestOwn(left.getReturnType());
+
             ArrayList<OperatorView> operators = new ArrayList<>();
             operators.add(OperatorView.SET);
             return operators;
-        } else if (Key.getComposite(opToken.key) != opToken.key) {
-            if (!left.requestSet(null)) {
-                stack.cFile.erro(left.getTokenGroup(), "This value cannot be SET", this);
-            }
-            isComposite = true;
-            opToken.key = Key.getComposite(opToken.key);
-            opToken = new Token(opToken.key.string);
-        } else {
-            left.request(null);
         }
 
-        Pointer ptr = left.getReturnType();
-        if (ptr != null && ptr.type != null) {
-            int repeat = 0;
-            do {
+        if (Key.getComposite(opToken.key) != opToken.key) {
+            left.requestSet();
+
+            isComposite = true;
+            Key key = Key.getComposite(opToken.key);
+            opToken = new Token(key.string, 0, key.string.length(), key, false);
+        }
+
+        int repeat = 0;
+        Pointer ptr = left.getNaturalPtr();
+        do {
+            if (ptr != null && ptr.type != null) {
                 ArrayList<OperatorView> found = null;
                 final int[] closer = new int[2];
                 final int[] result = new int[2];
@@ -301,6 +299,8 @@ public class Context {
                 ArrayList<OperatorView> operators = ptr.type.getOperator(opToken);
                 for (OperatorView ov : operators) {
                     if (ov.getParams().getArgsCount() == 2) {
+                        if (!isStatic && pointer.pointers != null) ov = new OperatorView(pointer, ov);
+
                         int ret = ov.getParams().verifyArguments(closer, result, left, right, found != null);
                         if (ret == 0) {
                             // invalid
@@ -315,21 +315,27 @@ public class Context {
                     }
                 }
                 if (found != null && found.size() == 1) {
-                    Pointer returnType = right.request(found.get(0).getParams().getArgTypePtr(1));
-                    if (isComposite && left.getReturnType() != null && returnType != null &&
-                            left.getReturnType().canReceive(returnType) <= 0) {
-                        stack.cFile.erro(right.getTokenGroup(), "Incompatible casting operation", this);
+                    left.requestOwn(found.get(0).getParams().getArgTypePtr(0));
+                    right.requestOwn(found.get(0).getParams().getArgTypePtr(1));
+
+                    if (isComposite) {
+                        Pointer returnType = found.get(0).getTypePtr();
+
+                        if (ptr.canReceive(returnType) <= 0) {
+                            stack.cFile.erro(left.getTokenGroup(), "Cannot cast [" + returnType + "] to [" + ptr + "]", this);
+                        } else if (Pointer.OwnTable(returnType, ptr) == -1) {
+                            stack.cFile.erro(left.getTokenGroup(), "Cannot convert a STRONG reference to a WEAK reference", this);
+                        }
                     }
                     return found;
-                } else {
-                    CallGroup swip = left;
-                    left = right;
-                    right = swip;
+                } else if (!isComposite) {
+                    ptr = right.getNaturalPtr();
                     repeat += 1;
                 }
-            } while (repeat == 1);
-        }
-        right.request(null);
+            }
+        } while (repeat == 1);
+
+        right.requestOwn(null);
         return null;
     }
 }

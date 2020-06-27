@@ -65,7 +65,11 @@ public class Parameters {
     public boolean load(GenericOwner owner) {
         for (Arg arg : args) {
             arg.typePtr = cFile.getPointer(arg.typeToken.start, arg.typeToken.end, null, owner, arg.isLet);
-            if (!hasGeneric && arg.typePtr != null && arg.typePtr.hasGeneric()) {
+            if (arg.typePtr == null) {
+                arg.typePtr = cFile.langObjectPtr(arg.isLet);
+            }
+
+            if (!hasGeneric && arg.typePtr.hasGeneric()) {
                 hasGeneric = true;
             }
         }

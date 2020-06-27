@@ -23,9 +23,7 @@ public class Interface extends Type {
 
         for (TokenGroup pTypeToken : parentTypeTokens) {
             Pointer parent = cFile.getPointer(pTypeToken.start, pTypeToken.end, this, this, false);
-            if (parent.type == null) {
-                cFile.erro(pTypeToken.start, "Undefined type", this);
-            } else {
+            if (parent != null) {
                 cFile.erro(pTypeToken.start, "An Interface cannot inherit", this);
             }
         }

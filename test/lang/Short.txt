@@ -38,6 +38,12 @@ public static struct short : Short {
     }
     int operator auto(short value) {
     }
+    long operator auto(short value) {
+    }
+    float operator auto(short value) {
+    }
+    double operator auto(short value) {
+    }
 
     bool operator ==(short value, double other) {
     }

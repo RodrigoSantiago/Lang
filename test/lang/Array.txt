@@ -2,6 +2,7 @@ namespace lang;
 
 public class Array<T> : List<T> {
 
+    // TODO - STACK, IF FINAL LOCAL, INITIATED WITH BRACES
     private final int length;
     public int Length {
         get {

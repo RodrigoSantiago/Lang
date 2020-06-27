@@ -41,7 +41,7 @@ public class InnerCall extends Call {
         if (innerExpression == null) {
             context.jumpTo(null);
         } else {
-            Context internal = new Context(getStack());
+            Context internal = new Context(context);
             innerExpression.load(internal);
             context.jumpToContext(internal);
         }

@@ -181,19 +181,15 @@ public class CallGroup {
         calls.add(call);
     }
 
-    public Pointer getNaturalPtr() {
-        return naturalPtr;
-    }
-
     public Pointer getReturnType() {
         return requestPtr;
     }
 
     public void load(Context context) {
         if (left != null && center != null && right != null && colon != null && option != null) {
-            left.load(new Context(getStack()));
-            right.load(new Context(getStack()));
-            option.load(new Context(getStack()));
+            left.load(new Context(context));
+            right.load(new Context(context));
+            option.load(new Context(context));
 
             // [Literal Resolve]
             if (left.isLiteral() && right.isLiteral() && option.isLiteral()) {
@@ -339,7 +335,7 @@ public class CallGroup {
     }
 
     public void requestGet(Pointer pointer) {
-        if (pointer == null) pointer = naturalPtr;
+        if (pointer == null) pointer = getNaturalPtr(pointer);
 
         requestPtr = pointer;
 
@@ -367,7 +363,7 @@ public class CallGroup {
     }
 
     public void requestOwn(Pointer pointer) {
-        if (pointer == null) pointer = naturalPtr;
+        if (pointer == null) pointer = getNaturalPtr(pointer);
 
         requestPtr = pointer;
 
@@ -400,6 +396,11 @@ public class CallGroup {
         } else {
             cFile.erro(getTokenGroup(), "SET not allowed", this);
         }
+    }
+
+    public boolean isSetExpression() {
+        return left != null && center != null && right != null && colon == null && option == null &&
+                center.getOperatorToken() != null && center.getOperatorToken().key.isSet();
     }
 
     @Override

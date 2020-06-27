@@ -177,7 +177,10 @@ public class Pointer {
 
         // Auto Boxing
         if (other.type.isValue()) {
-            return canReceive(other.type.parent) + 1;
+            int dif = canReceive(other.type.parent);
+            if (dif > 0) {
+                return dif + 1;
+            }
         }
         // Auto Unboxing
         if (other.type.isClass() && this.type.isValue()) {

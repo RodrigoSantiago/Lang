@@ -48,6 +48,10 @@ public static struct int : Int {
     }
     long operator auto(int value) {
     }
+    float operator auto(int value) {
+    }
+    double operator auto(int value) {
+    }
 
     bool operator ==(int value, double other) {
     }

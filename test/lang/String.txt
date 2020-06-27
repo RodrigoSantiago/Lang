@@ -54,6 +54,7 @@ public static struct string : String {
         lang_string(lang::string* data);
         lang_string(const char* str);
         ~lang_string();
+        lang_string& operator=(const lang_string &str);
     }
 
     native (source) {
@@ -70,6 +71,13 @@ public static struct string : String {
         }
         lang_string::~lang_string() {
             lang::text::dsg(data);
+        }
+        lang_string& lang_string::operator=() {
+            if (this->data != other->data) {
+                lang::text::dsg(data);
+                this->data = other->data;
+                lang::text::asg(data);
+            }
         }
     }
 
@@ -223,16 +231,6 @@ public static struct string : String {
     }
 
     string operator +(string value, string other) {
-    }
-
-    string operator =(string other) {
-        native (source) {
-            if (this->data != other->data) {
-                lang::text::dsg(data);
-                this->data = other->data;
-                lang::text::asg(data);
-            }
-        }
     }
 }
 

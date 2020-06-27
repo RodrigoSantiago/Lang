@@ -107,37 +107,11 @@ public class  Lexer {
                     if (!isType) {
                         Token pp = parent.getParent();
                         Token pprev = pp.getPrev();
-                        if ((pp.key == Key.PARAM && pprev != null && pprev.key == Key.WORD)
-                                || (pp.key == Key.INDEX && level > 1)) {
+                        if ((pp.key == Key.PARAM && pprev != null && pprev.key == Key.WORD) ||
+                                (pp.key == Key.INDEX && level > 1) || (isArray(pp))) {
                             parent.setNext(parent.getChild());
                             parent.setChild(null);
                             return null;
-                        } else if (pp.key == Key.BRACE && pprev.key == Key.INDEX) {
-                            // lambda <> array
-                            boolean isArray = false;
-                            int s = 0;
-                            Token back = pprev.getPrev();
-                            while (back != null) {
-                                if (back.key == Key.NEW) {
-                                    isArray = true;
-                                    break;
-                                } else if (back.key == Key.INDEX) {
-                                    if (s != 0) break;
-                                } else if (back.key == Key.GENERIC) {
-                                    if (s != 0) break;
-                                    s = 1;
-                                } else if (back.key == Key.WORD) {
-                                    s = 2;
-                                } else {
-                                    break;
-                                }
-                                back = back.getPrev();
-                            }
-                            if (isArray) {
-                                parent.setNext(parent.getChild());
-                                parent.setChild(null);
-                                return null;
-                            }
                         }
                     }
                 } else if (token.key != Key.WORD && token.key != Key.VOID && token.key != Key.LET &&
@@ -417,5 +391,45 @@ public class  Lexer {
         return chr == '+' || chr == '-' || chr == '*' || chr == '/' || chr == '%'
                 || chr == '=' || chr == '!' || chr == '|' || chr == '&' || chr == '^' || chr == ':' || chr == '?'
                 || chr == '~' || chr == '<' || chr == '>';
+    }
+
+    private static boolean isArray(Token parent) {
+        if (parent == null) return false;
+        if (parent.key != Key.BRACE) return false;
+
+        Token parentPrev = parent.getPrev();
+        if (parentPrev == null) {
+            return isArray(parent.getParent());
+        }
+        // new int[][] { {a, b} , {c, d} }
+        if (parentPrev.key == Key.COMMA) {
+            return true;
+        }
+
+        // [new int[][] { }]  vs [-> int[][] { }] vs [this[] { } * not a problem]
+        if (parentPrev.key == Key.INDEX) {
+            boolean isArray = false;
+            int s = 0;
+            Token back = parentPrev.getPrev();
+            while (back != null) {
+                if (back.key == Key.NEW) {
+                    isArray = true;
+                    break;
+                } else if (back.key == Key.INDEX) {
+                    if (s != 0) break;
+                } else if (back.key == Key.GENERIC) {
+                    if (s != 0) break;
+                    s = 1;
+                } else if (back.key == Key.WORD) {
+                    s = 2;
+                } else {
+                    break;
+                }
+                back = back.getPrev();
+            }
+            return isArray;
+        }
+
+        return false;
     }
 }

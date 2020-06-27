@@ -1,0 +1,10 @@
+namespace lang;
+
+public interface Locker {
+
+    public void Lock();
+    public void Unlock();
+    public void Wait();
+    public void Wait(long milis);
+    public void Notify();
+}

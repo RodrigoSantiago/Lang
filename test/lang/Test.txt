@@ -1,9 +1,16 @@
 namespace lang;
 
-public class Test {
+public class ClassA {
+    int a, b;
+}
+public class Test<T> {
 
     int method() {
-        int(();
-        int b;
+        int a, b;
+        bool[][] c = new bool[][] { { a < b, a > b }, { a < b, a > b }, { a < b, a > b } };
+        method(c, 10);
+    }
+
+    int method(let Object c, int d) {
     }
 }

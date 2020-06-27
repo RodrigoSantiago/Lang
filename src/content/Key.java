@@ -261,5 +261,22 @@ public enum Key {
     public String toString() {
         return "KEY[" + string + "]";
     }
-    
+
+    public boolean isSet() {
+        switch (this) {
+            case SETVAL: return true;
+            case SETADD: return true;
+            case SETSUB: return true;
+            case SETMUL: return true;
+            case SETDIV: return true;
+            case SETMOD: return true;
+            case SETLSHIFT: return true;
+            case SETRSHIFT: return true;
+            case SETAND: return true;
+            case SETOR: return true;
+            case SETNOT: return true;
+            case SETXOR: return true;
+            default: return false;
+        }
+    }
 }

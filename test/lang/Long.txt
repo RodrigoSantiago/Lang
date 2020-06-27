@@ -50,6 +50,8 @@ public static struct long : Long {
     }
     float operator auto(long value) {
     }
+    double operator auto(long value) {
+    }
 
     bool operator ==(long value, double other) {
     }

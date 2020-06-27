@@ -22,6 +22,10 @@ public class Expression {
     ArrayList<CallGroup> groups = new ArrayList<>();
 
     public Expression(Line line, Token start, Token end) {
+        this(line, start, end, null);
+    }
+
+    public Expression(Line line, Token start, Token end, Pointer arrayInit) {
         this.cFile = line.cFile;
         this.stack = line.stack;
         this.parent = line;
@@ -30,15 +34,29 @@ public class Expression {
         tokenGroup = new TokenGroup(start, end);
         System.out.println("EXPR: "+ TokenGroup.toString(start, end));
 
-        CallGroup group = new CallGroup(this);
-
         Token dot = null;
         Token contentStart = null;
         Token token = start;
         Token next;
         int state = 0;
+
+        CallGroup group = new CallGroup(this);
+
+        // Inner Array Init
+        if (start != null && start.key == Key.BRACE && arrayInit != null) {
+            group.add(new InitCall(group, start, start.getNext(), arrayInit));
+            add(group);
+
+            token = start.getNext();
+            while (token != null && token != end) {
+                cFile.erro(token, "Unexpected token", this);
+                token = token.getNext();
+            }
+        }
+
         while (token != null && token != end) {
             next = token.getNext();
+
             if (state == 0 && token.key == Key.NEW) {
                 if (next != end && next.key == Key.WORD) {
                     next = TokenGroup.nextType(next.getNext(), end);
@@ -82,7 +100,6 @@ public class Expression {
             } else if (state == 0 && (token.key == Key.DEFAULT || token.key == Key.NULL ||
                     token.key == Key.NUMBER || token.key == Key.STRING ||
                     token.key == Key.TRUE || token.key == Key.FALSE)) {
-                // Literal
                 group.add(new LiteralCall(group, token, next));
                 state = 2;
             } else if (state == 0 && (token.key == Key.WORD || token.key == Key.THIS || token.key == Key.SUPER)) {
@@ -169,6 +186,10 @@ public class Expression {
 
     public Pointer getReturnType() {
         return groups.size() == 1 ? groups.get(0).getReturnType() : null;
+    }
+
+    public boolean isSetExpression() {
+        return groups.size() == 1 && groups.get(0).isSetExpression();
     }
 
     public boolean isLiteral() {

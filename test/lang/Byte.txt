@@ -34,6 +34,17 @@ public static struct byte : Byte {
     private this() {
     }
 
+    short operator auto(byte value) {
+    }
+    int operator auto(byte value) {
+    }
+    long operator auto(byte value) {
+    }
+    float operator auto(byte value) {
+    }
+    double operator auto(byte value) {
+    }
+
     bool operator ==(byte value, double other) {
     }
     bool operator !=(byte value, double other) {

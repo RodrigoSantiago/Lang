@@ -253,7 +253,7 @@ public class LiteralCall extends Call {
             } else if (pointer.type == cFile.langShort() && literalType == LONG &&
                     resultNum < 32768 && resultNum >= -32768 && !isLong) {
                 naturalPtr = cFile.langShortPtr();
-            } else if (pointer.type == cFile.langInt() && literalType == LONG &&
+            } else if (literalType == LONG &&
                     resultNum < 2147483648L && resultNum >= -2147483648L && !isLong) {
                 naturalPtr = cFile.langIntPtr();
             } else if (literalType == LONG) {

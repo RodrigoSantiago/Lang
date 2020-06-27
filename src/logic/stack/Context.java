@@ -17,16 +17,26 @@ public class Context {
 
     public Type type;
     public Pointer pointer;
+    public Pointer innerThis;
     private boolean isStatic;
-    private boolean isIncorrect;
     private boolean isBegin;
+    private boolean isIncorrect;
 
     public Context(Stack stack) {
+        this(stack, null);
+    }
+
+    public Context(Stack stack, Pointer innerThis) {
         this.stack = stack;
-        this.pointer = stack.getSourcePtr();
-        this.isStatic = stack.isStatic();
+        this.pointer = innerThis != null ? innerThis : stack.getSourcePtr();
+        this.isStatic = innerThis == null && stack.isStatic();
         this.type = pointer.type;
+        this.innerThis = innerThis;
         isBegin = true;
+    }
+
+    public Context(Context context) {
+        this(context.stack, context.innerThis);
     }
 
     public void jumpTo(Type type, boolean isStatic) {
@@ -39,8 +49,8 @@ public class Context {
     public void jumpTo(Pointer pointer) {
         if (pointer == null) {
             isIncorrect = true;
-            this.pointer = stack.getSourcePtr();
-            this.isStatic = stack.isStatic();
+            this.pointer = innerThis != null ? innerThis : stack.getSourcePtr();
+            this.isStatic = innerThis == null && stack.isStatic();
         } else {
             this.isStatic = false;
             this.pointer = pointer;
@@ -95,7 +105,7 @@ public class Context {
 
     public ArrayList<MethodView> findMethod(Token nameToken, ArrayList<Expression> arguments) {
         for (Expression arg : arguments) {
-            arg.load(new Context(stack));
+            arg.load(new Context(this));
         }
         if (type != null) {
             ArrayList<MethodView> found = null;
@@ -136,7 +146,7 @@ public class Context {
 
     public ArrayList<IndexerView> findIndexer(ArrayList<Expression> arguments) {
         for (Expression arg : arguments) {
-            arg.load(new Context(stack));
+            arg.load(new Context(this));
         }
         if (type != null) {
             ArrayList<IndexerView> found = null;
@@ -177,7 +187,7 @@ public class Context {
 
     public ArrayList<ConstructorView> findConstructor(Pointer typePtr, ArrayList<Expression> arguments) {
         for (Expression arg : arguments) {
-            arg.load(new Context(stack));
+            arg.load(new Context(this));
         }
         if (typePtr.type != null) {
             ArrayList<ConstructorView> found = null;
@@ -202,6 +212,15 @@ public class Context {
                     }
                 }
             }
+            if (found == null && arguments.size() == 0 && typePtr.type.getEmptyConstructor() != null) {
+                ConstructorView cv = new ConstructorView(typePtr, typePtr.type.getEmptyConstructor());
+
+                int ret = cv.getParams().verifyArguments(closer, result, arguments, false);
+                if (ret == 1) {
+                    found = new ArrayList<>();
+                    found.add(cv);
+                }
+            }
             if (found != null && found.size() == 1) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
@@ -217,9 +236,9 @@ public class Context {
     }
 
     public OperatorView findOperator(CallGroup left, CallGroup center) {
-        center.load(new Context(stack));
+        center.load(new Context(this));
 
-        Pointer ptr = center.getNaturalPtr();
+        Pointer ptr = center.getNaturalPtr(null);
 
         if (left.isCastingOperator()) {
             Pointer castPtr = left.getCastPtr();
@@ -255,8 +274,8 @@ public class Context {
     }
 
     public ArrayList<OperatorView> findOperator(CallGroup left, CallGroup center, CallGroup right) {
-        left.load(new Context(stack));
-        right.load(new Context(stack));
+        left.load(new Context(this));
+        right.load(new Context(this));
 
         boolean isComposite = false;
         Token opToken = center.getOperatorToken();
@@ -273,7 +292,7 @@ public class Context {
             return operators;
         } else if (opToken.key == Key.SETVAL) {
             left.requestSet();
-            right.requestOwn(left.getReturnType());
+            right.requestOwn(left.getNaturalPtr(null));
 
             ArrayList<OperatorView> operators = new ArrayList<>();
             operators.add(OperatorView.SET);
@@ -289,7 +308,7 @@ public class Context {
         }
 
         int repeat = 0;
-        Pointer ptr = left.getNaturalPtr();
+        Pointer ptr = left.getNaturalPtr(null);
         do {
             if (ptr != null && ptr.type != null) {
                 ArrayList<OperatorView> found = null;
@@ -329,7 +348,7 @@ public class Context {
                     }
                     return found;
                 } else if (!isComposite) {
-                    ptr = right.getNaturalPtr();
+                    ptr = right.getNaturalPtr(null);
                     repeat += 1;
                 }
             }

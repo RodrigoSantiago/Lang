@@ -13,6 +13,7 @@ public class TokenGroup {
         this.end = end;
     }
 
+    // TODO - OPEN INDEXER
     public static Token nextType(Token next, Token end) {
         if (next != end && (next.key == Key.GENERIC)) {
             next = next.getNext();

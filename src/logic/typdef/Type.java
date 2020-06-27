@@ -49,6 +49,7 @@ public abstract class Type implements GenericOwner {
     private ArrayList<Destructor> destructors = new ArrayList<>(1);
     private ArrayList<Native> natives = new ArrayList<>();
     private Constructor staticConstructor;
+    private Constructor emptyConstructor;
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
@@ -429,6 +430,13 @@ public abstract class Type implements GenericOwner {
         }
 
         if (parent != null) {
+            if (constructors.size() == 0 && parent.type.constructors.size() > 0) {
+                if (parent.type.emptyConstructor != null && parent.type.emptyConstructor.isPublic()) {
+                    emptyConstructor = parent.type.emptyConstructor;
+                } else {
+                    cFile.erro(nameToken, "Constructor not implemented", this);
+                }
+            }
             for (Constructor pC : parent.type.constructors) {
                 if (pC.isDefault() && pC.isPublic()) {
                     boolean isImplemented = false;
@@ -989,6 +997,9 @@ public abstract class Type implements GenericOwner {
                     }
                 }
 
+                if (constructor.getParams().getCount() == 0) {
+                    emptyConstructor = constructor;
+                }
                 constructors.add(constructor);
             }
         }
@@ -1059,6 +1070,10 @@ public abstract class Type implements GenericOwner {
         } else {
             return null;
         }
+    }
+
+    public Constructor getEmptyConstructor() {
+        return emptyConstructor;
     }
 
     @Override

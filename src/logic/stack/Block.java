@@ -63,7 +63,7 @@ public abstract class Block extends Line {
                         break;
                     } else if (state == 1 && token.key == Key.INDEX) {
                         state = 2;
-                    } else if (state == 2 && token.key == Key.WORD) {
+                    } else if (state == 2 && (token.key == Key.WORD || token.key == Key.INDEX)) {
                         add(new LineVar(this, start, end));
                         break;
                     } else {

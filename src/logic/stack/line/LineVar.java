@@ -114,10 +114,15 @@ public class LineVar extends Line {
             Expression expresion = expresions.get(i);
             if (expresion != null) {
                 expresion.load(new Context(stack));
-                expresion.requestOwn(typePtr); // TODO - LET/VAR Exception
+
+                Pointer naturalPtr = typePtr;
                 if (typePtr == null) {
-                    typePtrs.add(expresion.getReturnType());
+                    naturalPtr = expresion.getNaturalPtr(null);
+                    if (naturalPtr == null) naturalPtr = cFile.langObjectPtr(isLet);
+                    else if (isLet) naturalPtr = naturalPtr.toLet();
+                    typePtrs.add(naturalPtr);
                 }
+                expresion.requestOwn(naturalPtr);
             } else if (typePtr == null) {
                 typePtrs.add(cFile.langObjectPtr());
                 cFile.erro(nameTokens.get(i), "Cannot determine a Type without an initialization", this);

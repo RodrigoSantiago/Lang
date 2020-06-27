@@ -37,10 +37,6 @@ public abstract class Call {
         return token;
     }
 
-    public Pointer getNaturalPtr() {
-        return naturalPtr;
-    }
-
     public Pointer getNaturalPtr(Pointer convertFlag) {
         return naturalPtr;
     }

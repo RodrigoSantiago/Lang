@@ -201,13 +201,11 @@ public class FieldCall extends Call {
                     }
                 }
             }
-        } else if (field != null) {
-            if (field.isReadOnly(getStack())) {
-                if (useGet) {
-                    useOwn = false;
-                } else {
-                    cFile.erro(token, "Cannot OWN a final variable", this);
-                }
+        } else if (field != null && field.isReadOnly(getStack())) {
+            if (useGet) {
+                useOwn = false;
+            } else {
+                cFile.erro(token, "Cannot OWN a final variable", this);
             }
         }
     }
@@ -236,7 +234,7 @@ public class FieldCall extends Call {
             }  else {
                 cFile.erro(token, "SET member not defined", this);
             }
-        } else if (field.isReadOnly(getStack())) {
+        } else if (field != null && field.isReadOnly(getStack())) {
             cFile.erro(token, "Cannot SET a final variable", this);
         }
     }

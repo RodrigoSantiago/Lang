@@ -355,7 +355,7 @@ public class CallGroup {
             left.setCastGet(pointer);
             center.requestGet(null);
         } else {
-            if (naturalPtr != null && pointer.canReceive(naturalPtr) <= 0) {
+            if (naturalPtr != null && naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
                 cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
             }
         }

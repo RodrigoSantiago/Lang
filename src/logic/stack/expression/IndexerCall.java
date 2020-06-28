@@ -100,14 +100,12 @@ public class IndexerCall extends Call {
         if (indexerView != null) {
             if (!indexerView.hasGet()) {
                 cFile.erro(token, "GET member not defined", this); // [impossible ?]
-            } else if (!indexerView.isGetPublic() && !indexerView.isGetPrivate()) {
-                if (!getStack().cFile.library.equals(indexerView.getGetFile().library)) {
-                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                }
-            } else if (indexerView.isGetPrivate()) {
-                if (!getStack().cFile.equals(indexerView.getGetFile())) {
-                    cFile.erro(token, "Cannot acess a Private member from other file", this);
-                }
+            } else if (!indexerView.isGetPublic() && !indexerView.isGetPrivate() &&
+                    !getStack().cFile.library.equals(indexerView.getGetFile().library)) {
+                cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+            } else if (indexerView.isGetPrivate() &&
+                    !getStack().cFile.equals(indexerView.getGetFile())) {
+                cFile.erro(token, "Cannot acess a Private member from other file", this);
             }
         }
     }
@@ -133,21 +131,19 @@ public class IndexerCall extends Call {
 
         if (indexerView != null) {
             if (useOwn && indexerView.hasOwn()) {
-                if (!indexerView.isOwnPublic() && !indexerView.isOwnPrivate()) {
-                    if (!getStack().cFile.library.equals(indexerView.getOwnFile().library)) {
-                        if (useGet) {
-                            useOwn = false;
-                        } else {
-                            cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                        }
+                if (!indexerView.isOwnPublic() && !indexerView.isOwnPrivate() &&
+                        !getStack().cFile.library.equals(indexerView.getOwnFile().library)) {
+                    if (useGet) {
+                        useOwn = false;
+                    } else {
+                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
                     }
-                } else if (indexerView.isOwnPrivate()) {
-                    if (!getStack().cFile.equals(indexerView.getOwnFile())) {
-                        if (useGet) {
-                            useOwn = false;
-                        } else {
-                            cFile.erro(token, "Cannot acess a Private member from other file", this);
-                        }
+                } else if (indexerView.isOwnPrivate() &&
+                        !getStack().cFile.equals(indexerView.getOwnFile())) {
+                    if (useGet) {
+                        useOwn = false;
+                    } else {
+                        cFile.erro(token, "Cannot acess a Private member from other file", this);
                     }
                 }
             } else {
@@ -161,14 +157,12 @@ public class IndexerCall extends Call {
             if (useGet && !useOwn) {
                 if (!indexerView.hasGet()) {
                     cFile.erro(token, "GET member not defined", this); // [impossible ?]
-                } else if (!indexerView.isGetPublic() && !indexerView.isGetPrivate()) {
-                    if (!getStack().cFile.library.equals(indexerView.getGetFile().library)) {
-                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                    }
-                } else if (indexerView.isGetPrivate()) {
-                    if (!getStack().cFile.equals(indexerView.getGetFile())) {
-                        cFile.erro(token, "Cannot acess a Private member from other file", this);
-                    }
+                } else if (!indexerView.isGetPublic() && !indexerView.isGetPrivate() &&
+                        !getStack().cFile.library.equals(indexerView.getGetFile().library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                } else if (indexerView.isGetPrivate() &&
+                        !getStack().cFile.equals(indexerView.getGetFile())) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
                 }
             }
         }
@@ -180,14 +174,12 @@ public class IndexerCall extends Call {
 
         if (indexerView != null) {
             if (indexerView.hasSet()) {
-                if (!indexerView.isSetPublic() && !indexerView.isSetPrivate()) {
-                    if (!getStack().cFile.library.equals(indexerView.getSetFile().library)) {
-                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                    }
-                } else if (indexerView.isSetPrivate()) {
-                    if (!getStack().cFile.equals(indexerView.getSetFile())) {
-                        cFile.erro(token, "Cannot acess a Private member from other file", this);
-                    }
+                if (!indexerView.isSetPublic() && !indexerView.isSetPrivate() &&
+                        !getStack().cFile.library.equals(indexerView.getSetFile().library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                } else if (indexerView.isSetPrivate() &&
+                        !getStack().cFile.equals(indexerView.getSetFile())) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
                 }
             }  else {
                 cFile.erro(token, "SET member not defined", this);

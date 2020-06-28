@@ -71,8 +71,6 @@ public class MethodCall extends Call {
         if (nameToken == null) {
             context.jumpTo(null);
         } else {
-
-            // TODO - INNER CONSTRUCTOR BEHAVIOR
             ArrayList<MethodView> methods = context.findMethod(nameToken, arguments);
             if (methods == null || methods.size() == 0) {
                 cFile.erro(token, "Method Not Found", this);
@@ -81,7 +79,9 @@ public class MethodCall extends Call {
                 methodView = methods.get(0);
             } else {
                 methodView = methods.get(0);
-                System.out.println(methodView);
+                if (context.isStatic() && !methodView.isStatic()) {
+                    cFile.erro(token, "Cannot use a Instance Member on a Static Environment", this);
+                }
             }
             context.jumpTo(methodView == null ? null : methodView.getTypePtr());
         }
@@ -108,21 +108,19 @@ public class MethodCall extends Call {
 
         requestPtr = pointer;
 
-        if (pointer.canReceive(naturalPtr) <= 0) {
+        if (naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
             return;
         }
 
         if (methodView != null) {
             Method method = methodView.method;
-            if (!methodView.isPublic() && !methodView.isPrivate()) {
-                if (!getStack().cFile.library.equals(method.cFile.library)) {
-                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                }
-            } else if (methodView.isPrivate()) {
-                if (!getStack().cFile.equals(method.cFile)) {
-                    cFile.erro(token, "Cannot acess a Private member from other file", this);
-                }
+            if (!methodView.isPublic() && !methodView.isPrivate() &&
+                    !getStack().cFile.library.equals(method.cFile.library)) {
+                cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+            } else if (methodView.isPrivate() &&
+                    !getStack().cFile.equals(method.cFile)) {
+                cFile.erro(token, "Cannot acess a Private member from other file", this);
             }
         }
     }
@@ -134,7 +132,7 @@ public class MethodCall extends Call {
 
         requestPtr = pointer;
 
-        if (pointer.canReceive(naturalPtr) <= 0) {
+        if (naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
             return;
         }
@@ -145,14 +143,12 @@ public class MethodCall extends Call {
 
         if (methodView != null) {
             Method method = methodView.method;
-            if (!methodView.isPublic() && !methodView.isPrivate()) {
-                if (!getStack().cFile.library.equals(method.cFile.library)) {
-                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                }
-            } else if (methodView.isPrivate()) {
-                if (!getStack().cFile.equals(method.cFile)) {
-                    cFile.erro(token, "Cannot acess a Private member from other file", this);
-                }
+            if (!methodView.isPublic() && !methodView.isPrivate() &&
+                    !getStack().cFile.library.equals(method.cFile.library)) {
+                cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+            } else if (methodView.isPrivate() &&
+                    !getStack().cFile.equals(method.cFile)) {
+                cFile.erro(token, "Cannot acess a Private member from other file", this);
             }
         }
     }

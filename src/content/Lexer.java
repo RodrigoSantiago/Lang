@@ -23,6 +23,9 @@ public class  Lexer {
     public Lexer(ContentFile cFile) {
         this.cFile = cFile;
         index = 0;
+        if (cFile.name.contains("Test")) {
+            System.out.println("");
+        }
     }
 
     public Token read() {
@@ -400,7 +403,7 @@ public class  Lexer {
         if (parentPrev == null || parentPrev.key != Key.WORD) {
             return true;
         }
-        if (level > 2) return false;
+        if (level > 1) return false;
 
         Token back = parentPrev.getPrev();
         while (back != null) {
@@ -416,7 +419,7 @@ public class  Lexer {
     }
 
     private static boolean isIndexerStatment(int level, Token parent) {
-        if (level > 2) return false;
+        if (level > 1) return false;
         if (parent == null) return false;
         if (parent.key != Key.INDEX) return false;
 

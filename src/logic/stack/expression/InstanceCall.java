@@ -4,6 +4,8 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
+import logic.member.Constructor;
+import logic.member.Method;
 import logic.member.view.ConstructorView;
 import logic.member.view.FieldView;
 import logic.stack.Context;
@@ -263,6 +265,8 @@ public class InstanceCall extends Call {
                             if (!constructorView.isDefault()) {
                                 cFile.erro(token, "A Generic Constructor should be Default", this);
                             }
+                        } else if (typePtr.type.isAbstract()) {
+                            cFile.erro(token, "Cannot Instanteate a Abstract Type", this);
                         }
                     }
                 }
@@ -294,6 +298,17 @@ public class InstanceCall extends Call {
         if (pointer.canReceive(naturalPtr) <= 0) {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
         }
+
+        if (constructorView != null) {
+            Constructor constructor = constructorView.constructor;
+            if (!constructorView.isPublic() && !constructorView.isPrivate() &&
+                    !getStack().cFile.library.equals(constructor.cFile.library)) {
+                cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+            } else if (constructorView.isPrivate() &&
+                    !getStack().cFile.equals(constructor.cFile)) {
+                cFile.erro(token, "Cannot acess a Private member from other file", this);
+            }
+        }
     }
 
     @Override
@@ -305,6 +320,17 @@ public class InstanceCall extends Call {
 
         if (pointer.canReceive(naturalPtr) <= 0) {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
+        }
+
+        if (constructorView != null) {
+            Constructor constructor = constructorView.constructor;
+            if (!constructorView.isPublic() && !constructorView.isPrivate() &&
+                    !getStack().cFile.library.equals(constructor.cFile.library)) {
+                cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+            } else if (constructorView.isPrivate() &&
+                    !getStack().cFile.equals(constructor.cFile)) {
+                cFile.erro(token, "Cannot acess a Private member from other file", this);
+            }
         }
     }
 

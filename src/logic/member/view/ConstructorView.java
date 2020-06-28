@@ -1,6 +1,7 @@
 package logic.member.view;
 
 import content.Token;
+import data.ContentFile;
 import logic.Pointer;
 import logic.member.Constructor;
 import logic.typdef.Type;
@@ -20,6 +21,10 @@ public class ConstructorView {
         this.caller = caller;
         this.constructor = constructorView.constructor;
         paramView = new ParamView(caller, constructorView.getParams());
+    }
+
+    public ContentFile getFile() {
+        return constructor.type.cFile;
     }
 
     public boolean isFrom(Type type) {

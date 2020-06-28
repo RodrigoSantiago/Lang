@@ -4,13 +4,18 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
+import logic.member.view.ConstructorView;
 import logic.params.Parameters;
+import logic.stack.Stack;
+import logic.stack.expression.ConstructorCall;
 import logic.typdef.Type;
 
 public class Constructor extends Member {
 
     private Parameters params;
     private TokenGroup contentToken;
+
+    private Constructor constructorTarget;
 
     public Constructor(Type type, Token start, Token end) {
         super(type);
@@ -72,6 +77,36 @@ public class Constructor extends Member {
         return false;
     }
 
+    public void make() {
+        if (type.nameToken.equals("Test")) {
+            if (contentToken != null) {
+                Stack stack = new Stack(cFile, type.self, type.self, null, false, isStatic(), true);
+                stack.read(contentToken.start, contentToken.end, true);
+                stack.addParam(getParams());
+                stack.load();
+
+                if (!isStatic()) {
+                    ConstructorCall call = stack.getConstructorCall();
+                    if (call != null) {
+                        ConstructorView cv = stack.getConstructorCall().getConstructorView();
+                        if (cv != null) {
+                            constructorTarget = cv.constructor;
+                            if (constructorTarget.linkTo(this)) {
+                                constructorTarget = null;
+                                cFile.erro(call.token, "Cyclic constructor call", this);
+                            }
+                        }
+                    } else {
+                        constructorTarget = type.getParentEmptyConstructor();
+                        if (constructorTarget == null && type.parent != null) {
+                            cFile.erro(token, "The constructor must call a local or parent constructor", this);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public void build(CppBuilder cBuilder) {
         if (isStatic()) {
             cBuilder.idt(1).add("// static initializer");
@@ -122,6 +157,15 @@ public class Constructor extends Member {
 
     public void markDefault() {
         isDefault = true;
+    }
+
+    public boolean linkTo(Constructor constructor) {
+        if (this == constructor) {
+            return true;
+        } else if (constructorTarget != null) {
+            return constructorTarget.linkTo(constructor);
+        }
+        return false;
     }
 
     @Override

@@ -26,7 +26,7 @@ public class FieldCall extends Call {
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
-            if (state == 0 && (token.key == Key.WORD || token.key == Key.THIS || token.key == Key.SUPER)) {
+            if (state == 0 && (token.key == Key.WORD || token.key == Key.THIS || token.key == Key.BASE)) {
                 this.token = token;
                 state = 1;
             } else {
@@ -70,9 +70,6 @@ public class FieldCall extends Call {
                 } else {
                     if (context.isStatic() && !fieldView.isStatic()) {
                         cFile.erro(token, "Cannot use a Instance Member on a Static Environment", this);
-                    }
-                    if (!context.isStatic() && fieldView.isStatic()) {
-                        cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
                     }
                     context.jumpTo(fieldView.getTypePtr());
                 }
@@ -125,14 +122,12 @@ public class FieldCall extends Call {
         if (fieldView != null) {
             if (!fieldView.hasGet()) {
                 cFile.erro(token, "GET member not defined", this); // [impossible ?]
-            } else if (!fieldView.isGetPublic() && !fieldView.isGetPrivate()) {
-                if (!getStack().cFile.library.equals(fieldView.getGetFile().library)) {
-                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                }
-            } else if (fieldView.isGetPrivate()) {
-                if (!getStack().cFile.equals(fieldView.getGetFile())) {
-                    cFile.erro(token, "Cannot acess a Private member from other file", this);
-                }
+            } else if (!fieldView.isGetPublic() && !fieldView.isGetPrivate() &&
+                    !getStack().cFile.library.equals(fieldView.getGetFile().library)) {
+                cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+            } else if (fieldView.isGetPrivate() &&
+                    !getStack().cFile.equals(fieldView.getGetFile())) {
+                cFile.erro(token, "Cannot acess a Private member from other file", this);
             }
         }
     }
@@ -162,21 +157,19 @@ public class FieldCall extends Call {
 
         if (fieldView != null) {
             if (useOwn && fieldView.hasOwn()) {
-                if (!fieldView.isOwnPublic() && !fieldView.isOwnPrivate()) {
-                    if (!getStack().cFile.library.equals(fieldView.getOwnFile().library)) {
-                        if (useGet) {
-                            useOwn = false;
-                        } else {
-                            cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                        }
+                if (!fieldView.isOwnPublic() && !fieldView.isOwnPrivate() &&
+                        !getStack().cFile.library.equals(fieldView.getOwnFile().library)) {
+                    if (useGet) {
+                        useOwn = false;
+                    } else {
+                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
                     }
-                } else if (fieldView.isOwnPrivate()) {
-                    if (!getStack().cFile.equals(fieldView.getOwnFile())) {
-                        if (useGet) {
-                            useOwn = false;
-                        } else {
-                            cFile.erro(token, "Cannot acess a Private member from other file", this);
-                        }
+                } else if (fieldView.isOwnPrivate() &&
+                        !getStack().cFile.equals(fieldView.getOwnFile())) {
+                    if (useGet) {
+                        useOwn = false;
+                    } else {
+                        cFile.erro(token, "Cannot acess a Private member from other file", this);
                     }
                 } else if (fieldView.isReadOnly(getStack())) {
                     cFile.erro(token, "Cannot SET a final variable", this);
@@ -192,14 +185,12 @@ public class FieldCall extends Call {
             if (useGet && !useOwn) {
                 if (!fieldView.hasGet()) {
                     cFile.erro(token, "GET member not defined", this); // [impossible ?]
-                } else if (!fieldView.isGetPublic() && !fieldView.isGetPrivate()) {
-                    if (!getStack().cFile.library.equals(fieldView.getGetFile().library)) {
-                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                    }
-                } else if (fieldView.isGetPrivate()) {
-                    if (!getStack().cFile.equals(fieldView.getGetFile())) {
-                        cFile.erro(token, "Cannot acess a Private member from other file", this);
-                    }
+                } else if (!fieldView.isGetPublic() && !fieldView.isGetPrivate() &&
+                        !getStack().cFile.library.equals(fieldView.getGetFile().library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                } else if (fieldView.isGetPrivate() &&
+                        !getStack().cFile.equals(fieldView.getGetFile())) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
                 }
             }
         } else if (field != null && field.isReadOnly(getStack())) {
@@ -221,14 +212,12 @@ public class FieldCall extends Call {
 
         if (fieldView != null) {
             if (fieldView.hasSet()) {
-                if (!fieldView.isSetPublic() && !fieldView.isSetPrivate()) {
-                    if (!getStack().cFile.library.equals(fieldView.getSetFile().library)) {
-                        cFile.erro(token, "Cannot acess a Internal member from other Library", this);
-                    }
-                } else if (fieldView.isSetPrivate()) {
-                    if (!getStack().cFile.equals(fieldView.getSetFile())) {
-                        cFile.erro(token, "Cannot acess a Private member from other file", this);
-                    }
+                if (!fieldView.isSetPublic() && !fieldView.isSetPrivate() &&
+                        !getStack().cFile.library.equals(fieldView.getSetFile().library)) {
+                    cFile.erro(token, "Cannot acess a Internal member from other Library", this);
+                } else if (fieldView.isSetPrivate() &&
+                        !getStack().cFile.equals(fieldView.getSetFile())) {
+                    cFile.erro(token, "Cannot acess a Private member from other file", this);
                 } else if (fieldView.isReadOnly(getStack())) {
                     cFile.erro(token, "Cannot SET a final variable", this);
                 }

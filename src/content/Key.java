@@ -55,7 +55,7 @@ public enum Key {
     LET("let",                false, true),
     NEW("new"),
     THIS("this",              false, false),
-    SUPER("super"),
+    BASE("base"),
     DEFAULT("default",        false, true),
     VOID("void"),
 
@@ -211,13 +211,13 @@ public enum Key {
             return  ENUM.isEqual(str, start, end) ? ENUM : ELSE.isEqual(str, start, end) ? ELSE :
                     CASE.isEqual(str, start, end) ? CASE : LOCK.isEqual(str, start, end) ? LOCK :
                     THIS.isEqual(str, start, end) ? THIS : VOID.isEqual(str, start, end) ? VOID :
-                    TRUE.isEqual(str, start, end) ? TRUE : NULL.isEqual(str, start, end) ? NULL : NOONE;
+                    TRUE.isEqual(str, start, end) ? TRUE : NULL.isEqual(str, start, end) ? NULL :
+                    BASE.isEqual(str, start, end) ? BASE :NOONE;
         } else if (len == 5) {
             return  USING.isEqual(str, start, end) ? USING : CLASS.isEqual(str, start, end) ? CLASS :
                     FINAL.isEqual(str, start, end) ? FINAL : WHILE.isEqual(str, start, end) ? WHILE :
                     YIELD.isEqual(str, start, end) ? YIELD : BREAK.isEqual(str, start, end) ? BREAK :
-                    SUPER.isEqual(str, start, end) ? SUPER : FALSE.isEqual(str, start, end) ? FALSE :
-                    ISNOT.isEqual(str, start, end) ? ISNOT : NOONE;
+                    FALSE.isEqual(str, start, end) ? FALSE : ISNOT.isEqual(str, start, end) ? ISNOT : NOONE;
         } else if (len == 6) {
             return  STRUCT.isEqual(str, start, end) ? STRUCT : PUBLIC.isEqual(str, start, end) ? PUBLIC :
                     STATIC.isEqual(str, start, end) ? STATIC : SWITCH.isEqual(str, start, end) ? SWITCH :

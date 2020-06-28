@@ -212,8 +212,8 @@ public class Context {
                     }
                 }
             }
-            if (found == null && arguments.size() == 0 && typePtr.type.getEmptyConstructor() != null) {
-                ConstructorView cv = new ConstructorView(typePtr, typePtr.type.getEmptyConstructor());
+            if (found == null && arguments.size() == 0 && typePtr.type.getParentEmptyConstructor() != null) {
+                ConstructorView cv = new ConstructorView(typePtr, typePtr.type.getParentEmptyConstructor());
 
                 int ret = cv.getParams().verifyArguments(closer, result, arguments, false);
                 if (ret == 1) {
@@ -347,10 +347,11 @@ public class Context {
                         }
                     }
                     return found;
-                } else if (!isComposite) {
-                    ptr = right.getNaturalPtr(null);
-                    repeat += 1;
                 }
+            }
+            if (!isComposite) {
+                ptr = right.getNaturalPtr(null);
+                repeat += 1;
             }
         } while (repeat == 1);
 

@@ -44,7 +44,7 @@ public class Pointer {
     }
 
     public Pointer toLet() {
-        if (let || (type != null && type.isValue())) return this;
+        if (let || (type != null && type.isValue()) || isDefault()) return this;
         return new Pointer(type, pointers == null ? null : pointers.clone(), typeSource, true);
     }
 

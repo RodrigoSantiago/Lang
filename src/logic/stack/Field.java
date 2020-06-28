@@ -7,6 +7,7 @@ public class Field {
 
     Stack stack;
     Block source;
+    Token token;
     Token nameToken;
     Pointer typePtr;
 
@@ -15,6 +16,15 @@ public class Field {
     public Field(Stack stack, Token nameToken, Pointer typePtr, boolean isFinal, Block source) {
         this.stack = stack;
         this.source = source;
+        this.nameToken = nameToken;
+        this.typePtr = typePtr;
+        isReadyOnly = isFinal;
+    }
+
+    public Field(Stack stack, Token token, Token nameToken, Pointer typePtr, boolean isFinal, Block source) {
+        this.stack = stack;
+        this.source = source;
+        this.token = token;
         this.nameToken = nameToken;
         this.typePtr = typePtr;
         isReadyOnly = isFinal;

@@ -7,6 +7,8 @@ import logic.GenericOwner;
 import logic.Pointer;
 import logic.params.Parameters;
 import logic.stack.block.*;
+import logic.stack.expression.ConstructorCall;
+
 import java.util.HashMap;
 
 public class Stack {
@@ -21,6 +23,9 @@ public class Stack {
     private boolean isExpression;
     private boolean isStatic;
     private boolean isConstructor;
+    private boolean hasConstructorCall;
+
+    private ConstructorCall constructorCall;
 
     HashMap<Token, Field> fields = new HashMap<>();
 
@@ -51,11 +56,15 @@ public class Stack {
     }
 
     public void load() {
+        if (!hasConstructorCall && !isStatic) {
+            thisBase();
+        }
+
         block.load();
     }
 
     public boolean isStatic() {
-        return isStatic;
+        return isStatic || (isConstructor && constructorCall == null && hasConstructorCall);
     }
 
     public boolean isConstructor() {
@@ -94,5 +103,42 @@ public class Stack {
 
     public Pointer getPointer(TokenGroup tokenGroup, boolean isLet) {
         return cFile.getPointer(tokenGroup.start, tokenGroup.end, null, generics, isLet);
+    }
+
+    public boolean isConstructorAllowed() {
+        return isConstructor && !isStatic;
+    }
+
+    public ConstructorCall getConstructorCall() {
+        return constructorCall;
+    }
+
+    public boolean addConstructorCall(ConstructorCall constructorCall) {
+        if (this.constructorCall == null) {
+            this.constructorCall = constructorCall;
+            thisBase();
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private void thisBase() {
+        Token nameThis = new Token("this");
+        fields.put(nameThis, new Field(this, nameThis, sourcePtr.toLet(), true, block));
+
+        if (sourcePtr.type.parent != null) {
+            Token nameBase = new Token("base");
+            fields.put(nameBase, new Field(this, nameBase, sourcePtr.type.parent.toLet(), true, block));
+        }
+    }
+
+    public boolean isStaticConstructor() {
+        return isStatic && isConstructor;
+    }
+
+    public void setContainsConstructorCall() {
+        hasConstructorCall = true;
     }
 }

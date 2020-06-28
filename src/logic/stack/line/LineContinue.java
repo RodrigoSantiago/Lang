@@ -25,11 +25,7 @@ public class LineContinue extends Line {
                 if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
                 label = token;
                 state = 2;
-            } else if ((state == 1 || state == 2) && (token.key == Key.SEMICOLON || next == end)) {
-                if (token.key != Key.SEMICOLON) {
-                    cFile.erro(token, "Semicolon expected", this);
-                }
-
+            } else if ((state == 1 || state == 2) && token.key == Key.SEMICOLON) {
                 state = 3;
             } else {
                 cFile.erro(token, "Unexpected token", this);
@@ -37,7 +33,7 @@ public class LineContinue extends Line {
             if (next == end) {
                 if (state == 0) {
                     cFile.erro(token, "Unexpected end of tokens", this);
-                } else {
+                } else if (state !=3) {
                     cFile.erro(token, "Semicolon expected", this);
                 }
             }

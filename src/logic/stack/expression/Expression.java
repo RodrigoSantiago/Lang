@@ -107,7 +107,7 @@ public class Expression {
                     token.key == Key.TRUE || token.key == Key.FALSE)) {
                 group.add(new LiteralCall(group, token, next));
                 state = 2;
-            } else if (state == 0 && (token.key == Key.WORD || token.key == Key.THIS || token.key == Key.SUPER)) {
+            } else if (state == 0 && (token.key == Key.WORD || token.key == Key.THIS || token.key == Key.BASE)) {
                 contentStart = token;
                 state = 1;
             } else if (state == 1 && token.key == Key.DOT) {
@@ -115,7 +115,11 @@ public class Expression {
                 group.add(new FieldCall(group, contentStart, contentStart.getNext()));
                 state = 3;
             } else if (state == 1 && token.key == Key.PARAM) {
-                group.add(new MethodCall(group, contentStart, next));
+                if (contentStart.key == Key.WORD) {
+                    group.add(new MethodCall(group, contentStart, next));
+                } else {
+                    group.add(new ConstructorCall(group, contentStart, next));
+                }
                 state = 2;
             } else if (state == 1 && token.key == Key.INDEX) {
                 group.add(new FieldCall(group, contentStart, contentStart.getNext()));

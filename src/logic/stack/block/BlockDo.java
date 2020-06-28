@@ -45,12 +45,12 @@ public class BlockDo extends Block {
                     contentToken = new TokenGroup(token.getChild(), token.getLastChild());
                 }
                 state = 4;
-            } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.SEMICOLON) {
+            } else if ((state == 1 || state == 2) && token.key == Key.SEMICOLON) {
                 if (state == 2) {
                     cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
                 }
                 state = 4;
-            } else if (state == 1 || state == 3) {
+            } else if (state == 1) {
                 contentToken = new TokenGroup(token, end);
                 next = end;
                 state = 4;

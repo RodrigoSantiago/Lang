@@ -50,6 +50,7 @@ public abstract class Type implements GenericOwner {
     private ArrayList<Native> natives = new ArrayList<>();
     private Constructor staticConstructor;
     private Constructor emptyConstructor;
+    private Constructor parentEmptyConstructor;
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
@@ -430,12 +431,18 @@ public abstract class Type implements GenericOwner {
         }
 
         if (parent != null) {
-            if (constructors.size() == 0 && parent.type.constructors.size() > 0) {
-                if (parent.type.emptyConstructor != null && parent.type.emptyConstructor.isPublic()) {
-                    emptyConstructor = parent.type.emptyConstructor;
-                } else {
-                    cFile.erro(nameToken, "Constructor not implemented", this);
+            if (parentEmptyConstructor == null && isClass()) {
+                Constructor parentEmpty = parent.type.emptyConstructor;
+                if (parentEmpty == null && parent.type.constructors.size() == 0) {
+                    parentEmpty = parent.type.parentEmptyConstructor;
                 }
+
+                if (parentEmpty != null && parentEmpty.isPublic()) {
+                    parentEmptyConstructor = parentEmpty;
+                }
+            }
+            if (parentEmptyConstructor == null && constructors.size() == 0) {
+                cFile.erro(nameToken, "The class should implement a valid constructor", this);
             }
             for (Constructor pC : parent.type.constructors) {
                 if (pC.isDefault() && pC.isPublic()) {
@@ -460,6 +467,13 @@ public abstract class Type implements GenericOwner {
     }
 
     public void make() {
+        for (Constructor constructor : constructors) {
+            constructor.make();
+        }
+        if (staticConstructor != null) {
+            staticConstructor.make();
+        }
+
         for (Method method : methods) {
             if (!method.isAbstract()) {
                 method.make();
@@ -1074,6 +1088,10 @@ public abstract class Type implements GenericOwner {
 
     public Constructor getEmptyConstructor() {
         return emptyConstructor;
+    }
+
+    public Constructor getParentEmptyConstructor() {
+        return parentEmptyConstructor;
     }
 
     @Override

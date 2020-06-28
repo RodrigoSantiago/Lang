@@ -17,6 +17,7 @@ public class BlockDo extends Block {
         super(block, start, end);
         System.out.println("DO");
 
+        Token colon = null;
         Token token = start;
         Token next;
         int state = 0;
@@ -25,15 +26,17 @@ public class BlockDo extends Block {
             if (state == 0 && token.key == Key.DO) {
                 state = 1;
             } else if (state == 1 && token.key == Key.COLON) {
+                colon = token;
                 state = 2;
-            } else if (state == 2 && token.key == Key.WORD) {
+            } else if ((state == 1 || state == 2) && token.key == Key.WORD && next != end && next.key == Key.BRACE) {
+                if (state == 1) cFile.erro(token, "Missing colon [:]", this);
                 if (token.isComplex()) cFile.erro(token, "Complex names are not allowed", this);
+
                 label = token;
                 state = 3;
             } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.BRACE) {
-                if (state == 2) {
-                    cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
-                }
+                if (state == 2) cFile.erro(colon, "Label Statment expected", this);
+
                 if (token.getChild() == null) {
                     if (next != end) {
                         contentToken = new TokenGroup(next, end);
@@ -46,11 +49,12 @@ public class BlockDo extends Block {
                 }
                 state = 4;
             } else if ((state == 1 || state == 2) && token.key == Key.SEMICOLON) {
-                if (state == 2) {
-                    cFile.erro(token.start, token.start + 1, "Label Statment expected", this);
-                }
+                if (state == 2) cFile.erro(colon, "Unexpected Token", this);
+
                 state = 4;
-            } else if (state == 1) {
+            } else if (state == 1 || state == 2) {
+                if (state == 2) cFile.erro(colon, "Unexpected Token", this);
+
                 contentToken = new TokenGroup(token, end);
                 next = end;
                 state = 4;
@@ -75,7 +79,7 @@ public class BlockDo extends Block {
 
     @Override
     public Line isBreakble(Token label) {
-        if (label == this.label || (this.label != null && this.label.equals(label))) {
+        if (label == null || label.equals(this.label)) {
             return this;
         } else {
             return super.isBreakble(label);
@@ -84,10 +88,10 @@ public class BlockDo extends Block {
 
     @Override
     public Line isContinuable(Token label) {
-        if (label == this.label || (this.label != null && this.label.equals(label))) {
+        if (label == null || label.equals(this.label)) {
             return this;
         } else {
-            return super.isContinuable(label);
+            return super.isBreakble(label);
         }
     }
 

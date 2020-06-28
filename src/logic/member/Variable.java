@@ -162,6 +162,10 @@ public class Variable extends Member {
         return fields;
     }
 
+    public boolean isInitialized(int pos) {
+        return initTokens.get(pos) != null;
+    }
+
     public Pointer getTypePtr() {
         return typePtr;
     }

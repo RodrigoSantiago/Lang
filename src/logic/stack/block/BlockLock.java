@@ -14,10 +14,13 @@ public class BlockLock extends Block {
     Expression lockerExp;
     TokenGroup contentToken;
 
+
     public BlockLock(Block block, Token start, Token end) {
         super(block, start, end);
         System.out.println("LOCK");
 
+
+        Token colon = null;
         Token token = start;
         Token next;
         int state = 0;
@@ -29,10 +32,16 @@ public class BlockLock extends Block {
                 lockerToken = token;
                 lockerExp = new Expression(this, lockerToken.getChild(), lockerToken.getLastChild());
                 state = 2;
-            } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
-                if (state == 1) {
-                    cFile.erro(token.start, token.start + 1, "Missing locker", this);
-                }
+            } else if (state == 2 && token.key == Key.COLON) {
+                colon = token;
+                state = 3;
+            } else if ((state == 2 || state == 3) && token.key == Key.WORD && next != end && next.key == Key.BRACE) {
+                cFile.erro(token, "Label Not Allowed", this);
+                state = 4;
+            } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.BRACE) {
+                if (state == 1) cFile.erro(token.start, token.start + 1, "Missing condition", this);
+                if (state == 3) cFile.erro(colon, "Unexpected Token", this);
+
                 if (token.getChild() == null) {
                     if (next != end) {
                         contentToken = new TokenGroup(next, end);
@@ -43,20 +52,22 @@ public class BlockLock extends Block {
                     if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
                     contentToken = new TokenGroup(token.getChild(), token.getLastChild());
                 }
-                state = 3;
-            } else if ((state == 1 || state == 2) && token.key == Key.SEMICOLON) {
-                if (state == 1) {
-                    cFile.erro(token.start, token.start + 1, "Missing locker", this);
-                }
-                state = 3;
-            } else if (state == 2) {
+                state = 5;
+            } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.SEMICOLON) {
+                if (state == 1) cFile.erro(token, "Missing condition", this);
+                if (state == 3) cFile.erro(colon, "Unexpected Token", this);
+
+                state = 5;
+            } else if ((state == 2 || state == 3 || state == 4)) {
+                if (state == 3) cFile.erro(colon, "Unexpected Token", this);
+
                 contentToken = new TokenGroup(token, end);
                 next = end;
-                state = 3;
-            } else  {
+                state = 5;
+            } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-            if (next == end && state != 3) {
+            if (next == end && state != 5) {
                 cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;

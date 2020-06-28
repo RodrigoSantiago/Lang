@@ -131,10 +131,15 @@ public class  Lexer {
                     token.setNext(nNext);
                 }
 
-            } else if ((group == '[' && tk == ']') || (group == '{' && tk == '}') || (group == '(' && tk == ')')) {
-                parent.setLastChild(token);
-                return token;
-
+            } else if (tk == ']' || tk == '}' || tk == ')') {
+                if ((group == '[' && tk == ']') || (group == '{' && tk == '}') || (group == '(' && tk == ')')) {
+                    parent.setLastChild(token);
+                    return token;
+                } else if (group == '(' || group == '[') { // break [better reading for braces { }]
+                    parent.setNext(parent.getChild());
+                    parent.setChild(null);
+                    return null;
+                }
             } else if (tk == '<') {
                 Token lastChild = read(token, level, tk);
                 if (lastChild != null) {

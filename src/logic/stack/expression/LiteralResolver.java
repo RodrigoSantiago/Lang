@@ -2,7 +2,7 @@ package logic.stack.expression;
 
 import content.Key;
 
-public abstract class LiteralResolver {
+public class LiteralResolver {
 
     public static LiteralCall resolve(CallGroup group, LiteralCall lCall, LiteralCall rCall, Key op) {
         int lType = lCall.getLiteralType();

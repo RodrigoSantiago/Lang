@@ -160,71 +160,66 @@ public class Parser {
         int state = 0;
         boolean caseExcep = false;
 
+        // block.add(start, next);
+
         Token token = init;
         Token start = token;
         while (token != null && token != end) {
             Token next = token.getNext();
-            if (state == 0 && token.key == Key.BRACE) {
-                // break; empty block [{}]
+            if (state == 0 && token.key == Key.BRACE) {     // [{}]
+                block.add(token, next);
+                state = 0;
+            } else if (state == 0 && (token.key == Key.CASE || token.key == Key.DEFAULT)) { // [{}]
+
+                while (next != end && (next.key != Key.COLON && next.key != Key.SEMICOLON &&
+                        next.key != Key.CASE && !next.key.isBlock)) {
+                    next = next.getNext();
+                }
+                if (next != end && next.key == Key.COLON) {
+                    next = next.getNext();
+                }
                 block.add(start, next);
                 start = next;
-                caseExcep = false;
-            } else if (state == 0 && (token.key.isBlock || token.key == Key.CASE || token.key == Key.DEFAULT)) {
-                caseExcep = token.key == Key.CASE || token.key == Key.DEFAULT;
-                state = 1; // [if]
 
-            } else if (state == 0 && next != end) {
-                state = 4; // [...]
-
-            } else if (state == 1 && token.key == Key.PARAM) {
-                state = 2; // [if][()]
-
-            } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {
-                // break; [if][()][{}] || [else][{}]
-                block.add(start, next);
-                start = next;
                 state = 0;
-                caseExcep = false;
-
-            } else if (token.key == Key.SEMICOLON || next == end) {
-                // break; (0)[;] || (1)[else][...][;] || (2)[if][()][;] || (3)[if][()][...][;] || (4)[...][;]
-                block.add(start, next);
-                start = next;
-                state = 0;
-                caseExcep = false;
-
-            } else if ((state == 1 || state == 2) && token.key.isBlock) {
-                state = 1; // [for][if] || [for][()][if]
-
-            } else if ((state == 1 || state == 2) && caseExcep && token.key == Key.COLON) {
-                block.add(start, next); // [case][:] empty case | [case][()][:] param case
-                start = next;
-                state = 0;
-                caseExcep = false;
-
-            } else if (state == 1 || state == 2) {
-                state = 3; // [if][()][...] | [else][...]
-
-            } else if (state == 3 && caseExcep && token.key == Key.COLON) {
-                block.add(start, next); // [case][...][:]
-                start = next;
-                state = 0;
-                caseExcep = false;
-
-            } else if (token.key.isBlock) {
-                // break; unexpected end [...][if]
-                block.add(start, token);
+            } else if (state == 0 && token.key.isBlock) {   // [if]
                 start = token;
                 state = 1;
-                caseExcep = false;
-            }
-            if (next == end && state != 0) {
-                // Incomplet End ? End without [;]
-                block.add(start, next);
+            } else if (state == 1 && token.key == Key.PARAM) {                  // [if]+[()]
+                state = 2;
+            } else if ((state == 1 || state == 2) && token.key == Key.COLON &&
+                    next != end && next.key == Key.WORD &&
+                    next.getNext() != end && next.getNext().key == Key.BRACE) { // [if][()*]+[:][name][{}]
+                block.add(start, next = next.getNext().getNext());
+                start = next;
                 state = 0;
-                caseExcep = false;
+            } else if ((state == 1 || state == 2) && token.key == Key.WORD &&
+                    next != end && next.key == Key.BRACE) {                     // [if][()*]+[name][{}]
+                block.add(start, next = next.getNext());
+                start = next;
+                state = 0;
+            } else if ((state == 1 || state == 2) && token.key == Key.BRACE) {  // [if][()*]+[{}]
+                block.add(start, next);
+                start = next;
+                state = 0;
+            } else if ((state == 1 || state == 2) && token.key.isBlock) {       // [if][()*]+[if]
+                state = 1;
+            } else {
+                // Do not use [default]
+                while (next != end && (next.key != Key.SEMICOLON && next.key != Key.CASE && !next.key.isBlock)) {
+                    next = next.getNext();
+                }
+                if (next != end && next.key == Key.SEMICOLON) {
+                    next = next.getNext();
+                }
+                block.add(start, next);
+                start = next;
             }
+
             token = next;
+        }
+        if (start != end) {
+            block.add(start, end);
         }
         block.end();
     }

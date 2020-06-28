@@ -19,14 +19,13 @@ public class BlockElse extends Block {
         super(block, start, end);
         System.out.println("ELSE");
 
-        Token key = start;
+        Token colon = null;
         Token token = start;
         Token next;
         int state = 0;
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.ELSE) {
-                key = token;
                 state = 1;
             } else if (state == 1 && token.key == Key.IF) {
                 System.out.println("AND IF");
@@ -36,10 +35,16 @@ public class BlockElse extends Block {
                 conditionToken = token;
                 conditionExp = new Expression(this, token.getChild(), token.getLastChild());
                 state = 3;
-            } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.BRACE) {
-                if (state == 2) {
-                    cFile.erro(token.start, token.start + 1, "Missing condition", this);
-                }
+            } else if (state == 3 && token.key == Key.COLON) {
+                colon = token;
+                state = 4;
+            } else if ((state == 3 || state == 4) && token.key == Key.WORD && next != end && next.key == Key.BRACE) {
+                cFile.erro(token, "Label statment not allowed", this);
+                state = 5;
+            } else if ((state == 1 || state == 2 || state == 3 || state == 4 || state == 5) && token.key == Key.BRACE) {
+                if (state == 2) cFile.erro(token.start, token.start + 1, "Missing condition", this);
+                if (state == 4) cFile.erro(colon, "Unexpected Token", this);
+
                 if (token.getChild() == null) {
                     if (next != end) {
                         contentToken = new TokenGroup(next, end);
@@ -50,20 +55,22 @@ public class BlockElse extends Block {
                     if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
                     contentToken = new TokenGroup(token.getChild(), token.getLastChild());
                 }
-                state = 4;
-            } else if ((state == 1 || state == 2 || state == 3) && token.key == Key.SEMICOLON) {
-                if (state == 2) {
-                    cFile.erro(token.start, token.start + 1, "Missing condition", this);
-                }
-                state = 4;
-            } else if (state == 2 || state == 3) {
+                state = 5;
+            } else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.SEMICOLON) {
+                if (state == 2) cFile.erro(token, "Missing condition", this);
+                if (state == 4) cFile.erro(colon, "Unexpected Token", this);
+
+                state = 5;
+            } else if (state == 1 || state == 3 || state == 4) {
+                if (state == 4) cFile.erro(colon, "Unexpected Token", this);
+
                 contentToken = new TokenGroup(token, end);
                 next = end;
-                state = 4;
+                state = 5;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-            if (next == end && state != 4) {
+            if (next == end && state != 5) {
                 cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;

@@ -42,7 +42,11 @@ public class LineBreak extends Line {
 
         breakSource = parent == null ? null : parent.isBreakble(label);
         if (breakSource == null) {
-            cFile.erro(start, "A Break Statment should be inside a Loop or Switch Statment", this);
+            if (label == null) {
+                cFile.erro(start, "A Break Statment should be inside a Loop or Switch Statment", this);
+            } else {
+                cFile.erro(start, "A Break Statment should be inside a Named Loop or Switch  [" + label + "]", this);
+            }
         }
     }
 }

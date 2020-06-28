@@ -88,7 +88,7 @@ public class BlockSwitch extends Block {
 
     @Override
     public Line isBreakble(Token label) {
-        if (label == this.label || (this.label != null && this.label.equals(label))) {
+        if (label == null || label.equals(this.label)) {
             return this;
         } else {
             return super.isBreakble(label);

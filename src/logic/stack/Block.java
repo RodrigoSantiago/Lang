@@ -22,6 +22,8 @@ public abstract class Block extends Line {
     }
 
     public void add(Token start, Token end) {
+        if (start.getNext() == end && start.key == Key.SEMICOLON) return;
+
         if (start.key == Key.BRACE) {
             add(new BlockEmpty(this, start, end));
         } else if (start.key == Key.IF) {

@@ -209,11 +209,16 @@ public class FieldView {
     }
 
     public boolean isReadOnly(Stack stack) {
-        if (srcNum != null) return false;
-
-        if (stack.isStaticConstructor() || stack.isConstructor()) {
-            return false;
+        if (srcVar != null) {
+            if (srcVar.isInitialized(srcID)) {
+                return true;
+            } else if (stack.isStaticConstructor() || stack.isConstructor()) {
+                return false;
+            } else {
+                return srcVar.isFinal();
+            }
+        } else {
+            return srcNum != null;
         }
-        return srcVar != null && !srcVar.isFinal();
     }
 }

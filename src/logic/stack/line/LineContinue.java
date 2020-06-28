@@ -41,8 +41,14 @@ public class LineContinue extends Line {
         }
 
         continueSource = parent == null ? null : parent.isContinuable(label);
+
+        continueSource = parent == null ? null : parent.isBreakble(label);
         if (continueSource == null) {
-            cFile.erro(start, "A Continue Statment should be inside a Loop", this);
+            if (label == null) {
+                cFile.erro(start, "A Continue Statment should be inside a Loop or Switch Statment", this);
+            } else {
+                cFile.erro(start, "A Continue Statment should be inside a Named Loop or Switch  [" + label + "]", this);
+            }
         }
     }
 }

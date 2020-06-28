@@ -245,7 +245,7 @@ public class CallGroup {
                 Call call = calls.get(i);
                 call.load(context);
 
-                if (!context.isIncorrect() && i < calls.size() - 1) {
+                if (!context.isIncorrect() && !call.isTypeCall() && i < calls.size() - 1) {
                     call.requestGet(null);
                 }
             }
@@ -258,12 +258,10 @@ public class CallGroup {
                         LiteralCall literalCall = innerCall.innerExpression.getLiteral();
                         calls.set(0, LiteralResolver.resolve(this, literalCall));
                     }
-                } else if (call instanceof FieldCall) {
-                    FieldCall fieldCall = (FieldCall) call;
-                    if (fieldCall.isTypeCall()) {
-                        // todo [ERRO]
-                    }
                 }
+            }
+            if (calls.size() > 0 && calls.get(calls.size() -1).isTypeCall()) {
+                // erro ? [alredy done by requestGET/OWN/SET]
             }
         }
     }

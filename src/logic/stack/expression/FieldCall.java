@@ -71,6 +71,9 @@ public class FieldCall extends Call {
                     if (context.isStatic() && !fieldView.isStatic()) {
                         cFile.erro(token, "Cannot use a Instance Member on a Static Environment", this);
                     }
+                    if (!context.isBegin() && !context.isStatic() && fieldView.isStatic()) {
+                        cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
+                    }
                     context.jumpTo(fieldView.getTypePtr());
                 }
             } else {

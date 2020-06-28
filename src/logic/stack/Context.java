@@ -358,4 +358,8 @@ public class Context {
         right.requestOwn(null);
         return null;
     }
+
+    public boolean isBegin() {
+        return isBegin;
+    }
 }

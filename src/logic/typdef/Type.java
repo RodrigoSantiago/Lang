@@ -356,6 +356,9 @@ public abstract class Type implements GenericOwner {
                 if (add) indexerView.add(pIW);
             }
             for (FieldView pFW : pPtr.type.fields.values()) {
+                if (nameToken.equals("Test")) {
+                    System.out.println("");
+                }
                 if (pFW.isStatic()) continue;
                 pFW = new FieldView(pPtr, pFW);
 
@@ -365,10 +368,10 @@ public abstract class Type implements GenericOwner {
                 boolean implOwn = !pFW.hasOwn() || !pFW.isOwnAbstract();
                 boolean add = true;
                 FieldView fw = fields.get(pFW.getName());
-                if (fw != null && !fw.isStatic()) {
+                if (fw != null) {
                     Token erro = fw.isFrom(this) ? fw.getName() : parentTokens.get(i);
                     add = false;
-                    if (fw.canOverride(pFW)) {
+                    if (fw.canOverride(pFW) && !fw.isStatic()) {
                         if (pFW.hasGet()) {
                             if (pFW.isGetFinal()) cFile.erro(erro, "Cannot override a final GET", this);
                             else if (!pFW.canAcessGet(this)) cFile.erro(erro, "Cannot acess GET", this);
@@ -406,7 +409,7 @@ public abstract class Type implements GenericOwner {
                                 implFieldOwn = fw.srcOwn;
                             }
                         }
-                    } else if (!fw.canShadow(pFW)) {
+                    } else /*if (!fw.canShadow(pFW))*/ {
                         cFile.erro(erro, "Incompatible signature [ " + pFW.getName() + " ]", this);
                     }
                 }

@@ -82,6 +82,9 @@ public class MethodCall extends Call {
                 if (context.isStatic() && !methodView.isStatic()) {
                     cFile.erro(token, "Cannot use a Instance Member on a Static Environment", this);
                 }
+                if (!context.isBegin() && !context.isStatic() && methodView.isStatic()) {
+                    cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
+                }
             }
             context.jumpTo(methodView == null ? null : methodView.getTypePtr());
         }

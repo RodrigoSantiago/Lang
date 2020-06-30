@@ -5,6 +5,7 @@ import logic.Pointer;
 import logic.params.Parameters;
 import logic.stack.expression.CallGroup;
 import logic.stack.expression.Expression;
+import logic.templates.Template;
 
 import java.util.ArrayList;
 
@@ -35,6 +36,18 @@ public class ParamView {
                 if (Pointer.hasGeneric(paramView.getArgTypePtr(i), caller)) {
                     typePtrs[i] = Pointer.byGeneric(paramView.getArgTypePtr(i), caller);
                 }
+            }
+        }
+    }
+
+    public ParamView(Template template, Pointer[] captureList, ParamView paramView) {
+        this.params = paramView.params;
+
+        typePtrs = new Pointer[paramView.getArgsCount()];
+        for (int i = 0; i < paramView.getArgsCount(); i++) {
+            typePtrs[i] = paramView.getArgTypePtr(i);
+            for (int j = 0; j < template.getCount(); j++) {
+                typePtrs[i] = Pointer.apply(template.getGeneric(j), captureList[j], typePtrs[i]);
             }
         }
     }

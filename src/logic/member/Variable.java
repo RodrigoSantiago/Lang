@@ -6,6 +6,7 @@ import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
+import logic.stack.Stack;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
@@ -37,10 +38,15 @@ public class Variable extends Member {
                 nameTokens.add(token);
                 state = 2;
             } else if (state == 2 && token.key == Key.SETVAL) {
+                Token initStart = next;
                 while (next != end && (next.key != Key.COMMA && next.key != Key.SEMICOLON)) {
                     next = next.getNext();
                 }
-                initTokens.add(new TokenGroup(token, next));
+                if (initStart == next) {
+                    cFile.erro(token, "Expression expected", this);
+                } else {
+                    initTokens.add(new TokenGroup(initStart, next));
+                }
 
                 if (next != end && next.key == Key.COMMA) {
                     next = next.getNext();
@@ -77,6 +83,16 @@ public class Variable extends Member {
             return nameTokens.size() > 0 ;
         }
         return false;
+    }
+
+    public void make() {
+        for (TokenGroup initToken : initTokens) {
+            if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
+                Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
+                stack.read(initToken.start, initToken.end, true);
+                stack.load();
+            }
+        }
     }
 
     public void build(CppBuilder cBuilder) {

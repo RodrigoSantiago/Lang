@@ -4,6 +4,7 @@ import content.Key;
 import content.Parser;
 import content.Token;
 import content.TokenGroup;
+import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Context;
 import logic.stack.Line;
@@ -22,13 +23,8 @@ public class BlockFor extends Block {
     TokenGroup conditionToken, loopToken;
     LineVar foreachVar;
 
-    /*
-
-
-    * */
     public BlockFor(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("FOR");
 
         Token colon = null;
         Token token = start;
@@ -42,7 +38,6 @@ public class BlockFor extends Block {
                 paramToken = token;
                 Token foreach = readIsForeach(paramToken.getChild(), paramToken.getLastChild());
                 if (foreach != null) {
-                    System.out.println("EACH");
                     readForeach(paramToken.getChild(), paramToken.getLastChild(), foreach);
                 } else {
                     readFor(paramToken.getChild(), paramToken.getLastChild());
@@ -102,9 +97,6 @@ public class BlockFor extends Block {
         if (firstLine != null) {
             firstLine.load();
         }
-        if (foreachVar != null) {
-            foreachVar.load();
-        }
         if (conditionExp != null) {
             conditionExp.load(new Context(stack));
             conditionExp.requestGet(cFile.langBoolPtr());
@@ -112,10 +104,49 @@ public class BlockFor extends Block {
         if (loopExp != null) {
             loopExp.load(new Context(stack));
             if (foreachVar != null) {
-                // verify string
-                // verify NULL == iterable
-                // cFile.erro(loopToken, "The foreach be a string or must implements Iterable", this);
-                loopExp.requestGet(null);
+
+                Pointer rType = null;
+                if (foreachVar.typeToken != null) {
+                    rType = stack.getPointer(foreachVar.typeToken, false);
+                }
+                Pointer rIterable = null;
+                if (rType != null) {
+                    rIterable = cFile.langIterablePtr(rType);
+                }
+
+                Pointer naturalPtr = loopExp.getNaturalPtr(rIterable);
+
+                if (naturalPtr != null && rIterable != null && naturalPtr.equalsIgnoreLet(rIterable)) {
+                    loopExp.requestGet(rIterable);
+                    foreachVar.typePtr = rType;
+                } else if (naturalPtr != null && naturalPtr.equals(cFile.langStringPtr())) {
+                    if (rType == null || rType.equals(cFile.langBytePtr())) {
+                        rType = cFile.langBytePtr();
+                    } else if (rType.equals(cFile.langShortPtr())) {
+                        rType = cFile.langShortPtr();
+                    } else if (rType.equals(cFile.langIntPtr())) {
+                        rType = cFile.langIntPtr();
+                    } else {
+                        rType = cFile.langBytePtr();
+                        cFile.erro(foreachVar.typeToken, "The string can iterate only by int, short or byte", this);
+                    }
+                    loopExp.requestGet(cFile.langStringPtr());
+                    foreachVar.typePtr = rType;
+                } else {
+                    loopExp.requestGet(rIterable);
+                    if (rType != null) {
+                        foreachVar.typePtr = rType;
+                    } else {
+                        foreachVar.typePtr = cFile.langObjectPtr();
+                        cFile.erro(loopExp.getTokenGroup(), "Cannot determine the Iterator Type", this);
+                    }
+                }
+
+                if (foreachVar.nameTokens.size() > 0) {
+                    if (!stack.addField(foreachVar.nameTokens.get(0), foreachVar.typePtr, foreachVar.isFinal, parent)) {
+                        cFile.erro(foreachVar.nameTokens.get(0), "Repeated field name", this);
+                    }
+                }
             } else {
                 conditionExp.requestGet(null);
             }
@@ -246,7 +277,7 @@ public class BlockFor extends Block {
     }
 
     private void readForeach(Token start, Token end, Token colon) {
-        foreachVar = new LineVar(this, start, colon, false);
+        foreachVar = new LineVar(this, start, colon, true);
         if (colon.getNext() != end) {
             loopToken = new TokenGroup(colon.getNext(), end);
             loopExp = new Expression(this, colon.getNext(), end);

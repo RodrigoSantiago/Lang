@@ -6,6 +6,7 @@ import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
+import logic.stack.Stack;
 import logic.typdef.Type;
 
 public class Property extends Member {
@@ -54,25 +55,28 @@ public class Property extends Member {
                 }
                 if (contentToken != null) readBlocks(contentToken);
                 state = 3;
-            } else if (state == 2 && token.key == Key.SEMICOLON) {
-                contentToken = new TokenGroup(token, next);
-                state = 4;
             } else if (state == 3 && token.key == Key.SETVAL) {
+                Token initStart = next;
                 while (next != end && next.key != Key.SEMICOLON) {
                     next = next.getNext();
                 }
-                if (next != end) {
-                    next = next.getNext();
+
+                if (initStart == next) {
+                    cFile.erro(token, "Expression expected", this);
                 } else {
-                    cFile.erro(token, "Semicolon expected", this);
+                    initToken = new TokenGroup(initStart, next);
                 }
-                initToken = new TokenGroup(token, next);
                 state = 4;
+            } else if (state == 4 && token.key == Key.SEMICOLON) {
+                state = 5;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
             if (next == end && state < 3) {
                 cFile.erro(token, "Unexpected end of tokens", this);
+            }
+            if (next == end && state == 4) {
+                cFile.erro(token, "Semicolon expected", this);
             }
             token = next;
         }
@@ -191,6 +195,28 @@ public class Property extends Member {
 
     @Override
     public boolean load() {
+        if ((!hasSet || isSetAbstract) && initToken != null) {
+            cFile.erro(initToken, "Init token not allowed without a implemented SET", this);
+        }
+
+        if (hasGet) {
+            if ((isGetPrivate && !isOwnPrivate) || (!isGetPublic && isOwnPublic)) {
+                cFile.erro(token, "The OWN acess should be equal or more restrict than GET", this);
+            }
+        } else {
+            cFile.erro(token, "Missing GET Statement", this);
+        }
+        if (hasGet && hasOwn) {
+            if ((isGetPrivate && !isSetPrivate) || (!isGetPublic && isSetPublic)) {
+                cFile.erro(token, "The SET acess should be equal or more restrict than GET", this);
+            }
+        }
+        if (hasGet && hasOwn && !isGetOwn && hasSet) {
+            if ((isOwnPrivate && !isSetPrivate) || (!isOwnPublic && isSetPublic)) {
+                cFile.erro(token, "The SET acess should be equal or more restrict than OWN", this);
+            }
+        }
+
         if ((contentToken != null && contentToken.start.key == Key.SEMICOLON) || !hasGet && !hasSet && !hasOwn) {
             cFile.erro(contentToken == null ? token : contentToken.start,
                     "A Property should have at least one member", this);
@@ -218,6 +244,36 @@ public class Property extends Member {
             return hasGet || hasSet || hasOwn;
         }
         return false;
+    }
+
+    public void make() {
+        if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
+            Stack stack = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
+                    isStatic() ? null : type, false, isStatic(), true);
+
+            stack.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
+            stack.load();
+        }
+        if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
+            Stack stack = new Stack(cFile, token, type.self, typePtr,
+                    isStatic() ? null : type, false, isStatic(), true);
+
+            stack.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
+            stack.load();
+        }
+        if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
+            Stack stack = new Stack(cFile, token, type.self, Pointer.voidPointer,
+                    isStatic() ? null : type, false, isStatic(), true);
+
+            stack.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
+            stack.value(typePtr);
+            stack.load();
+        }
+        if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
+            Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
+            stack.read(initToken.start, initToken.end, true);
+            stack.load();
+        }
     }
 
     public void build(CppBuilder cBuilder) {

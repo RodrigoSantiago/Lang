@@ -16,7 +16,6 @@ public class LineReturn extends Line {
 
     public LineReturn(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("RETURN");
 
         Token init = start;
         Token token = start;

@@ -15,7 +15,7 @@ public class Compiler {
     private HashMap<String, Library> libraries = new HashMap<>();
 
     private Namespace langSpace;
-    private Type langObject, langWrapper, langArray, langString,
+    private Type langObject, langWrapper, langArray,  langIterable, langString,
             langByte, langShort, langInt, langLong, langFloat, langDouble, langBool, langLocker, langFunction;
 
     public void setMainFile(ContentFile main) {
@@ -201,6 +201,14 @@ public class Compiler {
         }
 
         return langArray;
+    }
+
+    public Type getLangIterable() {
+        if (langIterable == null) {
+            langIterable = getLangType(new Token("Iterable"));
+        }
+
+        return langIterable;
     }
 
     public void langInvalidate(Library library) {

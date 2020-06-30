@@ -23,4 +23,8 @@ public class Generic {
         this.typeToken = typeToken;
     }
 
+    @Override
+    public String toString() {
+        return "Generic{" + nameToken + ":" + typePtr + "}";
+    }
 }

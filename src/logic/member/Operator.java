@@ -6,17 +6,20 @@ import content.TokenGroup;
 import data.CppBuilder;
 import logic.params.Parameters;
 import logic.Pointer;
+import logic.stack.Stack;
 import logic.typdef.Type;
 
 public class Operator extends Member {
 
+    public TokenGroup typeToken;
+    public Pointer typePtr;
     public Parameters params;
 
     public Token operator;
     public Key op = Key.NOONE;
+
     public TokenGroup contentToken;
-    public TokenGroup typeToken;
-    public Pointer typePtr;
+    private boolean hasImplementation;
 
     public Operator(Type type, Token start, Token end) {
         super(type);
@@ -87,6 +90,12 @@ public class Operator extends Member {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type, isLet());
             if (typePtr == null) {
                 typePtr = cFile.langObjectPtr(isLet());
+            } else if (!typePtr.equals(cFile.langBoolPtr())) {
+                if (op == Key.EQUAL || op == Key.DIF || op == Key.LESS || op == Key.ELESS ||
+                        op == Key.MORE || op == Key.EMORE) {
+                    cFile.erro(operator, "The comparing operators must return bool", this);
+                    return false;
+                }
             }
 
             if (params != null) {
@@ -115,6 +124,9 @@ public class Operator extends Member {
                         cFile.erro(operator, "The operator must have a single parameter", this);
                         return false;
                     }
+                } else {
+                    cFile.erro(operator, "The operator must have one or two parameters", this);
+                    return false;
                 }
 
                 if (typePtr.equals(type.self) && (op == Key.CAST || op == Key.AUTO)) {
@@ -131,6 +143,14 @@ public class Operator extends Member {
             }
         }
         return false;
+    }
+
+    public void make() {
+        if (hasImplementation) {
+            Stack stack = new Stack(cFile, token, type.self, typePtr, type, false, true, false);
+            stack.read(contentToken.start, contentToken.end, true);
+            stack.load();
+        }
     }
 
     public void build(CppBuilder cBuilder) {

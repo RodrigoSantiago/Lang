@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
+import logic.Pointer;
 import logic.member.view.ConstructorView;
 import logic.params.Parameters;
 import logic.stack.Stack;
@@ -14,6 +15,7 @@ public class Constructor extends Member {
 
     private Parameters params;
     private TokenGroup contentToken;
+    private boolean hasImplementation;
 
     private Constructor constructorTarget;
 
@@ -35,6 +37,7 @@ public class Constructor extends Member {
                 params = new Parameters(cFile, token);
                 state = 2;
             } else if (state == 2 && token.key == Key.BRACE) {
+                hasImplementation = true;
                 if (token.getChild() == null) {
                     if (next != end) {
                         contentToken = new TokenGroup(next, end);
@@ -61,7 +64,7 @@ public class Constructor extends Member {
 
     @Override
     public boolean load() {
-        if (contentToken != null && contentToken.start.key == Key.SEMICOLON) {
+        if (!hasImplementation) {
             cFile.erro(contentToken.start, "A Constructor should implement", this);
         }
 
@@ -78,29 +81,27 @@ public class Constructor extends Member {
     }
 
     public void make() {
-        if (type.nameToken.equals("Test")) {
-            if (contentToken != null) {
-                Stack stack = new Stack(cFile, type.self, type.self, null, false, isStatic(), true);
-                stack.read(contentToken.start, contentToken.end, true);
-                stack.addParam(getParams());
-                stack.load();
+        if (hasImplementation) {
+            Stack stack = new Stack(cFile, token, type.self, Pointer.voidPointer, isStatic() ? null : type, false, isStatic(), true);
+            stack.read(contentToken.start, contentToken.end, true);
+            stack.addParam(getParams());
+            stack.load();
 
-                if (!isStatic()) {
-                    ConstructorCall call = stack.getConstructorCall();
-                    if (call != null) {
-                        ConstructorView cv = stack.getConstructorCall().getConstructorView();
-                        if (cv != null) {
-                            constructorTarget = cv.constructor;
-                            if (constructorTarget.linkTo(this)) {
-                                constructorTarget = null;
-                                cFile.erro(call.token, "Cyclic constructor call", this);
-                            }
+            if (!isStatic()) {
+                ConstructorCall call = stack.getConstructorCall();
+                if (call != null) {
+                    ConstructorView cv = stack.getConstructorCall().getConstructorView();
+                    if (cv != null) {
+                        constructorTarget = cv.constructor;
+                        if (constructorTarget.linkTo(this)) {
+                            constructorTarget = null;
+                            cFile.erro(call.token, "Cyclic constructor call", this);
                         }
-                    } else {
-                        constructorTarget = type.getParentEmptyConstructor();
-                        if (constructorTarget == null && type.parent != null) {
-                            cFile.erro(token, "The constructor must call a local or parent constructor", this);
-                        }
+                    }
+                } else {
+                    constructorTarget = type.getParentEmptyConstructor();
+                    if (constructorTarget == null && type.parent != null && type.isClass()) {
+                        cFile.erro(token, "The constructor must call a local or parent constructor", this);
                     }
                 }
             }

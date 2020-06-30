@@ -15,7 +15,6 @@ public class BlockDo extends Block {
 
     public BlockDo(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("DO");
 
         Token colon = null;
         Token token = start;

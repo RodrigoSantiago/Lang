@@ -254,6 +254,10 @@ public class ContentFile {
         return getCompiler().getLangWrapper();
     }
 
+    public Type langIterable() {
+        return getCompiler().getLangIterable();
+    }
+
     public Pointer langObjectPtr() {
         return new Pointer(mark(getCompiler().getLangObject()));
     }
@@ -304,6 +308,10 @@ public class ContentFile {
 
     public Pointer langArrayPtr(Pointer pointer) {
         return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer}, false);
+    }
+
+    public Pointer langIterablePtr(Pointer pointer) {
+        return new Pointer(mark(getCompiler().getLangIterable()), new Pointer[]{pointer}, false);
     }
 
     public Pointer langWrapperPtr(Type type) {
@@ -491,7 +499,7 @@ public class ContentFile {
             ptr = new Pointer(langArray(), new Pointer[]{ptr}, isLet && (i + 1 == arr));
         }
 
-        return ptr;
+        return ptr.toLet(isLet);
     }
 
     public void erro(int start, int end, String message, Object sender) {

@@ -8,6 +8,8 @@ import logic.Pointer;
 import logic.params.Parameters;
 import logic.stack.block.*;
 import logic.stack.expression.ConstructorCall;
+import logic.stack.expression.Expression;
+import logic.stack.line.LineExpression;
 
 import java.util.HashMap;
 
@@ -16,9 +18,11 @@ public class Stack {
     public final ContentFile cFile;
     private final Pointer sourcePtr;
     private Pointer returnPtr;
+    public Token referenceToken;
 
     public Line line;
     public Block block;
+    public Expression expression;
 
     private boolean isExpression;
     private boolean isStatic;
@@ -31,16 +35,17 @@ public class Stack {
 
     private GenericOwner generics;
 
-    Stack(Stack source, Pointer returnPtr) {
+    Stack(Stack source, Token referenceToken, Pointer returnPtr) {
         this.cFile = source.cFile;
         this.sourcePtr = source.sourcePtr;
         this.returnPtr = returnPtr;
         this.isExpression = false;
         this.isStatic = source.isStatic;
         this.isConstructor = false;
+        this.referenceToken = referenceToken;
     }
 
-    public Stack(ContentFile cFile, Pointer sourcePtr, Pointer returnPtr, GenericOwner generics,
+    public Stack(ContentFile cFile, Token referenceToken, Pointer sourcePtr, Pointer returnPtr, GenericOwner generics,
                  boolean isExpression, boolean isStatic, boolean isConstructor) {
         this.cFile = cFile;
         this.sourcePtr = sourcePtr;
@@ -49,18 +54,29 @@ public class Stack {
         this.isExpression = isExpression;
         this.isStatic = isStatic;
         this.isConstructor = isConstructor;
+        this.referenceToken = referenceToken;
     }
 
     public void read(Token start, Token end, boolean read) {
-        block = new BlockEmpty(this, start, end, read);
+        if (isExpression) {
+            block = new BlockEmpty(this, start, end, false);
+            expression = new Expression(block, start, end);
+        } else {
+            block = new BlockEmpty(this, start, end, read);
+        }
     }
 
     public void load() {
-        if (!hasConstructorCall && !isStatic) {
-            thisBase();
-        }
+        if (isExpression) {
+            expression.load(new Context(this));
+            expression.requestOwn(returnPtr);
+        } else {
+            if (!hasConstructorCall && !isStatic) {
+                thisBase();
+            }
 
-        block.load();
+            block.load();
+        }
     }
 
     public boolean isStatic() {
@@ -80,6 +96,8 @@ public class Stack {
     }
 
     public void addParam(Parameters params) {
+        if (params == null) return;
+
         for (int i = 0; i < params.getCount(); i++) {
             addParam(params.getNameToken(i), params.getTypePtr(i), false);
         }
@@ -124,13 +142,18 @@ public class Stack {
         }
     }
 
+    public void value (Pointer valuePtr) {
+        Token nameValue = new Token("value");
+        fields.put(nameValue, new Field(this, referenceToken, nameValue, valuePtr, false, block));
+    }
+
     private void thisBase() {
         Token nameThis = new Token("this");
-        fields.put(nameThis, new Field(this, nameThis, sourcePtr.toLet(), true, block));
+        fields.put(nameThis, new Field(this, referenceToken, nameThis, sourcePtr.toLet(), true, block));
 
         if (sourcePtr.type.parent != null) {
             Token nameBase = new Token("base");
-            fields.put(nameBase, new Field(this, nameBase, sourcePtr.type.parent.toLet(), true, block));
+            fields.put(nameBase, new Field(this, referenceToken, nameBase, sourcePtr.type.parent.toLet(), true, block));
         }
     }
 

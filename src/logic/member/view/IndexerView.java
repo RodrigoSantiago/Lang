@@ -58,10 +58,13 @@ public class IndexerView {
     }
 
     public boolean canOverride(IndexerView other) {
-        if (getTypePtr().equals(other.getTypePtr())) {
+        if (other.hasOwn() || other.hasSet()) {
+            if (getTypePtr().equals(other.getTypePtr())) {
+                return getParams().canOverride(other.getParams());
+            }
+        } else if (getTypePtr().equalsIgnoreLet(other.getTypePtr())) {
             return getParams().canOverride(other.getParams());
         }
-
         return false;
     }
 

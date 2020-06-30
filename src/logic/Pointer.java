@@ -1,6 +1,7 @@
 package logic;
 
 import logic.templates.Generic;
+import logic.templates.Template;
 import logic.typdef.Type;
 
 public class Pointer {
@@ -39,13 +40,16 @@ public class Pointer {
     }
 
     public boolean isDefault() {
-        return this == nullPointer || this == voidPointer || this == openPointer ||
-                (typeSource != null && typeSource.basePtr == openPointer);
+        return this == nullPointer || this == voidPointer || this == openPointer;
     }
 
     public Pointer toLet() {
-        if (let || (type != null && type.isValue()) || isDefault()) return this;
-        return new Pointer(type, pointers == null ? null : pointers.clone(), typeSource, true);
+        return toLet(true);
+    }
+
+    public Pointer toLet(boolean toLet) {
+        if (toLet == let || (type != null && type.isValue()) || isDefault()) return this;
+        return new Pointer(type, pointers == null ? null : pointers.clone(), typeSource, toLet);
     }
 
     public boolean hasGeneric() {
@@ -82,6 +86,16 @@ public class Pointer {
         if (pointers != null) {
             for (Pointer pointer : pointers) {
                 if (pointer.contains(other)) return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean contains(Generic typeSource) {
+        if (this.typeSource == typeSource) return true;
+        if (pointers != null) {
+            for (Pointer pointer : pointers) {
+                if (pointer.contains(typeSource)) return true;
             }
         }
         return false;
@@ -157,6 +171,7 @@ public class Pointer {
         }
 
         if (other.equalsIgnoreLet(this)) return 1;
+        if (other.type.isFunction() && type.isFunction()) return 0;
 
         // Implicit Cast
         for (Pointer p : other.type.autoCast) {
@@ -204,7 +219,7 @@ public class Pointer {
         }
 
         if (source.typeSource != null && caller.type != null && source.typeSource.owner == caller.type.template) {
-            return caller.pointers[source.typeSource.index];
+            return caller.pointers[source.typeSource.index].toLet(source.let);
         } else if (source.pointers != null) {
             Pointer[] inner = new Pointer[source.pointers.length];
             for (int i = 0; i < source.pointers.length; i++) {
@@ -227,6 +242,51 @@ public class Pointer {
             }
         }
         return false;
+    }
+
+    public static Pointer capture(Generic source, Pointer original, Pointer input) {
+        if (original.typeSource == source) {
+            return input.isDerivedFrom(source.basePtr) > 0 ? input.toLet(false) : null;
+        } else if (original.type == input.type &&
+                original.pointers != null && input.pointers != null &&
+                original.pointers.length == input.pointers.length) {
+
+            for (int i = 0; i < original.pointers.length; i++) {
+                Pointer cap = capture(source, original.pointers[i], input.pointers[i]);
+                if (cap != null) {
+                    return cap.toLet(false);
+                }
+            }
+        }
+        return null;
+    }
+
+    public static Pointer apply(Generic generic, Pointer original, Pointer source) {
+        if (source.typeSource == generic) {
+            return original.toLet(source.let);
+        } else if (source.pointers != null) {
+            Pointer[] inner = new Pointer[source.pointers.length];
+            for (int i = 0; i < source.pointers.length; i++) {
+                inner[i] = apply(generic, original, source.pointers[i]);
+            }
+            return new Pointer(source.type, inner, source.typeSource, source.let);
+        }
+
+        return source;
+    }
+
+    public static Pointer force(Generic generic, Pointer source) {
+        if (source.typeSource == generic) {
+            return generic.defaultPtr.toLet(source.let);
+        } else if (source.pointers != null) {
+            Pointer[] inner = new Pointer[source.pointers.length];
+            for (int i = 0; i < source.pointers.length; i++) {
+                inner[i] = force(generic, source.pointers[i]);
+            }
+            return new Pointer(source.type, inner, source.typeSource, source.let);
+        }
+
+        return source;
     }
 
     public static int OwnTable(Pointer reciver, Pointer src) {
@@ -301,7 +361,7 @@ public class Pointer {
         if (this == voidPointer) return "void";
         if (this == nullPointer) return "nullptr";
         if (this == openPointer) return "open";
-        if (this.isOpen()) return typeSource.nameToken+ ":open";
+        if (this.isOpen()) return typeSource.nameToken + ":open";
         String s = (let ? "let " : "") + (typeSource == null ? type.toString() :
                 typeSource.nameToken.toString() + ":" + typeSource.basePtr);
         if (pointers != null) {

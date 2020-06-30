@@ -356,9 +356,6 @@ public abstract class Type implements GenericOwner {
                 if (add) indexerView.add(pIW);
             }
             for (FieldView pFW : pPtr.type.fields.values()) {
-                if (nameToken.equals("Test")) {
-                    System.out.println("");
-                }
                 if (pFW.isStatic()) continue;
                 pFW = new FieldView(pPtr, pFW);
 
@@ -433,19 +430,19 @@ public abstract class Type implements GenericOwner {
             }
         }
 
-        if (parent != null) {
-            if (parentEmptyConstructor == null && isClass()) {
-                Constructor parentEmpty = parent.type.emptyConstructor;
-                if (parentEmpty == null && parent.type.constructors.size() == 0) {
-                    parentEmpty = parent.type.parentEmptyConstructor;
-                }
+        if (parent != null && isClass()) {
+              if (parentEmptyConstructor == null) {
+                    Constructor parentEmpty = parent.type.emptyConstructor;
+                    if (parentEmpty == null && parent.type.constructors.size() == 0) {
+                        parentEmpty = parent.type.parentEmptyConstructor;
+                    }
 
-                if (parentEmpty != null && parentEmpty.isPublic()) {
-                    parentEmptyConstructor = parentEmpty;
+                    if (parentEmpty != null && parentEmpty.isPublic()) {
+                        parentEmptyConstructor = parentEmpty;
+                    }
+                if (parentEmptyConstructor == null && constructors.size() == 0) {
+                    cFile.erro(nameToken, "The class should implement a valid constructor", this);
                 }
-            }
-            if (parentEmptyConstructor == null && constructors.size() == 0) {
-                cFile.erro(nameToken, "The class should implement a valid constructor", this);
             }
             for (Constructor pC : parent.type.constructors) {
                 if (pC.isDefault() && pC.isPublic()) {
@@ -481,6 +478,18 @@ public abstract class Type implements GenericOwner {
             if (!method.isAbstract()) {
                 method.make();
             }
+        }
+        for (Variable variable : variables) {
+            variable.make();
+        }
+        for (Property property : properties) {
+            property.make();
+        }
+        for (Indexer indexer : indexers) {
+            indexer.make();
+        }
+        for (Operator operator : operators) {
+            operator.make();
         }
     }
 

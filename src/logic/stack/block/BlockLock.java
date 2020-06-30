@@ -17,8 +17,6 @@ public class BlockLock extends Block {
 
     public BlockLock(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("LOCK");
-
 
         Token colon = null;
         Token token = start;

@@ -34,7 +34,6 @@ public class InstanceCall extends Call {
     public InstanceCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
 
-        System.out.println("INSTANCE : "+ TokenGroup.toString(start, end));
         Token token = start;
         Token next;
         int state = 0;
@@ -271,8 +270,9 @@ public class InstanceCall extends Call {
                     }
                 }
             }
-
-            context.jumpTo(typePtr);
+            if (typePtr == null) {
+                context.jumpTo(null);
+            }
         }
     }
 

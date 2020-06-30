@@ -59,14 +59,6 @@ public class Context {
         isBegin = false;
     }
 
-    public void jumpToContext(Context context) {
-        this.isIncorrect = context.isIncorrect;
-        this.isStatic = context.isStatic;
-        this.pointer = context.pointer;
-        this.type = context.type;
-        isBegin = false;
-    }
-
     public boolean isStatic() {
         return isStatic;
     }
@@ -103,7 +95,29 @@ public class Context {
         return fieldView;
     }
 
+    private ArrayList<MethodView> findFunctionRun(Token nameToken, ArrayList<Expression> arguments) {
+        Pointer[] ptrs = pointer.pointers;
+        int len = ptrs.length - 1;
+        if (len > arguments.size()) {
+            len = arguments.size();
+            stack.cFile.erro(nameToken, "Missing arguments", this);
+        } else if (len < arguments.size()) {
+            stack.cFile.erro(nameToken, "Too much arguments", this);
+        }
+        for (int i = 0; i < arguments.size(); i++) {
+            arguments.get(i).requestOwn(i > len ? null : ptrs[i + 1]);
+        }
+
+        ArrayList<MethodView> found = new ArrayList<>();
+        found.add(new MethodView(stack.cFile.langFunction().getMethod(new Token("run")).get(0).method, pointer));
+        return found;
+    }
+
     public ArrayList<MethodView> findMethod(Token nameToken, ArrayList<Expression> arguments) {
+        if (type != null && type.isFunction() && !isStatic && nameToken.equals("run")) {
+            return findFunctionRun(nameToken, arguments);
+        }
+
         for (Expression arg : arguments) {
             arg.load(new Context(this));
         }
@@ -116,6 +130,7 @@ public class Context {
             for (MethodView mv : methods) {
                 if (mv.getParams().getArgsCount() == arguments.size()) {
                     if (!isStatic && pointer.pointers != null) mv = new MethodView(pointer, mv);
+                    if (mv.templateView != null) mv = MethodView.byTemplate(arguments, mv);
 
                     int ret = mv.getParams().verifyArguments(closer, result, arguments, found != null);
                     if (ret == 0) {
@@ -279,7 +294,35 @@ public class Context {
 
         boolean isComposite = false;
         Token opToken = center.getOperatorToken();
-        if (opToken.key == Key.IS || opToken.key == Key.ISNOT) {
+
+        if (opToken.key == Key.EQUAL || opToken.key == Key.DIF) {
+            Pointer lPointer = left.getNaturalPtr(null);
+            Pointer rPointer = right.getNaturalPtr(null);
+            if (lPointer != null && rPointer != null &&
+                    lPointer != Pointer.voidPointer && rPointer != Pointer.voidPointer) {
+
+                if ((lPointer == Pointer.nullPointer && rPointer == Pointer.nullPointer) ||
+                        (lPointer.isOpen() && rPointer.isOpen()) ||
+                        (lPointer == Pointer.nullPointer && rPointer.type != null && rPointer.type.isPointer()) ||
+                        (rPointer == Pointer.nullPointer && lPointer.type != null && lPointer.type.isPointer()) ||
+                        (lPointer.type != null && lPointer.type.isPointer() &&
+                                rPointer.type != null && rPointer.type.isPointer())) {
+                    left.requestGet(null);
+                    right.requestGet(null);
+
+                    ArrayList<OperatorView> operators = new ArrayList<>();
+                    operators.add(opToken.key == Key.EQUAL ? OperatorView.EQUAL : OperatorView.DIF);
+                    return operators;
+                }
+            }
+        } else if (opToken.key == Key.AND || opToken.key == Key.OR) {
+            left.requestGet(stack.cFile.langBoolPtr());
+            right.requestGet(stack.cFile.langBoolPtr());
+
+            ArrayList<OperatorView> operators = new ArrayList<>();
+            operators.add(opToken.key == Key.AND ? OperatorView.AND : OperatorView.OR);
+            return operators;
+        } else if (opToken.key == Key.IS || opToken.key == Key.ISNOT) {
             left.requestGet(null);
             // right.requestGet(null); [TYPE CALL]
 

@@ -4,11 +4,14 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
+import logic.Pointer;
+import logic.stack.Stack;
 import logic.typdef.Type;
 
 public class Destructor extends Member {
 
     private TokenGroup contentToken;
+    private boolean hasImplementation;
 
     public Destructor(Type type, Token start, Token end) {
         super(type);
@@ -31,6 +34,7 @@ public class Destructor extends Member {
                 }
                 state = 3;
             } else if (state == 3 && token.key == Key.BRACE) {
+                hasImplementation = true;
                 if (token.getChild() == null) {
                     if (next != end) {
                         contentToken = new TokenGroup(next, end);
@@ -59,11 +63,19 @@ public class Destructor extends Member {
 
     @Override
     public boolean load() {
-        if (contentToken != null && contentToken.start.key == Key.SEMICOLON) {
+        if (!hasImplementation) {
             cFile.erro(contentToken.start, "A Destructor should implement", this);
         }
 
         return contentToken != null;
+    }
+
+    public void make() {
+        if (hasImplementation) {
+            Stack stack = new Stack(cFile, token, type.self, Pointer.voidPointer, type, false, false, false);
+            stack.read(contentToken.start, contentToken.end, true);
+            stack.load();
+        }
     }
 
     public void build(CppBuilder cBuilder) {

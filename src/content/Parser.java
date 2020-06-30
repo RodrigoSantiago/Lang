@@ -157,13 +157,10 @@ public class Parser {
     }
 
     public static void parseLines(Block block, Token init, Token end) {
-        int state = 0;
-        boolean caseExcep = false;
-
-        // block.add(start, next);
 
         Token token = init;
         Token start = token;
+        int state = 0;
         while (token != null && token != end) {
             Token next = token.getNext();
             if (state == 0 && token.key == Key.BRACE) {     // [{}]
@@ -205,7 +202,7 @@ public class Parser {
             } else if ((state == 1 || state == 2) && token.key.isBlock) {       // [if][()*]+[if]
                 state = 1;
             } else {
-                // Do not use [default]
+
                 while (next != end && (next.key != Key.SEMICOLON && next.key != Key.CASE && !next.key.isBlock)) {
                     next = next.getNext();
                 }
@@ -218,7 +215,7 @@ public class Parser {
 
             token = next;
         }
-        if (start != end) {
+        if (start != null && start != end) {
             block.add(start, end);
         }
         block.end();

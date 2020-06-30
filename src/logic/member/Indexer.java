@@ -7,6 +7,7 @@ import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.IndexerView;
 import logic.params.Parameters;
+import logic.stack.Stack;
 import logic.typdef.Type;
 
 public class Indexer extends Member {
@@ -181,6 +182,24 @@ public class Indexer extends Member {
 
     @Override
     public boolean load() {
+        if (hasGet) {
+            if ((isGetPrivate && !isOwnPrivate) || (!isGetPublic && isOwnPublic)) {
+                cFile.erro(token, "The OWN acess should be equal or more restrict than GET", this);
+            }
+        } else {
+            cFile.erro(token, "Missing GET Statement", this);
+        }
+        if (hasGet && hasOwn) {
+            if ((isGetPrivate && !isSetPrivate) || (!isGetPublic && isSetPublic)) {
+                cFile.erro(token, "The SET acess should be equal or more restrict than GET", this);
+            }
+        }
+        if (hasGet && hasOwn && !isGetOwn && hasSet) {
+            if ((isOwnPrivate && !isSetPrivate) || (!isOwnPublic && isSetPublic)) {
+                cFile.erro(token, "The SET acess should be equal or more restrict than OWN", this);
+            }
+        }
+
         if ((contentToken != null && contentToken.start.key == Key.SEMICOLON) || !hasGet && !hasSet && !hasOwn) {
             cFile.erro(contentToken == null ? token : contentToken.start,
                     "A Indexer should have at least one member", this);
@@ -212,6 +231,34 @@ public class Indexer extends Member {
             }
         }
         return false;
+    }
+
+    public void make() {
+        if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
+            Stack stack = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
+                    isStatic() ? null : type, false, isStatic(), true);
+
+            stack.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
+            stack.addParam(getParams());
+            stack.load();
+        }
+        if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
+            Stack stack = new Stack(cFile, token, type.self, typePtr,
+                    isStatic() ? null : type, false, isStatic(), true);
+
+            stack.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
+            stack.addParam(getParams());
+            stack.load();
+        }
+        if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
+            Stack stack = new Stack(cFile, token, type.self, Pointer.voidPointer,
+                    isStatic() ? null : type, false, isStatic(), true);
+
+            stack.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
+            stack.addParam(getParams());
+            stack.value(typePtr);
+            stack.load();
+        }
     }
 
     public void build(CppBuilder cBuilder) {

@@ -19,7 +19,6 @@ public class IndexerCall extends Call {
     public IndexerCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
 
-        System.out.println("INDEXER : "+ TokenGroup.toString(start, end));
         Token token = start;
         Token next;
         int state = 0;
@@ -64,7 +63,18 @@ public class IndexerCall extends Call {
     }
 
     @Override
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        if (indexerView != null) {
+            naturalPtr = indexerView.getTypePtr();
+        }
+        return naturalPtr;
+    }
+
+    @Override
     public void load(Context context) {
+        if (context.type.nameToken.equals("date")) {
+            System.out.println("");
+        }
         ArrayList<IndexerView> indexers = context.findIndexer(arguments);
         if (indexers == null || indexers.size() == 0) {
             cFile.erro(token, "Indexer not found", this);
@@ -74,7 +84,9 @@ public class IndexerCall extends Call {
         } else {
             indexerView = indexers.get(0);
         }
-        context.jumpTo(indexerView == null ? null : indexerView.getTypePtr());
+        if (indexerView == null) {
+            context.jumpTo(null);
+        }
     }
 
     @Override

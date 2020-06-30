@@ -32,7 +32,6 @@ public class Expression {
         this.start = start;
         this.end = end;
         tokenGroup = new TokenGroup(start, end);
-        System.out.println("EXPR: "+ TokenGroup.toString(start, end));
 
         Token dot = null;
         Token contentStart = null;
@@ -449,7 +448,7 @@ public class Expression {
     }
 
     public Pointer getNaturalPtr(Pointer convertFlag) {
-        return groups.size() > 0 ? groups.get(0).getNaturalPtr(convertFlag) : null;
+        return groups.size() > 0 ? groups.get(0).getNaturalPtr(convertFlag) : Pointer.voidPointer;
     }
 
     public void requestGet(Pointer pointer) {

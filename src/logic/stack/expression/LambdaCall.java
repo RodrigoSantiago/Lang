@@ -4,7 +4,6 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
-import logic.params.Parameters;
 import logic.stack.Context;
 import logic.stack.StackExpansion;
 
@@ -33,7 +32,6 @@ public class LambdaCall extends Call {
     public LambdaCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
 
-        System.out.println("LAMBDA : "+ TokenGroup.toString(start, end));
         Token token = start;
         Token next;
         int state = 0;
@@ -230,32 +228,30 @@ public class LambdaCall extends Call {
 
     @Override
     public Pointer getNaturalPtr(Pointer convertFlag) {
-        if (naturalPtr == null) {
-            if (isAutomatic && convertFlag != null && convertFlag.type == cFile.langFunction()) {
-                if (convertFlag.pointers != null && convertFlag.pointers.length == nameTokens.size() + 1) {
-                    naturalPtr = convertFlag;
-                } else {
-                    naturalPtr = null;
-                }
-            } else if (isNoTyped && convertFlag != null && convertFlag.type == cFile.langFunction()) {
-                boolean dif = true;
-                if (convertFlag.pointers != null && convertFlag.pointers.length == nameTokens.size() + 1) {
-                    dif = false;
-                    for (int i = 1; i < functionPtr.pointers.length; i++) {
-                        if (!functionPtr.pointers[i].equals(convertFlag.pointers[i])) {
-                            dif = true;
-                            break;
-                        }
+        if (isAutomatic && convertFlag != null && convertFlag.type == cFile.langFunction()) {
+            if (convertFlag.pointers != null && convertFlag.pointers.length == nameTokens.size() + 1) {
+                naturalPtr = convertFlag;
+            } else {
+                naturalPtr = null;
+            }
+        } else if (isNoTyped && convertFlag != null && convertFlag.type == cFile.langFunction()) {
+            boolean dif = true;
+            if (convertFlag.pointers != null && convertFlag.pointers.length == nameTokens.size() + 1) {
+                dif = false;
+                for (int i = 1; i < functionPtr.pointers.length; i++) {
+                    if (!functionPtr.pointers[i].equals(convertFlag.pointers[i])) {
+                        dif = true;
+                        break;
                     }
                 }
-                if (dif) {
-                    naturalPtr = functionPtr;
-                } else {
-                    naturalPtr = convertFlag;
-                }
-            } else {
-                naturalPtr = functionPtr;
             }
+            if (dif) {
+                naturalPtr = functionPtr;
+            } else {
+                naturalPtr = convertFlag;
+            }
+        } else {
+            naturalPtr = functionPtr;
         }
         return naturalPtr;
     }
@@ -276,7 +272,7 @@ public class LambdaCall extends Call {
         }
 
         if (contentToken != null) {
-            innerStack = new StackExpansion(getStack(), typePtr);
+            innerStack = new StackExpansion(getStack(), token, typePtr);
             innerStack.read(contentToken.start, contentToken.end, true);
             for (int i = 0; i < nameTokens.size(); i++) {
                 innerStack.addParam(nameTokens.get(i), naturalPtr.pointers[i + 1], false);
@@ -300,7 +296,7 @@ public class LambdaCall extends Call {
         }
 
         if (contentToken != null) {
-            innerStack = new StackExpansion(getStack(), naturalPtr.pointers[0]);
+            innerStack = new StackExpansion(getStack(), token, naturalPtr.pointers[0]);
             innerStack.read(contentToken.start, contentToken.end, true);
             for (int i = 0; i < nameTokens.size(); i++) {
                 innerStack.addParam(nameTokens.get(i), naturalPtr.pointers[i + 1], false);

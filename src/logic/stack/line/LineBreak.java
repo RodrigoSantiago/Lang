@@ -12,7 +12,6 @@ public class LineBreak extends Line {
 
     public LineBreak(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("BREAK");
 
         Token token = start;
         Token next;

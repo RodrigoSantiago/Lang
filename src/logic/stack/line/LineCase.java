@@ -27,7 +27,6 @@ public class LineCase extends Line {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && (token.key == Key.CASE || token.key == Key.DEFAULT)) {
-                System.out.println(token.key == Key.DEFAULT ? "DEFAULT" : "CASE");
                 init = next;
                 isDefault = token.key == Key.DEFAULT;
                 state = 1;

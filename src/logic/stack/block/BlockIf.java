@@ -16,7 +16,6 @@ public class BlockIf extends Block {
 
     public BlockIf(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("IF");
 
         Token colon = null;
         Token token = start;

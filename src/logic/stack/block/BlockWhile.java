@@ -18,7 +18,6 @@ public class BlockWhile extends Block {
 
     public BlockWhile(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("WHILE");
 
         Token colon = null;
         Token token = start;

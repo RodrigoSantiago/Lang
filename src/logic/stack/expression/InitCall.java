@@ -23,8 +23,6 @@ public class InitCall extends Call {
             innerRequest = requestType;
         }
 
-        System.out.println("INNER ARRAY INIT : "+ TokenGroup.toString(start, end));
-
         end = start.getLastChild();
         Token token = start.getChild();
         Token next;

@@ -68,6 +68,9 @@ public class Parameters {
             if (arg.typePtr == null) {
                 arg.typePtr = cFile.langObjectPtr(arg.isLet);
             }
+            if (arg.typePtr.let != arg.isLet) {
+                System.out.println("");
+            }
 
             if (!hasGeneric && arg.typePtr.hasGeneric()) {
                 hasGeneric = true;

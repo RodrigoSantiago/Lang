@@ -14,6 +14,8 @@ public class OperatorView {
     public static final OperatorView SET = new OperatorView(Key.SETVAL);
     public static final OperatorView IS = new OperatorView(Key.IS);
     public static final OperatorView ISNOT = new OperatorView(Key.ISNOT);
+    public static final OperatorView EQUAL = new OperatorView(Key.EQUAL);
+    public static final OperatorView DIF = new OperatorView(Key.DIF);
 
     public final Pointer caller;
     public final Operator operator;

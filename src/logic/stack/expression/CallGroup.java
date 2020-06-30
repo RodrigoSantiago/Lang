@@ -245,8 +245,17 @@ public class CallGroup {
                 Call call = calls.get(i);
                 call.load(context);
 
-                if (!context.isIncorrect() && !call.isTypeCall() && i < calls.size() - 1) {
-                    call.requestGet(null);
+                if (!context.isIncorrect() && i < calls.size() - 1) {
+                    if (call.isTypeCall()) {
+                        if (call.getTypePtr() != null) {
+                            context.jumpTo(call.getTypePtr().type, true);
+                        } else {
+                            context.jumpTo(null);
+                        }
+                    } else {
+                        call.requestGet(null);
+                        context.jumpTo(call.getNaturalPtr(null));
+                    }
                 }
             }
             if (calls.size() == 1) {
@@ -275,7 +284,8 @@ public class CallGroup {
             }
         } else if (operatorView != null) {
             if (operatorView == OperatorView.OR || operatorView == OperatorView.AND ||
-                    operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT) {
+                    operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT ||
+                    operatorView == OperatorView.EQUAL || operatorView == OperatorView.DIF) {
                 return pointer.canReceive(cFile.langBoolPtr());
             } else if (operatorView == OperatorView.CAST) {
                 return left.getCastPtr() == null ? 0 : pointer.canReceive(left.getCastPtr());
@@ -291,33 +301,32 @@ public class CallGroup {
     }
 
     public Pointer getNaturalPtr(Pointer convertFlag) {
-        if (naturalPtr == null) {
-            if (option != null) {
-                Pointer a = right.getNaturalPtr(convertFlag);
-                Pointer b = option.getNaturalPtr(convertFlag);
-                if (a == null) {
-                    naturalPtr = b;
-                } else if (b == null) {
-                    naturalPtr = a;
-                } else if (a.canReceive(b) > 0) {
-                    naturalPtr = a;
-                } else if (b.canReceive(a) > 0) {
-                    naturalPtr = b;
-                }
-            } else if (operatorView != null) {
-                if (operatorView == OperatorView.OR || operatorView == OperatorView.AND ||
-                        operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT) {
-                    naturalPtr = cFile.langBoolPtr();
-                } else if (operatorView == OperatorView.CAST) {
-                    naturalPtr = left.getCastPtr();
-                } else if (operatorView == OperatorView.SET || setOperator) {
-                    naturalPtr = right.getNaturalPtr(convertFlag);
-                } else {
-                    naturalPtr = operatorView.getTypePtr();
-                }
-            } else if (calls.size() > 0) {
-                naturalPtr = calls.get(calls.size() - 1).getNaturalPtr(convertFlag);
+        if (option != null) {
+            Pointer a = right.getNaturalPtr(convertFlag);
+            Pointer b = option.getNaturalPtr(convertFlag);
+            if (a == null) {
+                naturalPtr = b;
+            } else if (b == null) {
+                naturalPtr = a;
+            } else if (a.canReceive(b) > 0) {
+                naturalPtr = a;
+            } else if (b.canReceive(a) > 0) {
+                naturalPtr = b;
             }
+        } else if (operatorView != null) {
+            if (operatorView == OperatorView.OR || operatorView == OperatorView.AND ||
+                    operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT ||
+                    operatorView == OperatorView.EQUAL || operatorView == OperatorView.DIF) {
+                naturalPtr = cFile.langBoolPtr();
+            } else if (operatorView == OperatorView.CAST) {
+                naturalPtr = left.getCastPtr();
+            } else if (operatorView == OperatorView.SET || setOperator) {
+                naturalPtr = right.getNaturalPtr(convertFlag);
+            } else {
+                naturalPtr = operatorView.getTypePtr();
+            }
+        } else if (calls.size() > 0) {
+            naturalPtr = calls.get(calls.size() - 1).getNaturalPtr(convertFlag);
         }
         return naturalPtr;
     }
@@ -328,8 +337,11 @@ public class CallGroup {
 
     private boolean setCastOwn(Pointer pointer) {
         if (pointer == null || castPtr == null) return true;
-
-        return Pointer.OwnTable(pointer, naturalPtr) == 0;
+        try {
+            return Pointer.OwnTable(pointer, naturalPtr) == 0;
+        } catch (Exception e) {
+            return true;
+        }
     }
 
     public void requestGet(Pointer pointer) {
@@ -352,6 +364,7 @@ public class CallGroup {
         } else if (operatorView == OperatorView.CAST) {
             left.setCastGet(pointer);
             center.requestGet(null);
+            naturalPtr = left.getCastPtr();
         } else {
             if (naturalPtr != null && naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
                 cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
@@ -361,7 +374,8 @@ public class CallGroup {
     }
 
     public void requestOwn(Pointer pointer) {
-        if (pointer == null) pointer = getNaturalPtr(pointer);
+        getNaturalPtr(pointer);
+        if (pointer == null) pointer = naturalPtr;
 
         requestPtr = pointer;
 
@@ -380,6 +394,9 @@ public class CallGroup {
                 center.requestOwn(null);
             } else {
                 center.requestGet(null);
+            }
+            if (naturalPtr != null && pointer.canReceive(naturalPtr) <= 0) {
+                cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
             }
         } else {
             if (naturalPtr != null && pointer.canReceive(naturalPtr) <= 0) {

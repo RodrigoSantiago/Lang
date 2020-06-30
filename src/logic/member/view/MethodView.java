@@ -3,7 +3,11 @@ package logic.member.view;
 import content.Token;
 import logic.Pointer;
 import logic.member.Method;
+import logic.stack.expression.Expression;
+import logic.templates.Generic;
 import logic.typdef.Type;
+
+import java.util.ArrayList;
 
 public class MethodView {
     public final Pointer caller;
@@ -13,6 +17,7 @@ public class MethodView {
     private Pointer typePtr;
 
     public MethodView overrided;
+    Pointer[] captureList;
 
     public MethodView(Pointer caller, Method method) {
         this.caller = caller;
@@ -33,6 +38,57 @@ public class MethodView {
         paramView = new ParamView(caller, methodView.getParams());
         templateView = method.getTemplate() != null ? new TemplateView(caller, method.getTemplate()) : null;
         this.overrided = methodView.overrided;
+    }
+
+
+    public MethodView(Method functionMethod, Pointer caller) {
+        this.caller = caller;
+        this.method = functionMethod;
+        this.paramView = null;
+        this.templateView = null;
+        this.typePtr = caller.pointers[0];
+    }
+
+    public MethodView(Pointer[] captureList, MethodView methodView) {
+        this.caller = methodView.caller;
+        this.method = methodView.method;
+        this.templateView = methodView.templateView;
+        this.captureList = captureList;
+
+        typePtr = method.getTypePtr();
+        this.paramView = new ParamView(templateView.template, captureList, methodView.paramView);
+        for (int j = 0; j < templateView.getGenCount(); j++) {
+            typePtr = Pointer.apply(templateView.getGeneric(j), captureList[j], typePtr);
+        }
+    }
+
+    public static MethodView byTemplate(ArrayList<Expression> expressions, MethodView methodView) {
+        ParamView paramView = methodView.getParams();
+        TemplateView templateView = methodView.getTemplate();
+        Pointer[] captureList = new Pointer[templateView.getGenCount()];
+
+        for (int k = 0; k < templateView.getGenCount(); k++) {
+            Generic gen = templateView.getGeneric(k);
+            captureList[k] = gen.typePtr;
+
+            loop1 : for (int i = 0; i < expressions.size(); i++) {
+                Pointer input = expressions.get(i).getNaturalPtr(null);
+                for (int j = 0; j < paramView.getArgsCount(); j++) {
+                    Pointer original = paramView.getArgTypePtr(i);
+                    Pointer capture = Pointer.capture(gen, original, input);
+                    if (capture != null) {
+                        captureList[k] = capture;
+                        break loop1;
+                    }
+                }
+            }
+        }
+
+        return new MethodView(captureList, methodView);
+    }
+
+    public Pointer[] getCaptureList() {
+        return captureList;
     }
 
     public boolean isFrom(Type type) {
@@ -86,6 +142,10 @@ public class MethodView {
 
     public TemplateView getTemplate() {
         return templateView;
+    }
+
+    public boolean isTemplateReturnEntry() {
+        return method.isTemplateReturnEntry();
     }
 
     public boolean isPrivate() {

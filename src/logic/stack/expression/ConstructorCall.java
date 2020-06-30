@@ -20,7 +20,6 @@ public class ConstructorCall extends Call {
 
     public ConstructorCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
-        System.out.println("CONSTRUCTOR : " + TokenGroup.toString(start, end));
 
         Token token = start;
         Token next;
@@ -75,6 +74,11 @@ public class ConstructorCall extends Call {
     }
 
     @Override
+    public Pointer getNaturalPtr(Pointer convertFlag) {
+        return naturalPtr = Pointer.voidPointer;
+    }
+
+    @Override
     public void load(Context context) {
         if (getStack().isConstructorAllowed()) {
 
@@ -95,9 +99,7 @@ public class ConstructorCall extends Call {
                 constructorView = constructors.get(0);
             }
 
-            if (getStack().addConstructorCall(this)) {
-                context.jumpTo(Pointer.voidPointer);
-            } else {
+            if (!getStack().addConstructorCall(this)) {
                 cFile.erro(nameToken, "Repeated Constructor call", this);
                 context.jumpTo(null);
             }
@@ -114,6 +116,9 @@ public class ConstructorCall extends Call {
 
     @Override
     public void requestGet(Pointer pointer) {
+        if (pointer != null && pointer != getNaturalPtr(pointer)) {
+            cFile.erro(token, "Cannot cast void", this);
+        }
 
         if (constructorView != null) {
             Constructor constructor = constructorView.constructor;
@@ -129,6 +134,9 @@ public class ConstructorCall extends Call {
 
     @Override
     public void requestOwn(Pointer pointer) {
+        if (pointer != null && pointer != getNaturalPtr(pointer)) {
+            cFile.erro(token, "Cannot cast void", this);
+        }
 
         if (constructorView != null) {
             if (!constructorView.isPublic() && !constructorView.isPrivate() &&

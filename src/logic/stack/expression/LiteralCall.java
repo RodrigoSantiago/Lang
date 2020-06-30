@@ -29,7 +29,6 @@ public class LiteralCall extends Call {
     public LiteralCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
 
-        System.out.println("LITERAL : "+ TokenGroup.toString(start, end));
         Token token = start;
         Token next;
         int state = 0;
@@ -192,7 +191,7 @@ public class LiteralCall extends Call {
 
     @Override
     public void load(Context context) {
-        context.jumpTo(typePtr);
+
     }
 
     @Override
@@ -234,36 +233,34 @@ public class LiteralCall extends Call {
 
     @Override
     public Pointer getNaturalPtr(Pointer pointer) {
-        if (naturalPtr == null) {
-            if (pointer == null) {
-                naturalPtr = getRelativePointer();
-            } else if (literalType == NULL) {
-                naturalPtr = Pointer.nullPointer;
-            } else if (literalType == DEFAULT) {
-                naturalPtr = Pointer.openPointer;
-            } else if (pointer.type != null && pointer.type.isPointer()) {
-                naturalPtr = getRelativePointer();
-            } else if (literalType == BOOL) {
-                naturalPtr = cFile.langBoolPtr();
-            } else if (literalType == STRING) {
-                naturalPtr = cFile.langStringPtr();
-            } else if (pointer.type == cFile.langByte() && literalType == LONG &&
-                    resultNum < 128 && resultNum >= -128 && !isLong) {
-                naturalPtr = cFile.langBytePtr();
-            } else if (pointer.type == cFile.langShort() && literalType == LONG &&
-                    resultNum < 32768 && resultNum >= -32768 && !isLong) {
-                naturalPtr = cFile.langShortPtr();
-            } else if (literalType == LONG &&
-                    resultNum < 2147483648L && resultNum >= -2147483648L && !isLong) {
-                naturalPtr = cFile.langIntPtr();
-            } else if (literalType == LONG) {
-                naturalPtr = cFile.langLongPtr();
-            } else if (pointer.type == cFile.langFloat() && literalType == DOUBLE &&
-                    (isFloat || !isDouble)) {
-                naturalPtr = cFile.langFloatPtr();
-            } else if (literalType == DOUBLE) {
-                naturalPtr = cFile.langDoublePtr();
-            }
+        if (pointer == null) {
+            naturalPtr = getRelativePointer();
+        } else if (literalType == NULL) {
+            naturalPtr = Pointer.nullPointer;
+        } else if (literalType == DEFAULT) {
+            naturalPtr = Pointer.openPointer;
+        } else if (pointer.type != null && pointer.type.isPointer()) {
+            naturalPtr = getRelativePointer();
+        } else if (literalType == BOOL) {
+            naturalPtr = cFile.langBoolPtr();
+        } else if (literalType == STRING) {
+            naturalPtr = cFile.langStringPtr();
+        } else if (pointer.type == cFile.langByte() && literalType == LONG &&
+                resultNum < 128 && resultNum >= -128 && !isLong) {
+            naturalPtr = cFile.langBytePtr();
+        } else if (pointer.type == cFile.langShort() && literalType == LONG &&
+                resultNum < 32768 && resultNum >= -32768 && !isLong) {
+            naturalPtr = cFile.langShortPtr();
+        } else if (literalType == LONG &&
+                resultNum < 2147483648L && resultNum >= -2147483648L && !isLong) {
+            naturalPtr = cFile.langIntPtr();
+        } else if (literalType == LONG) {
+            naturalPtr = cFile.langLongPtr();
+        } else if (pointer.type == cFile.langFloat() && literalType == DOUBLE &&
+                (isFloat || !isDouble)) {
+            naturalPtr = cFile.langFloatPtr();
+        } else if (literalType == DOUBLE) {
+            naturalPtr = cFile.langDoublePtr();
         }
         return naturalPtr;
     }

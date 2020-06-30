@@ -13,7 +13,6 @@ public class BlockNative extends Block {
 
     public BlockNative(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("NATIVE");
 
         Token colon = null;
         Token token = start;

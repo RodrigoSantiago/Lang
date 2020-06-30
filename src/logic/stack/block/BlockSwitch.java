@@ -27,7 +27,6 @@ public class BlockSwitch extends Block {
 
     public BlockSwitch(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("SWITCH");
 
         Token token = start;
         Token next;
@@ -43,7 +42,6 @@ public class BlockSwitch extends Block {
             } else if (state == 2 && token.key == Key.COLON) {
                 state = 3;
             } else if (state == 3 && token.key == Key.WORD) {
-                System.out.println("LABEL : "+ token);
                 label = token;
                 state = 4;
             }  else if ((state == 1 || state == 2 || state == 3 || state == 4) && token.key == Key.BRACE) {

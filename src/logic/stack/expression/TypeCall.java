@@ -13,7 +13,6 @@ public class TypeCall extends Call {
 
     public TypeCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
-        System.out.println("TYPE : " + TokenGroup.toString(start, end));
 
         Token token = start;
         Token next;

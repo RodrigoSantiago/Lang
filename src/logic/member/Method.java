@@ -7,6 +7,7 @@ import data.CppBuilder;
 import logic.GenericOwner;
 import logic.stack.Stack;
 import logic.member.view.MethodView;
+import logic.templates.Generic;
 import logic.templates.Template;
 import logic.params.Parameters;
 import logic.Pointer;
@@ -17,11 +18,13 @@ public class Method extends Member implements GenericOwner {
     private Token nameToken;
     private Parameters params;
     private Template template;
+    private boolean templateReturnEntry;
 
     private Pointer typePtr;
     private TokenGroup typeToken;
 
     private TokenGroup contentToken;
+    private boolean hasImplementation;
 
     public Method(Type type, Token start, Token end) {
         super(type);
@@ -54,6 +57,7 @@ public class Method extends Member implements GenericOwner {
                 params = new Parameters(cFile, token);
                 state = 4;
             } else if (state == 4 && token.key == Key.BRACE) {
+                hasImplementation = true;
                 if (token.getChild() == null) {
                     if (next != end) {
                         contentToken = new TokenGroup(next, end);
@@ -96,6 +100,10 @@ public class Method extends Member implements GenericOwner {
         }
     }
 
+    public boolean isTemplateReturnEntry() {
+        return templateReturnEntry;
+    }
+
     @Override
     public boolean load() {
         if (contentToken != null && contentToken.start.key == Key.SEMICOLON && !isAbstract()) {
@@ -103,14 +111,6 @@ public class Method extends Member implements GenericOwner {
         }
 
         if (typeToken != null) {
-            if (typeToken.start.key == Key.VOID) {
-                typePtr = Pointer.voidPointer;
-            } else {
-                typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, this, isLet());
-                if (typePtr == null) {
-                    typePtr = cFile.langObjectPtr(isLet());
-                }
-            }
 
             if (template != null) {
                 template.load(null);
@@ -130,9 +130,42 @@ public class Method extends Member implements GenericOwner {
                 }
             }
 
+            if (typeToken.start.key == Key.VOID) {
+                typePtr = Pointer.voidPointer;
+            } else {
+                typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, this, isLet());
+                if (typePtr == null) {
+                    typePtr = cFile.langObjectPtr(isLet());
+                }
+            }
+
             if (params != null) {
                 params.load(this);
 
+                boolean missing = false;
+                if (template != null) {
+                    for (int i = 0; i < template.getCount(); i++) {
+                        Generic gen = template.getGeneric(i);
+                        boolean contains = false;
+                        for (int j = 0; j < params.getCount(); j++) {
+                            if (params.getTypePtr(j) != null && params.getTypePtr(j).contains(gen)) {
+                                contains = true;
+                            }
+                        }
+                        if (!contains) {
+                            if (typePtr.contains(gen)) {
+                                templateReturnEntry = true;
+                            } else {
+                                missing = true;
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (missing) {
+                    cFile.erro(token, "The Generic should be used on parameters or return type", this);
+                    return false;
+                }
                 return true;
             }
 
@@ -141,13 +174,11 @@ public class Method extends Member implements GenericOwner {
     }
 
     public void make() {
-        if (nameToken.equals("method")) {
-            if (contentToken != null) {
-                Stack stack = new Stack(cFile, type.self, typePtr, this, false, isStatic(), false);
-                stack.read(contentToken.start, contentToken.end, true);
-                stack.addParam(getParams());
-                stack.load();
-            }
+        if (hasImplementation) {
+            Stack stack = new Stack(cFile, token, type.self, typePtr, this, false, isStatic(), false);
+            stack.read(contentToken.start, contentToken.end, true);
+            stack.addParam(getParams());
+            stack.load();
         }
     }
 

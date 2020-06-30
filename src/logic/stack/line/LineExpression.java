@@ -15,7 +15,6 @@ public class LineExpression extends Line {
 
     public LineExpression(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("EXPRESSION:");
 
         Token last = end;
         Token token = start;

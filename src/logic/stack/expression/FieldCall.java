@@ -19,7 +19,6 @@ public class FieldCall extends Call {
 
     public FieldCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
-        System.out.println("FIELD : "+ TokenGroup.toString(start, end));
 
         Token token = start;
         Token next;
@@ -74,13 +73,11 @@ public class FieldCall extends Call {
                     if (!context.isBegin() && !context.isStatic() && fieldView.isStatic()) {
                         cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
                     }
-                    context.jumpTo(fieldView.getTypePtr());
                 }
             } else {
                 if (!getLine().isChildOf(field.getSource())) {
                     cFile.erro(token, "Field Not Acessible", this);
                 }
-                context.jumpTo(field.getTypePtr());
             }
         }
     }
@@ -93,12 +90,10 @@ public class FieldCall extends Call {
 
     @Override
     public Pointer getNaturalPtr(Pointer convertFlag) {
-        if (naturalPtr == null) {
-            if (field != null) {
-                naturalPtr = field.getTypePtr();
-            } else if (fieldView != null) {
-                naturalPtr = fieldView.getTypePtr();
-            }
+        if (field != null) {
+            naturalPtr = field.getTypePtr();
+        } else if (fieldView != null) {
+            naturalPtr = fieldView.getTypePtr();
         }
         return naturalPtr;
     }
@@ -175,7 +170,11 @@ public class FieldCall extends Call {
                         cFile.erro(token, "Cannot acess a Private member from other file", this);
                     }
                 } else if (fieldView.isReadOnly(getStack())) {
-                    cFile.erro(token, "Cannot SET a final variable", this);
+                    if (useGet) {
+                        useOwn = false;
+                    } else {
+                        cFile.erro(token, "Cannot SET a final variable", this);
+                    }
                 }
             } else {
                 if (useGet) {

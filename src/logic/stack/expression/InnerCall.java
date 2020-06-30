@@ -12,7 +12,7 @@ public class InnerCall extends Call {
 
     public InnerCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
-        System.out.println("INNER : ("+ TokenGroup.toString(start, end)+")");
+
         Token token = start;
         Token next;
         int state = 0;
@@ -41,9 +41,7 @@ public class InnerCall extends Call {
         if (innerExpression == null) {
             context.jumpTo(null);
         } else {
-            Context internal = new Context(context);
-            innerExpression.load(internal);
-            context.jumpToContext(internal);
+            innerExpression.load(new Context(context));
         }
     }
 
@@ -54,9 +52,7 @@ public class InnerCall extends Call {
 
     @Override
     public Pointer getNaturalPtr(Pointer convertFlag) {
-        if (naturalPtr == null) {
-            naturalPtr = innerExpression == null ? null : innerExpression.getNaturalPtr(convertFlag);
-        }
+        naturalPtr = innerExpression == null ? null : innerExpression.getNaturalPtr(convertFlag);
         return naturalPtr;
     }
 

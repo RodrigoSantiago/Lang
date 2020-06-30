@@ -132,4 +132,8 @@ public class Template {
     public Pointer getDefaultPtr(int pos) {
         return generics.get(pos).defaultPtr;
     }
+
+    public Generic getGeneric(int i) {
+        return generics.get(i);
+    }
 }

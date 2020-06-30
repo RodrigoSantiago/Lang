@@ -2,11 +2,12 @@ package logic.member.view;
 
 import content.Token;
 import logic.Pointer;
+import logic.templates.Generic;
 import logic.templates.Template;
 
 public class TemplateView {
 
-    private Template template;
+    public final Template template;
     private Pointer[] typePtrs;
 
     public TemplateView(Pointer caller, Template template) {
@@ -44,5 +45,9 @@ public class TemplateView {
 
     public Token getGenName(int index) {
         return template.getNameToken(index);
+    }
+
+    public Generic getGeneric(int i) {
+        return template.getGeneric(i);
     }
 }

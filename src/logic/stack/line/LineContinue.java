@@ -12,7 +12,6 @@ public class LineContinue extends Line {
 
     public LineContinue(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("CONTINUE");
 
         Token token = start;
         Token next;

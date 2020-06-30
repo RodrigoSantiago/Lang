@@ -1,16 +1,14 @@
 package logic.stack;
 
 import content.Token;
-import data.ContentFile;
 import logic.Pointer;
-import logic.stack.block.BlockEmpty;
 
 public class StackExpansion extends Stack {
 
     Stack source;
 
-    public StackExpansion(Stack source, Pointer returnPtr) {
-        super(source, returnPtr);
+    public StackExpansion(Stack source, Token referenceToken, Pointer returnPtr) {
+        super(source, referenceToken, returnPtr);
         this.source = source;
     }
 

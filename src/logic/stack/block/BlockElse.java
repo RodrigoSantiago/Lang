@@ -17,7 +17,6 @@ public class BlockElse extends Block {
 
     public BlockElse(Block block, Token start, Token end) {
         super(block, start, end);
-        System.out.println("ELSE");
 
         Token colon = null;
         Token token = start;
@@ -28,7 +27,6 @@ public class BlockElse extends Block {
             if (state == 0 && token.key == Key.ELSE) {
                 state = 1;
             } else if (state == 1 && token.key == Key.IF) {
-                System.out.println("AND IF");
                 isElseIf = true;
                 state = 2;
             } else if (state == 2 && token.key == Key.PARAM && token.getChild() != null) {

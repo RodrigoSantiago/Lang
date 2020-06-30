@@ -19,7 +19,6 @@ public class MethodCall extends Call {
     public MethodCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
 
-        System.out.println("METHOD : "+ TokenGroup.toString(start, end));
         Token token = start;
         Token next;
         int state = 0;
@@ -86,7 +85,9 @@ public class MethodCall extends Call {
                     cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
                 }
             }
-            context.jumpTo(methodView == null ? null : methodView.getTypePtr());
+            if (methodView == null) {
+                context.jumpTo(null);
+            }
         }
     }
 
@@ -97,8 +98,34 @@ public class MethodCall extends Call {
 
     @Override
     public Pointer getNaturalPtr(Pointer pointer) {
-        if (naturalPtr == null && methodView != null) {
+        if (methodView != null) {
             naturalPtr = methodView.getTypePtr();
+            if (methodView.isTemplateReturnEntry()) {
+                if (pointer != null) {
+                    Pointer[] captureList = methodView.getCaptureList();
+                    naturalPtr = methodView.getTypePtr();
+                    for (int j = 0; j < methodView.getTemplate().getGenCount(); j++) {
+                        Pointer ptr = Pointer.capture(
+                                methodView.getTemplate().getGeneric(j),
+                                methodView.getTypePtr(), pointer);
+                        if (ptr != null && (captureList[j] == null || captureList[j].typeSource == methodView.getTemplate().getGeneric(j))) {
+                            captureList[j] = ptr;
+                        }
+                    }
+                    for (int j = 0; j < methodView.getTemplate().getGenCount(); j++) {
+                        naturalPtr = Pointer.apply(
+                                methodView.getTemplate().getGeneric(j),
+                                captureList[j], naturalPtr);
+                    }
+                    if (naturalPtr != null) {
+                        for (int j = 0; j < methodView.getTemplate().getGenCount(); j++) {
+                            naturalPtr = Pointer.force(methodView.getTemplate().getGeneric(j), naturalPtr);
+                        }
+                    }
+                } else {
+                    naturalPtr = cFile.langObjectPtr().toLet(methodView.isLet());
+                }
+            }
         }
         return naturalPtr;
     }

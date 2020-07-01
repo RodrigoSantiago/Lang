@@ -37,7 +37,11 @@ public class BlockSwitch extends Block {
                 state = 1;
             }else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
                 paramToken = token;
-                expression = new Expression(this, paramToken.getChild(), paramToken.getLastChild());
+                if (token.isEmptyParent()) {
+                    cFile.erro(token, "Empty expressison", this);
+                } else {
+                    expression = new Expression(this, token.getChild(), token.getLastChild());
+                }
                 state = 2;
             } else if (state == 2 && token.key == Key.COLON) {
                 state = 3;

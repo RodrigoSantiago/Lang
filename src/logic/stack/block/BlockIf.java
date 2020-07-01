@@ -4,8 +4,10 @@ import content.Key;
 import content.Parser;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.stack.Block;
 import logic.stack.Context;
+import logic.stack.Line;
 import logic.stack.expression.Expression;
 
 public class BlockIf extends Block {
@@ -27,7 +29,11 @@ public class BlockIf extends Block {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
                 conditionToken = token;
-                conditionExp = new Expression(this, conditionToken.getChild(), conditionToken.getLastChild());
+                if (token.isEmptyParent()) {
+                    cFile.erro(token, "Empty condition", this);
+                } else {
+                    conditionExp = new Expression(this, token.getChild(), token.getLastChild());
+                }
                 state = 2;
             } else if (state == 2 && token.key == Key.COLON) {
                 colon = token;
@@ -82,6 +88,15 @@ public class BlockIf extends Block {
             conditionExp.requestGet(cFile.langBoolPtr());
         }
         super.load();
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        cBuilder.idt(idt).add("if (").add(conditionExp, idt).add(") {").ln();
+        for (Line line : lines) {
+            line.build(cBuilder, idt + 1, idt + 1);
+        }
+        cBuilder.idt(idt).add("}").ln();
     }
 
     @Override

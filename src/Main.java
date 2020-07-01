@@ -67,7 +67,7 @@ public class Main {
                 }
             }
         }
-        if (!erros && false) {
+        if (!erros) {
             File[] fls = lang.getSrcDir().listFiles();
             if (fls != null) {
                 for (File file : fls) {

@@ -2,6 +2,7 @@ package logic.stack.expression;
 
 import content.Token;
 import data.ContentFile;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Context;
 import logic.stack.Line;
@@ -66,4 +67,12 @@ public abstract class Call {
     public abstract void requestOwn(Pointer pointer);
 
     public abstract void requestSet();
+
+    public void build(CppBuilder cBuilder, int idt) {
+
+    }
+
+    public String next() {
+        return requestPtr.isPointer() ? "->" : ".";
+    }
 }

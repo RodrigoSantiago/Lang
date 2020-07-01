@@ -473,6 +473,9 @@ public abstract class Type implements GenericOwner {
         if (staticConstructor != null) {
             staticConstructor.make();
         }
+        for (Destructor destructor : destructors) {
+            destructor.make();
+        }
 
         for (Method method : methods) {
             if (!method.isAbstract()) {

@@ -104,8 +104,8 @@ public class Native extends Member {
         } else if (isSource()) {
             cBuilder.toSource(type.template != null);
         }
-        int start = contentToken.start.start;
-        int end = contentToken.end.end;
+        int start = contentToken.start.getParent().end;
+        int end = contentToken.end.start;
 
         boolean text = false;
         String in = cFile.content.substring(start, end);
@@ -135,7 +135,8 @@ public class Native extends Member {
                     sub = 0;
                 }
 
-                for (String line : lines) {
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i];
                     int s = 0;
                     for (int j = 0; j < line.length() && j < sub; j++) {
                         if (Character.isSpaceChar(line.charAt(j))) {
@@ -143,7 +144,9 @@ public class Native extends Member {
                         }
                     }
                     line = line.substring(s);
-                    cBuilder.idt(isHeader() ? 1 : 0).add(line).ln();
+                    if ((i > 0 && i < lines.length - 1) || !line.isEmpty()) {
+                        cBuilder.idt(isHeader() ? 1 : 0).add(line).ln();
+                    }
                 }
             }
         }

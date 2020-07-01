@@ -3,6 +3,7 @@ package logic.stack.block;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.stack.Block;
 import logic.stack.expression.Expression;
 
@@ -98,5 +99,55 @@ public class BlockNative extends Block {
     @Override
     public void load() {
 
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        int start = contentToken.start.getParent().end;
+        int end = contentToken.end.start;
+
+        boolean text = false;
+        String in = cFile.content.substring(start, end);
+        for (int i = 0; i < in.length(); i++) {
+            char chr = in.charAt(i);
+            if (chr != ' ' && chr != '\t' && chr != '\n' && chr != '\r') {
+                text = true;
+                break;
+            }
+        }
+        if (text) {
+            String[] lines = in.split("\\r?\\n");
+            if (lines.length == 1) {
+                cBuilder.idt(idt).add(lines[0]).ln();
+            } else if (lines.length > 1) {
+                int sub = -1;
+                for (String value : lines) {
+                    int s = 0;
+                    for (int i = 0; i < value.length(); i++) {
+                        if (!Character.isSpaceChar(value.charAt(i))) {
+                            if (s < sub || sub == -1) sub = i;
+                            break;
+                        }
+                    }
+                }
+                if (sub == -1) {
+                    sub = 0;
+                }
+
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i];
+                    int s = 0;
+                    for (int j = 0; j < line.length() && j < sub; j++) {
+                        if (Character.isSpaceChar(line.charAt(j))) {
+                            s = j + 1;
+                        }
+                    }
+                    line = line.substring(s);
+                    if ((i > 0 && i < lines.length - 1) || !line.isEmpty()) {
+                        cBuilder.idt(idt).add(line).ln();
+                    }
+                }
+            }
+        }
     }
 }

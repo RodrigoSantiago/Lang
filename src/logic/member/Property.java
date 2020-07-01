@@ -17,6 +17,7 @@ public class Property extends Member {
 
     private TokenGroup contentToken;
     private TokenGroup initToken;
+    public Stack stackGet, stackSet, stackOwn;
     private Token getContentToken, setContentToken, ownContentToken;
 
     private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
@@ -248,26 +249,26 @@ public class Property extends Member {
 
     public void make() {
         if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
-            Stack stack = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
+            stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
                     isStatic() ? null : type, false, isStatic(), true);
 
-            stack.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
-            stack.load();
+            stackGet.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
+            stackGet.load();
         }
         if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
-            Stack stack = new Stack(cFile, token, type.self, typePtr,
+            stackOwn = new Stack(cFile, token, type.self, typePtr,
                     isStatic() ? null : type, false, isStatic(), true);
 
-            stack.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
-            stack.load();
+            stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
+            stackOwn.load();
         }
         if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
-            Stack stack = new Stack(cFile, token, type.self, Pointer.voidPointer,
+            stackSet = new Stack(cFile, token, type.self, Pointer.voidPointer,
                     isStatic() ? null : type, false, isStatic(), true);
 
-            stack.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
-            stack.value(typePtr);
-            stack.load();
+            stackSet.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
+            stackSet.value(typePtr);
+            stackSet.load();
         }
         if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
             Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
@@ -298,6 +299,7 @@ public class Property extends Member {
                 }
                 cBuilder.add(getPtr)
                         .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() {").ln()
+                        .add(stackGet == null ? stackOwn : stackGet)
                         .add("}").ln()
                         .ln();
             }
@@ -324,6 +326,7 @@ public class Property extends Member {
                 }
                 cBuilder.add(typePtr)
                         .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() {").ln()
+                        .add(stackOwn == null ? stackGet : stackOwn)
                         .add("}").ln()
                         .ln();
             }
@@ -347,6 +350,7 @@ public class Property extends Member {
                 }
                 cBuilder.add("void ").path(type.self, isStatic()).add("::set_").add(nameToken)
                         .add("(").add(typePtr).add(" v_value) {").ln()
+                        .add(stackSet)
                         .add("}").ln()
                         .ln();
             }

@@ -3,6 +3,7 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Context;
 
@@ -59,20 +60,27 @@ public class InnerCall extends Call {
     @Override
     public void requestGet(Pointer pointer) {
         if (pointer != null) pointer = pointer.toLet();
-        if (innerExpression != null) innerExpression.requestGet(pointer);
-
-        requestPtr = pointer;
+        if (innerExpression != null) {
+            innerExpression.requestGet(pointer);
+            requestPtr = innerExpression.getReturnType();
+        }
     }
 
     @Override
     public void requestOwn(Pointer pointer) {
-        if (innerExpression != null) innerExpression.requestGet(pointer);
-
-        requestPtr = pointer;
+        if (innerExpression != null) {
+            innerExpression.requestOwn(pointer);
+            requestPtr = innerExpression.getReturnType();
+        }
     }
 
     @Override
     public void requestSet() {
         cFile.erro(getToken(), "SET not allowed", this);
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt) {
+        cBuilder.add("(").add(innerExpression, idt).add(")");
     }
 }

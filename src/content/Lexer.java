@@ -273,8 +273,12 @@ public class  Lexer {
                 if (nChr != '>') {
                     while (!eof()) {
                         if (!isOperatorP(readNext())) {
-                            readPrev();
-                            break;
+                            if (pChr == '!' && chr == 'i' && nChr == 's') {
+                                readNext();
+                            } else {
+                                readPrev();
+                                break;
+                            }
                         }
                     }
                 }

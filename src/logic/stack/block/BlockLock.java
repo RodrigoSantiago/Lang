@@ -28,7 +28,11 @@ public class BlockLock extends Block {
                 state = 1;
             } else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
                 lockerToken = token;
-                lockerExp = new Expression(this, lockerToken.getChild(), lockerToken.getLastChild());
+                if (token.isEmptyParent()) {
+                    cFile.erro(token, "Empty locker", this);
+                } else {
+                    lockerExp = new Expression(this, token.getChild(), token.getLastChild());
+                }
                 state = 2;
             } else if (state == 2 && token.key == Key.COLON) {
                 colon = token;

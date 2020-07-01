@@ -4,6 +4,9 @@ import content.Key;
 import content.Token;
 import logic.member.view.ParamView;
 import logic.params.Parameters;
+import logic.stack.Stack;
+import logic.stack.expression.CallGroup;
+import logic.stack.expression.Expression;
 import logic.templates.Generic;
 import logic.templates.Template;
 import logic.Pointer;
@@ -186,6 +189,21 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder add(long number) {
+        tBuilder.append(number);
+        return this;
+    }
+
+    public CppBuilder add(double number) {
+        tBuilder.append(number);
+        return this;
+    }
+
+    public CppBuilder add(float number) {
+        tBuilder.append(number);
+        return this;
+    }
+
     public CppBuilder add(boolean addIf, Token token) {
         if (addIf) {
             token.addToBuilder(tBuilder);
@@ -198,15 +216,102 @@ public class CppBuilder {
         return this;
     }
 
-    public CppBuilder add(Key operator, Pointer typePtr) {
-        if (operator == Key.CAST) {
-            add("cast_")._namePtr(typePtr);
-        } else if (operator == Key.AUTO) {
-            add("auto_")._namePtr(typePtr);
-        } else {
-            add(operator.name().toLowerCase());
+    public CppBuilder add(Expression expression, int idt) {
+        if (expression != null) expression.build(this, idt);
+        return this;
+    }
+
+    public CppBuilder add(ArrayList<Expression> parameters, int idt) {
+        for (int i = 0; i < parameters.size(); i++) {
+            if (i > 0) add(", ");
+            parameters.get(i).build(this, idt);
         }
         return this;
+    }
+
+    public CppBuilder add(CallGroup group, int idt) {
+        if (group != null) group.build(this, idt);
+        return this;
+    }
+    public CppBuilder add(Stack stack) {
+        stack.build(this);
+        return this;
+    }
+
+    public CppBuilder nameGeneric(Token token) {
+        tBuilder.append("g_");
+        token.addToBuilder(tBuilder);
+        return this;
+    }
+
+    public CppBuilder nameField(Token nameToken) {
+        return add("f_").add(nameToken);
+    }
+
+    public CppBuilder nameField(String nameToken) {
+        return add("f_").add(nameToken);
+    }
+
+    public CppBuilder nameParam(Token nameToken) {
+        return add("v_").add(nameToken);
+    }
+
+    public CppBuilder nameParam(String nameToken) {
+        return add("v_").add(nameToken);
+    }
+
+    public CppBuilder nameMethod(Token nameToken) {
+        return add("m_").add(nameToken);
+    }
+
+    public CppBuilder nameMethod(String nameToken) {
+        return add("m_").add(nameToken);
+    }
+
+    public CppBuilder namePropertyGet(Token nameToken) {
+        return add("get_").add(nameToken);
+    }
+
+    public CppBuilder namePropertyGet(String nameToken) {
+        return add("get_").add(nameToken);
+    }
+
+    public CppBuilder namePropertySet(Token nameToken) {
+        return add("set_").add(nameToken);
+    }
+
+    public CppBuilder namePropertySet(String nameToken) {
+        return add("set_").add(nameToken);
+    }
+
+    public CppBuilder namePropertyOwn(Token nameToken) {
+        return add("own_").add(nameToken);
+    }
+
+    public CppBuilder namePropertyOwn(String nameToken) {
+        return add("own_").add(nameToken);
+    }
+
+    public CppBuilder nameIndexerGet() {
+        return add("get");
+    }
+
+    public CppBuilder nameIndexerSet() {
+        return add("set");
+    }
+
+    public CppBuilder nameIndexerOwn() {
+        return add("own");
+    }
+
+    public CppBuilder nameOp(Key operator, Pointer typePtr) {
+        if (operator == Key.CAST) {
+            return add("cast_")._namePtr(typePtr);
+        } else if (operator == Key.AUTO) {
+            return add("auto_")._namePtr(typePtr);
+        } else {
+            return add(operator.name().toLowerCase());
+        }
     }
 
     private CppBuilder _namePtr(Pointer typePtr) {
@@ -219,12 +324,6 @@ public class CppBuilder {
             }
             add("_cast");
         }
-        return this;
-    }
-
-    public CppBuilder nameGeneric(Token token) {
-        tBuilder.append("g_");
-        token.addToBuilder(tBuilder);
         return this;
     }
 
@@ -283,6 +382,12 @@ public class CppBuilder {
         if (pointer.typeSource != null) {
             nameGeneric(pointer.typeSource.nameToken);
         } else {
+            if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
+                if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
+                    tDependences.add(pointer.type);
+                }
+            }
+
             if (_static) {
                 add(pointer.type.staticPathToken);
             } else {

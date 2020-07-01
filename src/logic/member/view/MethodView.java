@@ -172,6 +172,10 @@ public class MethodView {
         return method.isLet();
     }
 
+    public Type getType() {
+        return method.type;
+    }
+
     @Override
     public String toString() {
         return "MethodView{" +caller + method.getName() + "(" + paramView + ") : " +getTypePtr()+ "}";

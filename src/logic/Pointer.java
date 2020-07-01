@@ -52,6 +52,18 @@ public class Pointer {
         return new Pointer(type, pointers == null ? null : pointers.clone(), typeSource, toLet);
     }
 
+    public boolean isPointer() {
+        return this == nullPointer || (this.type != null && this.type.isPointer());
+    }
+
+    public boolean isValue() {
+        return this == openPointer || (this.type != null && this.type.isValue());
+    }
+
+    public boolean isLangBase() {
+        return this.type != null && this.type.isLangBase();
+    }
+
     public boolean hasGeneric() {
         if (typeSource != null) return true;
         if (pointers != null) {
@@ -246,7 +258,7 @@ public class Pointer {
 
     public static Pointer capture(Generic source, Pointer original, Pointer input) {
         if (original.typeSource == source) {
-            return input.isDerivedFrom(source.basePtr) > 0 ? input.toLet(false) : null;
+            return !input.isDefault() && input.isDerivedFrom(source.basePtr) > 0 ? input.toLet(false) : null;
         } else if (original.type == input.type &&
                 original.pointers != null && input.pointers != null &&
                 original.pointers.length == input.pointers.length) {

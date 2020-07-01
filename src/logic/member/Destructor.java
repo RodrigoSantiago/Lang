@@ -12,6 +12,7 @@ public class Destructor extends Member {
 
     private TokenGroup contentToken;
     private boolean hasImplementation;
+    public Stack stack;
 
     public Destructor(Type type, Token start, Token end) {
         super(type);
@@ -72,7 +73,7 @@ public class Destructor extends Member {
 
     public void make() {
         if (hasImplementation) {
-            Stack stack = new Stack(cFile, token, type.self, Pointer.voidPointer, type, false, false, false);
+            stack = new Stack(cFile, token, type.self, Pointer.voidPointer, type, false, false, false);
             stack.read(contentToken.start, contentToken.end, true);
             stack.load();
         }
@@ -84,7 +85,8 @@ public class Destructor extends Member {
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add("void ").path(type.self, false).add("::destroy() {").ln();
+                .add("void ").path(type.self, false).add("::destroy() {").ln()
+                .add(stack);
 
         if (type.parent != null) {
             cBuilder.idt(1).path(type.parent, false).add("::destroy();").ln();

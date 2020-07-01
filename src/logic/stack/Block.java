@@ -11,7 +11,7 @@ public abstract class Block extends Line {
 
     private BlockDo lastBlockDo;
 
-    ArrayList<Line> lines = new ArrayList<>();
+    public ArrayList<Line> lines = new ArrayList<>();
 
     public Block(Stack stack, Token start, Token end) {
         super(stack, start, end);

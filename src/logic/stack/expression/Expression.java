@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Context;
 import logic.stack.Line;
@@ -194,10 +195,6 @@ public class Expression {
 
     public Pointer getReturnType() {
         return groups.size() == 1 ? groups.get(0).getReturnType() : null;
-    }
-
-    public boolean isSetExpression() {
-        return groups.size() == 1 && groups.get(0).isSetExpression();
     }
 
     public boolean isLiteral() {
@@ -457,5 +454,9 @@ public class Expression {
 
     public void requestOwn(Pointer pointer) {
         if (groups.size() > 0) groups.get(0).requestOwn(pointer);
+    }
+
+    public void build(CppBuilder cBuilder, int idt) {
+        groups.get(0).build(cBuilder, idt);
     }
 }

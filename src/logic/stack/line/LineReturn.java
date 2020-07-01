@@ -3,6 +3,7 @@ package logic.stack.line;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Context;
@@ -57,5 +58,11 @@ public class LineReturn extends Line {
             }
         }
         super.load();
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        cBuilder.idt(off).add("return ").add(returnExp, idt).add(";");
+        if (off > 0) cBuilder.ln();
     }
 }

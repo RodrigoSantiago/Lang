@@ -3,6 +3,7 @@ package logic.stack.line;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Context;
@@ -138,5 +139,19 @@ public class LineVar extends Line {
                 cFile.erro(nameToken, "Repeated field name", this);
             }
         }
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        cBuilder.idt(off).add(typePtr == null ? typePtrs.get(0) : typePtr);
+        for (int i = 0; i < nameTokens.size(); i++) {
+            if (i > 0) cBuilder.add(",");
+            cBuilder.add(" ").nameParam(nameTokens.get(i));
+            if (expresions.get(i) != null) {
+                cBuilder.add(" = ").add(expresions, idt);
+            }
+        }
+        cBuilder.add(";");
+        if (off > 0) cBuilder.ln();
     }
 }

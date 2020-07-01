@@ -17,6 +17,7 @@ public class Constructor extends Member {
     private TokenGroup contentToken;
     private boolean hasImplementation;
 
+    public Stack stack;
     private Constructor constructorTarget;
 
     public Constructor(Type type, Token start, Token end) {
@@ -82,7 +83,7 @@ public class Constructor extends Member {
 
     public void make() {
         if (hasImplementation) {
-            Stack stack = new Stack(cFile, token, type.self, Pointer.voidPointer, isStatic() ? null : type, false, isStatic(), true);
+            stack = new Stack(cFile, token, type.self, Pointer.voidPointer, isStatic() ? null : type, false, isStatic(), true);
             stack.read(contentToken.start, contentToken.end, true);
             stack.addParam(getParams());
             stack.load();
@@ -119,7 +120,8 @@ public class Constructor extends Member {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .path(type.self, false).add("*")
-                        .add(" ").path(type.self, false).add("::create(").add(params).add(") {").ln()
+                        .add(" ").path(type.self, false).add("::create(").add(params).add(") {").ln() // TODO - DEFAULT DCONSTRUCTOR PARENT
+                        .add(stack)
                         .idt(1).add("return this;").ln()
                         .add("}").ln()
                         .ln();
@@ -144,7 +146,8 @@ public class Constructor extends Member {
                 } else {
                     cBuilder.add("(").add(params).add(") : ").add(type.pathToken).add("() {").ln();
                 }
-                cBuilder.add("}").ln()
+                cBuilder.add(stack)
+                        .add("}").ln()
                         .ln();
             }
         }

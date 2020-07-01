@@ -3,6 +3,7 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.member.Constructor;
 import logic.member.Method;
@@ -337,5 +338,15 @@ public class InstanceCall extends Call {
     @Override
     public void requestSet() {
         cFile.erro(getToken(), "SET not allowed", this);
+    }
+
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt) {
+        if (typePtr.isPointer()) {
+            cBuilder.add("(new ").path(typePtr, false).add("())->create(").add(arguments, idt).add(")");
+        } else {
+            cBuilder.path(typePtr, false).add("(").add(arguments, idt).add(")");
+        }
     }
 }

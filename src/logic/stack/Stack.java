@@ -3,13 +3,13 @@ package logic.stack;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
+import data.CppBuilder;
 import logic.GenericOwner;
 import logic.Pointer;
 import logic.params.Parameters;
 import logic.stack.block.*;
 import logic.stack.expression.ConstructorCall;
 import logic.stack.expression.Expression;
-import logic.stack.line.LineExpression;
 
 import java.util.HashMap;
 
@@ -76,6 +76,16 @@ public class Stack {
             }
 
             block.load();
+        }
+    }
+
+    public void build(CppBuilder cBuilder) {
+        if (isExpression) {
+            expression.build(cBuilder, 0);
+        } else {
+            for (Line line : block.lines) {
+                line.build(cBuilder, 1, 1);
+            }
         }
     }
 

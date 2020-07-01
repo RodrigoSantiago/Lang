@@ -3,6 +3,7 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
 import logic.stack.Context;
@@ -11,11 +12,11 @@ import logic.typdef.Type;
 
 public class FieldCall extends Call {
 
-    private Type staticCall;
-    private FieldView fieldView;
-    private Field field;
+    public Type staticCall;
+    public FieldView fieldView;
+    public Field field;
 
-    private boolean useGet, useSet, useOwn;
+    private boolean useGet, useSet, useOwn, clearAcess;
 
     public FieldCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -67,6 +68,7 @@ public class FieldCall extends Call {
                         context.jumpTo(staticCall, true);
                     }
                 } else {
+                    clearAcess = context.isBegin();
                     if (context.isStatic() && !fieldView.isStatic()) {
                         cFile.erro(token, "Cannot use a Instance Member on a Static Environment", this);
                     }
@@ -229,5 +231,45 @@ public class FieldCall extends Call {
         } else if (field != null && field.isReadOnly(getStack())) {
             cFile.erro(token, "Cannot SET a final variable", this);
         }
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt) {
+        if (staticCall != null) {
+            cBuilder.path(staticCall.self, true);
+        } else if (fieldView != null) {
+            if (clearAcess) {
+                if (fieldView.isStatic()) {
+                    cBuilder.path(fieldView.getType().self, true).add("::");
+                } else {
+                    cBuilder.add("this->");
+                }
+            }
+            if (fieldView.isVariable() || fieldView.isNum()) {
+                cBuilder.nameField(token);
+            } else if (useGet) {
+                cBuilder.namePropertyGet(token).add("()");
+            } else if (useOwn) {
+                cBuilder.namePropertyOwn(token).add("()");
+            } else if (useSet) {
+                cBuilder.namePropertySet(token).add("(");
+            }
+        } else if (token.key == Key.THIS) {
+            if (requestPtr.isPointer()) {
+                cBuilder.add("this");
+            } else {
+                cBuilder.add("(*this)");
+            }
+        } else if (token.key == Key.BASE) {
+            cBuilder.path(getStack().getSourcePtr().type.parent, false);
+        } else {
+            cBuilder.nameParam(token);
+        }
+    }
+
+    @Override
+    public String next() {
+        if (staticCall != null || token.key == Key.BASE) return "::";
+        return super.next();
     }
 }

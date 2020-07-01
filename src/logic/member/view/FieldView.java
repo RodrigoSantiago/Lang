@@ -15,10 +15,10 @@ public class FieldView {
     public Token nameToken;
     public Pointer typePtr;
 
-    private Variable srcVar;
-    private int srcID;
+    public Variable srcVar;
+    public int srcID;
 
-    private Num srcNum;
+    public Num srcNum;
     public Property srcPro;
 
     public Property srcGet;
@@ -220,5 +220,9 @@ public class FieldView {
         } else {
             return srcNum != null;
         }
+    }
+
+    public Type getType() {
+        return srcPro != null ? srcPro.type : srcVar != null ? srcVar.type : srcNum.type;
     }
 }

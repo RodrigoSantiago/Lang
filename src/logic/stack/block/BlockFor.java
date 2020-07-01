@@ -4,6 +4,7 @@ import content.Key;
 import content.Parser;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Context;
@@ -22,6 +23,9 @@ public class BlockFor extends Block {
     Expression conditionExp, loopExp;
     TokenGroup conditionToken, loopToken;
     LineVar foreachVar;
+
+    Pointer foreachItPtr;
+    private boolean strInt, strShort, strByte;
 
     public BlockFor(Block block, Token start, Token end) {
         super(block, start, end);
@@ -121,10 +125,13 @@ public class BlockFor extends Block {
                     foreachVar.typePtr = rType;
                 } else if (naturalPtr != null && naturalPtr.equals(cFile.langStringPtr())) {
                     if (rType == null || rType.equals(cFile.langBytePtr())) {
+                        strByte = true;
                         rType = cFile.langBytePtr();
                     } else if (rType.equals(cFile.langShortPtr())) {
+                        strShort = true;
                         rType = cFile.langShortPtr();
                     } else if (rType.equals(cFile.langIntPtr())) {
+                        strInt = true;
                         rType = cFile.langIntPtr();
                     } else {
                         rType = cFile.langBytePtr();
@@ -141,7 +148,9 @@ public class BlockFor extends Block {
                         cFile.erro(loopExp.getTokenGroup(), "Cannot determine the Iterator Type", this);
                     }
                 }
-
+                if (foreachVar.typePtr != null) {
+                    foreachItPtr = cFile.langIterablePtr(foreachVar.typePtr);
+                }
                 if (foreachVar.nameTokens.size() > 0) {
                     if (!stack.addField(foreachVar.nameTokens.get(0), foreachVar.typePtr, foreachVar.isFinal, parent)) {
                         cFile.erro(foreachVar.nameTokens.get(0), "Repeated field name", this);
@@ -152,6 +161,44 @@ public class BlockFor extends Block {
             }
         }
         super.load();
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        if (foreachVar != null) {
+            cBuilder.idt(idt).add("/*foreach*/{").ln()
+                    .idt(idt + 1).add(foreachItPtr).add(" it_").add(idt).add(" = ");
+            if (strInt) {
+                cBuilder.add(loopExp, idt)
+                        .add(".").nameMethod("iterateUTF32").add("();").ln();
+            } else if (strShort) {
+                cBuilder.add(loopExp, idt)
+                        .add(".").nameMethod("iterateUTF16").add("();").ln();
+            } else if (strByte) {
+                cBuilder.add(loopExp, idt)
+                        .add(".").nameMethod("iterateUTF8").add("();").ln();
+            } else {
+                cBuilder.add(loopExp, idt)
+                        .add(loopExp.getReturnType().isPointer() ? "->" : ".")
+                        .nameMethod("iterate").add("();").ln();
+            }
+            cBuilder.idt(idt + 1).add("while (it_").add(idt).add("->").nameMethod("hasNext").add("()) {").ln()
+                    .idt(idt + 2).add(foreachVar.typePtr).add(" ").nameParam(foreachVar.nameTokens.get(0))
+                    .add(" = it_").add(idt).add("->").nameMethod("next").add("();").ln();
+            for (Line line : lines) {
+                line.build(cBuilder, idt + 2, idt + 2);
+            }
+            cBuilder.idt(idt + 1).add("}").ln()
+                    .idt(idt).add("}").ln();
+        } else {
+            cBuilder.idt(idt).add(" for (");
+            if (firstLine != null) firstLine.build(cBuilder, idt, 0);
+            cBuilder.add("; ").add(conditionExp, idt).add("; ").add(loopExp, idt).add(") {").ln();
+            for (Line line : lines) {
+                line.build(cBuilder, idt + 1, idt + 2);
+            }
+            cBuilder.idt(idt).add("}").ln();
+        }
     }
 
     @Override

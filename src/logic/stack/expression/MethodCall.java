@@ -3,6 +3,7 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.member.Method;
 import logic.member.view.MethodView;
@@ -15,6 +16,7 @@ public class MethodCall extends Call {
     Token nameToken;
     MethodView methodView;
     ArrayList<Expression> arguments = new ArrayList<>();
+    private boolean clearAcess;
 
     public MethodCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -78,6 +80,7 @@ public class MethodCall extends Call {
                 methodView = methods.get(0);
             } else {
                 methodView = methods.get(0);
+                clearAcess = context.isBegin();
                 if (context.isStatic() && !methodView.isStatic()) {
                     cFile.erro(token, "Cannot use a Instance Member on a Static Environment", this);
                 }
@@ -186,5 +189,11 @@ public class MethodCall extends Call {
     @Override
     public void requestSet() {
         cFile.erro(getToken(), "SET not allowed", this);
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt) {
+        if (clearAcess && methodView.isStatic()) cBuilder.path(methodView.getType().self, true).add("::");
+        cBuilder.nameMethod(methodView.getName()).add("(").add(arguments, idt).add(")");
     }
 }

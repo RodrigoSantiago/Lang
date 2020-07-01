@@ -81,7 +81,7 @@ public enum Key {
     EQUAL("==",               false, false, true, true, false, 5),
     DIF("!=",                 false, false, true, true, false, 5),
     IS("is",                  false, false, true, false, false, 5),
-    ISNOT("isnot",            false, false, true, false, false, 5),
+    ISNOT("!is",              false, false, true, false, false, 5),
     BITAND("&",               false, false, true, true, false, 6),
     BITXOR("^",               false, false, true, true, false, 7),
     BITOR("|",                false, false, true, true, false, 8),
@@ -102,8 +102,6 @@ public enum Key {
     SETNOT("~=",              false, false, true, false, false, 11),
     SETXOR("^=",              false, false, true, false, false, 11),
 
-    // GET("get"),
-    // SET("set"),
     CAST("cast",              false, false, false, true),
     AUTO("auto",              false, false, false, true);
 
@@ -193,7 +191,8 @@ public enum Key {
                     : OR.isEqual(str, start, end) ? OR : SETMUL.isEqual(str, start, end) ? SETMUL : IOP;
         } else if (len == 3) {
             return SETRSHIFT.isEqual(str, start, end) ? SETRSHIFT
-                    : SETLSHIFT.isEqual(str, start, end) ? SETLSHIFT : IOP;
+                    : SETLSHIFT.isEqual(str, start, end) ? SETLSHIFT
+                    : ISNOT.isEqual(str, start, end) ? ISNOT : IOP;
         }
         return IOP;
     }
@@ -205,7 +204,6 @@ public enum Key {
                     IS.isEqual(str, start, end) ? IS : NOONE;
         } else if (len == 3) {
             return  NEW.isEqual(str, start, end) ? NEW : VAR.isEqual(str, start, end) ? VAR :
-                    // GET.isEqual(str, start, end) ? GET : SET.isEqual(str, start, end) ? SET :
                     FOR.isEqual(str, start, end) ? FOR : LET.isEqual(str, start, end) ? LET : NOONE;
         } else if (len == 4) {
             return  ENUM.isEqual(str, start, end) ? ENUM : ELSE.isEqual(str, start, end) ? ELSE :
@@ -217,7 +215,7 @@ public enum Key {
             return  USING.isEqual(str, start, end) ? USING : CLASS.isEqual(str, start, end) ? CLASS :
                     FINAL.isEqual(str, start, end) ? FINAL : WHILE.isEqual(str, start, end) ? WHILE :
                     YIELD.isEqual(str, start, end) ? YIELD : BREAK.isEqual(str, start, end) ? BREAK :
-                    FALSE.isEqual(str, start, end) ? FALSE : ISNOT.isEqual(str, start, end) ? ISNOT : NOONE;
+                    FALSE.isEqual(str, start, end) ? FALSE : NOONE;
         } else if (len == 6) {
             return  STRUCT.isEqual(str, start, end) ? STRUCT : PUBLIC.isEqual(str, start, end) ? PUBLIC :
                     STATIC.isEqual(str, start, end) ? STATIC : SWITCH.isEqual(str, start, end) ? SWITCH :
@@ -263,20 +261,9 @@ public enum Key {
     }
 
     public boolean isSet() {
-        switch (this) {
-            case SETVAL: return true;
-            case SETADD: return true;
-            case SETSUB: return true;
-            case SETMUL: return true;
-            case SETDIV: return true;
-            case SETMOD: return true;
-            case SETLSHIFT: return true;
-            case SETRSHIFT: return true;
-            case SETAND: return true;
-            case SETOR: return true;
-            case SETNOT: return true;
-            case SETXOR: return true;
-            default: return false;
-        }
+        return this == Key.SETVAL || this == Key.SETADD || this == Key.SETSUB ||
+                this == Key.SETMUL || this == Key.SETDIV || this == Key.SETMOD ||
+                this == Key.SETLSHIFT || this == Key.SETRSHIFT || this == Key.SETAND ||
+                this == Key.SETOR || this == Key.SETNOT || this == Key.SETXOR;
     }
 }

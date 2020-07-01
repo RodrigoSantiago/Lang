@@ -25,6 +25,7 @@ public class Method extends Member implements GenericOwner {
 
     private TokenGroup contentToken;
     private boolean hasImplementation;
+    Stack stack;
 
     public Method(Type type, Token start, Token end) {
         super(type);
@@ -175,7 +176,7 @@ public class Method extends Member implements GenericOwner {
 
     public void make() {
         if (hasImplementation) {
-            Stack stack = new Stack(cFile, token, type.self, typePtr, this, false, isStatic(), false);
+            stack = new Stack(cFile, token, type.self, typePtr, this, false, isStatic(), false);
             stack.read(contentToken.start, contentToken.end, true);
             stack.addParam(getParams());
             stack.load();
@@ -203,6 +204,7 @@ public class Method extends Member implements GenericOwner {
                     .add(typePtr)
                     .add(" ").path(type.self, isStatic()).add("::m_").add(nameToken)
                     .add("(").add(params).add(") {").ln()
+                    .add(stack)
                     .add("}").ln()
                     .ln();
         }

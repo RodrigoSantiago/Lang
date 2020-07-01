@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.OperatorView;
 import logic.stack.Context;
@@ -25,6 +26,7 @@ public class CallGroup {
     private OperatorView operatorView;
     private Pointer castPtr;
     private boolean setOperator;
+    private boolean rightOperator;
 
     private Pointer naturalPtr;
     private Pointer requestPtr;
@@ -40,6 +42,7 @@ public class CallGroup {
         if (right.isOperator()) {
             this.left = right;
             this.center = left;
+            rightOperator = true;
         } else {
             this.left = left;
             this.center = right;
@@ -198,6 +201,7 @@ public class CallGroup {
         } else if (left != null && center != null && right != null) {
             ArrayList<OperatorView> operatos = context.findOperator(left, center, right);
             setOperator = center.getOperatorToken() != null && center.getOperatorToken().key.priority == 11;
+            // TODO - INEED TO KNOW IF IT IS REVERSE !!!!
 
             if (operatos == null || operatos.size() == 0) {
                 cFile.erro(center.operatorToken, "Operator Not Found", this);
@@ -332,22 +336,21 @@ public class CallGroup {
     }
 
     private void setCastGet(Pointer pointer) {
-
+        if (castPtr != null) castPtr = castPtr.toLet(true);
     }
 
     private boolean setCastOwn(Pointer pointer) {
         if (pointer == null || castPtr == null) return true;
-        try {
-            return Pointer.OwnTable(pointer, naturalPtr) == 0;
-        } catch (Exception e) {
+        if (Pointer.OwnTable(pointer, castPtr) == 0) {
             return true;
+        } else {
+            castPtr = castPtr.toLet(true);
+            return false;
         }
     }
 
     public void requestGet(Pointer pointer) {
         if (pointer == null) pointer = getNaturalPtr(pointer);
-
-        requestPtr = pointer;
 
         if (option != null) {
             left.requestGet(cFile.langBoolPtr());
@@ -359,13 +362,18 @@ public class CallGroup {
             } else {
                 cFile.erro(getTokenGroup(), "Incompatible Ternary Members values", this);
             }
+
+            requestPtr = pointer;
         } else if (calls.size() > 0) {
             calls.get(calls.size() - 1).requestGet(pointer);
+            requestPtr = calls.get(calls.size() - 1).requestPtr;
         } else if (operatorView == OperatorView.CAST) {
             left.setCastGet(pointer);
             center.requestGet(null);
             naturalPtr = left.getCastPtr();
+            requestPtr = left.getCastPtr();
         } else {
+            requestPtr = pointer;
             if (naturalPtr != null && naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
                 cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
             }
@@ -413,9 +421,43 @@ public class CallGroup {
         }
     }
 
-    public boolean isSetExpression() {
-        return left != null && center != null && right != null && colon == null && option == null &&
-                center.getOperatorToken() != null && center.getOperatorToken().key.isSet();
+    public void build(CppBuilder cBuilder, int idt) {
+        if (left != null && center != null && right != null && colon != null && option != null) {
+            cBuilder.add(left, idt).add(" ? ").add(right, idt).add(" : ").add(option, idt);
+        } else if (left != null && center != null && right != null) {
+            if (operatorView == OperatorView.EQUAL || operatorView == OperatorView.DIF ||
+                    operatorView == OperatorView.AND || operatorView == OperatorView.OR) {
+                cBuilder.add(left, idt).add(" ").add(center.operatorToken).add(" ").add(right, idt);
+            } else if (operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT) {
+
+            } else if (center.operatorToken.key.isSet()) {
+                cBuilder.add(left, idt).add(" = ").add(right, idt);
+            } else if (operatorView.operator != null && operatorView.operator.type.isLangBase()) {
+                cBuilder.add(left, idt).add(" ").add(center.operatorToken).add(" ").add(right, idt);
+            } else {
+                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.op, null)
+                        .add("(").add(left, idt).add(", ").add(right, idt).add(")");
+            }
+        } else if (left != null && left.isCastingOperator() && center != null) {
+            cBuilder.add("cast<").add(center.getReturnType()).add(", ").add(left.getCastPtr()).add(">::val(").add(center, idt).add(")");
+        } else if (left != null && center != null) {
+            if (center.getReturnType().isLangBase()) {
+                if (rightOperator) {
+                    cBuilder.add(center, idt).add(left.operatorToken);
+                } else {
+                    cBuilder.add(left.operatorToken).add(center, idt);
+                }
+            }
+        } else if (calls.size() > 0) {
+            for (int i = 0; i < calls.size(); i++) {
+                Call call = calls.get(i);
+                call.build(cBuilder, idt);
+
+                if (i < calls.size() - 1) {
+                    cBuilder.add(call.next());
+                }
+            }
+        }
     }
 
     @Override

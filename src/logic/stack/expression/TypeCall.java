@@ -3,6 +3,7 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Context;
 
@@ -78,5 +79,10 @@ public class TypeCall extends Call {
     @Override
     public void requestSet() {
         cFile.erro(getToken(), "Unexpected identifier", this);
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt) {
+        cBuilder.add(typePtr);
     }
 }

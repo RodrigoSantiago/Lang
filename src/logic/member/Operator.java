@@ -19,6 +19,7 @@ public class Operator extends Member {
     public Key op = Key.NOONE;
 
     public TokenGroup contentToken;
+    public Stack stack;
     private boolean hasImplementation;
 
     public Operator(Type type, Token start, Token end) {
@@ -65,6 +66,7 @@ public class Operator extends Member {
                     if (token.isOpen()) cFile.erro(token, "Brace closure expected", this);
                     contentToken = new TokenGroup(token.getChild(), token.getLastChild());
                 }
+                hasImplementation = true;
                 state = 5;
             } else if (state == 4 && token.key == Key.SEMICOLON) {
                 contentToken = new TokenGroup(token, next);
@@ -147,8 +149,9 @@ public class Operator extends Member {
 
     public void make() {
         if (hasImplementation) {
-            Stack stack = new Stack(cFile, token, type.self, typePtr, type, false, true, false);
+            stack = new Stack(cFile, token, type.self, typePtr, type, false, true, false);
             stack.read(contentToken.start, contentToken.end, true);
+            stack.addParam(getParams());
             stack.load();
         }
     }
@@ -159,14 +162,15 @@ public class Operator extends Member {
         cBuilder.idt(1).add(type.template, 1);
         cBuilder.add("static ")
                 .add(typePtr)
-                .add(" ").add(op, typePtr).add("(").add(params).add(");").ln();
+                .add(" ").nameOp(op, typePtr).add("(").add(params).add(");").ln();
 
         if (!isAbstract()) {
             cBuilder.toSource(type.template != null);
             cBuilder.add(type.template)
                     .add(typePtr)
-                    .add(" ").path(type.self, false).add("::").add(op, typePtr)
+                    .add(" ").path(type.self, false).add("::").nameOp(op, typePtr)
                     .add("(").add(params).add(") {").ln()
+                    .add(stack)
                     .add("}").ln()
                     .ln();
         }

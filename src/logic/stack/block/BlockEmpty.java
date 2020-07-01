@@ -4,7 +4,9 @@ import content.Key;
 import content.Parser;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.stack.Block;
+import logic.stack.Line;
 import logic.stack.Stack;
 
 public class BlockEmpty extends Block {
@@ -55,5 +57,14 @@ public class BlockEmpty extends Block {
         if (contentToken != null) {
             Parser.parseLines(this, contentToken.start, contentToken.end);
         }
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        cBuilder.idt(idt).add("{").ln();
+        for (Line line : lines) {
+            line.build(cBuilder, idt + 1, idt + 1);
+        }
+        cBuilder.idt(idt).add("}").ln();
     }
 }

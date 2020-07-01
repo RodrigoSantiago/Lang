@@ -3,6 +3,7 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.member.Constructor;
 import logic.member.view.ConstructorView;
@@ -152,5 +153,14 @@ public class ConstructorCall extends Call {
     @Override
     public void requestSet() {
 
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt) {
+        if (token.key == Key.THIS) {
+            cBuilder.add("create(").add(arguments, idt).add(")");
+        } else {
+            cBuilder.path(typePtr, false).add("::create(").add(arguments, idt).add(")");
+        }
     }
 }

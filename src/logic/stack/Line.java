@@ -2,7 +2,7 @@ package logic.stack;
 
 import content.Token;
 import data.ContentFile;
-import logic.Pointer;
+import data.CppBuilder;
 
 public abstract class Line {
     public final Stack stack;
@@ -29,6 +29,10 @@ public abstract class Line {
     }
 
     public void load() {
+    }
+
+    public void build(CppBuilder cBuilder, int idt, int off) {
+
     }
 
     public boolean isIfStatment() {

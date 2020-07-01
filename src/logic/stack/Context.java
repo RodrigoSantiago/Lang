@@ -114,12 +114,12 @@ public class Context {
     }
 
     public ArrayList<MethodView> findMethod(Token nameToken, ArrayList<Expression> arguments) {
-        if (type != null && type.isFunction() && !isStatic && nameToken.equals("run")) {
-            return findFunctionRun(nameToken, arguments);
-        }
-
         for (Expression arg : arguments) {
             arg.load(new Context(this));
+        }
+
+        if (type != null && type.isFunction() && !isStatic && nameToken.equals("run")) {
+            return findFunctionRun(nameToken, arguments);
         }
         if (type != null) {
             ArrayList<MethodView> found = null;

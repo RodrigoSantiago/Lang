@@ -2,6 +2,7 @@ package logic.stack.line;
 
 import content.Key;
 import content.Token;
+import data.CppBuilder;
 import logic.stack.Block;
 import logic.stack.Line;
 
@@ -49,5 +50,11 @@ public class LineContinue extends Line {
                 cFile.erro(start, "A Continue Statment should be inside a Named Loop or Switch  [" + label + "]", this);
             }
         }
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        cBuilder.idt(off).add("continue").add(";");
+        if (off > 0) cBuilder.ln();
     }
 }

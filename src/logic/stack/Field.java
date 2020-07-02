@@ -1,16 +1,21 @@
 package logic.stack;
 
+import content.Key;
 import content.Token;
+import data.CppBuilder;
+import data.Temp;
 import logic.Pointer;
 
 public class Field {
+
+    public Temp temp;
+    Field copy;
 
     Stack stack;
     Block source;
     Token token;
     Token nameToken;
     Pointer typePtr;
-
     boolean isReadyOnly;
 
     public Field(Stack stack, Token nameToken, Pointer typePtr, boolean isFinal, Block source) {
@@ -28,6 +33,16 @@ public class Field {
         this.nameToken = nameToken;
         this.typePtr = typePtr;
         isReadyOnly = isFinal;
+    }
+
+    public Field(Stack stack, Field field) {
+        this.stack = stack;
+        this.copy = field;
+        this.source = field.source;
+        this.token = field.token;
+        this.nameToken = field.nameToken;
+        this.typePtr = field.typePtr;
+        isReadyOnly = true;
     }
 
     public Token getName() {
@@ -48,5 +63,27 @@ public class Field {
 
     public boolean isReadOnly(Stack stack) {
         return isReadyOnly || stack != getStack();
+    }
+
+    public void buildParam(CppBuilder cBuilder) {
+        temp = cBuilder.temp(typePtr.toLet());
+        cBuilder.add(temp).add(" = ");
+        copy.build(cBuilder);
+    }
+
+    public void build(CppBuilder cBuilder) {
+        if (temp != null) {
+            cBuilder.add(temp);
+        } else if (nameToken.key == Key.THIS) {
+            if (typePtr.isPointer()) {
+                cBuilder.add("this");
+            } else {
+                cBuilder.add("(*this)");
+            }
+        } else if (nameToken.key == Key.BASE) {
+            cBuilder.add(typePtr.type.parent.type.pathToken);
+        } else {
+            cBuilder.nameParam(nameToken);
+        }
     }
 }

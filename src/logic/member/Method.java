@@ -196,16 +196,16 @@ public class Method extends Member implements GenericOwner {
                 .add(" m_").add(nameToken).add("(").add(params).add(")").add(isAbstract() ? " = 0;" : ";").ln();
 
         if (!isAbstract()) {
-            cBuilder.toSource(type.template != null || template != null);
+            cBuilder.toSource((!isStatic() && type.template != null) || template != null);
             if (!isStatic()) {
                 cBuilder.add(type.template);
             }
             cBuilder.add(template)
                     .add(typePtr)
                     .add(" ").path(type.self, isStatic()).add("::m_").add(nameToken)
-                    .add("(").add(params).add(") {").ln()
+                    .add("(").add(params).add(") ").in(1)
                     .add(stack)
-                    .add("}").ln()
+                    .out().ln()
                     .ln();
         }
 

@@ -312,9 +312,29 @@ public class LiteralCall extends Call {
         } else if (literalType == STRING) {
             cBuilder.path(cFile.langStringPtr(), false).add("(\"").add(resultStr).add("\")");
         } else if (literalType == LONG) {
-            cBuilder.add(resultNum);
+            if (naturalPtr.equals(cFile.langLongPtr())) {
+                cBuilder.add(resultNum).add("L");
+            } else if (naturalPtr.equals(cFile.langIntPtr())) {
+                cBuilder.add("(").add(cFile.langIntPtr()).add(")").add(resultNum);
+            } else if (naturalPtr.equals(cFile.langBytePtr())) {
+                cBuilder.add("(").add(cFile.langBytePtr()).add(")").add(resultNum);
+            } else if (naturalPtr.equals(cFile.langShortPtr())) {
+                cBuilder.add("(").add(cFile.langShortPtr()).add(")").add(resultNum);
+            } else if (naturalPtr.equals(cFile.langFloatPtr())) {
+                cBuilder.add(resultNum).add(".0F");
+            } else if (naturalPtr.equals(cFile.langDoublePtr())) {
+                cBuilder.add(resultNum).add(".0D");
+            } else {
+                cBuilder.add(resultNum);
+            }
         } else if (literalType == DOUBLE) {
-            cBuilder.add(resultDouble);
+            if (naturalPtr.equals(cFile.langFloatPtr())) {
+                cBuilder.add(resultDouble).add("F");
+            } else if (naturalPtr.equals(cFile.langDoublePtr())) {
+                cBuilder.add(resultDouble).add("D");
+            } else {
+                cBuilder.add(resultDouble);
+            }
         }
     }
 }

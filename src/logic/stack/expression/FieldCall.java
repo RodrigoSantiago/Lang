@@ -15,6 +15,7 @@ public class FieldCall extends Call {
     public Type staticCall;
     public FieldView fieldView;
     public Field field;
+    public Field thisField;
 
     private boolean useGet, useSet, useOwn, clearAcess;
 
@@ -42,6 +43,11 @@ public class FieldCall extends Call {
     @Override
     public boolean isTypeCall() {
         return staticCall != null;
+    }
+
+    @Override
+    public boolean isMethodSetter() {
+        return fieldView != null && fieldView.isProperty();
     }
 
     public Pointer getTypePtr() {
@@ -75,10 +81,9 @@ public class FieldCall extends Call {
                     if (!context.isBegin() && !context.isStatic() && fieldView.isStatic()) {
                         cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
                     }
-                }
-            } else {
-                if (!getLine().isChildOf(field.getSource())) {
-                    cFile.erro(token, "Field Not Acessible", this);
+                    if (clearAcess && !fieldView.isStatic()) {
+                        thisField = getStack().findField(new Token("this", 0 , 4, Key.THIS, false));
+                    }
                 }
             }
         }
@@ -86,8 +91,8 @@ public class FieldCall extends Call {
 
     @Override
     public int verify(Pointer pointer) {
-        return staticCall != null ? 0 : field != null ? pointer.canReceive(field.getTypePtr()) :
-                fieldView != null ? pointer.canReceive(fieldView.getTypePtr()) : 0;
+        return staticCall != null ? 0 : fieldView != null ? pointer.canReceive(fieldView.getTypePtr()) :
+                field != null ? pointer.canReceive(field.getTypePtr()) : 0;
     }
 
     @Override
@@ -245,8 +250,14 @@ public class FieldCall extends Call {
                     cBuilder.add("this->");
                 }
             }
-            if (fieldView.isVariable() || fieldView.isNum()) {
+            if (fieldView.isNum()) {
                 cBuilder.nameField(token);
+            } else if (fieldView.isVariable()) {
+                if (!fieldView.isStatic() || fieldView.srcVar.isLiteral(fieldView.srcID)) {
+                    cBuilder.nameField(token);
+                } else {
+                    cBuilder.nameStaticField(token).add("()");
+                }
             } else if (useGet) {
                 cBuilder.namePropertyGet(token).add("()");
             } else if (useOwn) {
@@ -254,16 +265,33 @@ public class FieldCall extends Call {
             } else if (useSet) {
                 cBuilder.namePropertySet(token).add("(");
             }
-        } else if (token.key == Key.THIS) {
-            if (requestPtr.isPointer()) {
-                cBuilder.add("this");
-            } else {
-                cBuilder.add("(*this)");
-            }
-        } else if (token.key == Key.BASE) {
-            cBuilder.path(getStack().getSourcePtr().type.parent, false);
         } else {
-            cBuilder.nameParam(token);
+            field.build(cBuilder);
+        }
+    }
+
+    @Override
+    public void buildSet(CppBuilder cBuilder, int idt) {
+        if (fieldView != null) {
+            if (clearAcess) {
+                if (fieldView.isStatic()) {
+                    cBuilder.path(fieldView.getType().self, true).add("::");
+                } else {
+                    thisField.build(cBuilder);
+                    cBuilder.add("->");
+                }
+            }
+            if (fieldView.isVariable()) {
+                if (!fieldView.isStatic() || fieldView.srcVar.isLiteral(fieldView.srcID)) {
+                    cBuilder.nameField(token);
+                } else {
+                    cBuilder.nameStaticField(token).add("()");
+                }
+            } else if (useGet) {
+                cBuilder.namePropertySet(token).add("(");
+            }
+        } else {
+            field.build(cBuilder);
         }
     }
 

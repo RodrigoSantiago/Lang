@@ -39,7 +39,7 @@ public class LineExpression extends Line {
     public void load() {
         if (expression != null) {
             expression.load(new Context(stack));
-            expression.requestGet(null);
+            expression.request();
             if (expression.isLiteral()) {
                 cFile.erro(expressionGroup, "Must be a call", this);
             }

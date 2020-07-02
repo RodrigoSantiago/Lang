@@ -185,7 +185,9 @@ public class ContentFile {
                 String[] parts = name.split("::");
                 for (String part : parts) {
                     if (part.startsWith("_")) {
-                        erro(tokenName, "A nmespace cannot start with underline (_)", this);
+                        erro(tokenName, "A namespace cannot start with underline (_)", this);
+                    } else if (part.length() < 3) {
+                        erro(tokenName, "A namespace shold have at least 3 characters", this);
                     }
                 }
             }
@@ -312,6 +314,10 @@ public class ContentFile {
 
     public Pointer langIterablePtr(Pointer pointer) {
         return new Pointer(mark(getCompiler().getLangIterable()), new Pointer[]{pointer}, false);
+    }
+
+    public Pointer langIteratorPtr(Pointer pointer) {
+        return new Pointer(mark(getCompiler().getLangIterator()), new Pointer[]{pointer}, false);
     }
 
     public Pointer langWrapperPtr(Type type) {

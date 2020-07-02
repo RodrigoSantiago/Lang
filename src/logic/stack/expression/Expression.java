@@ -193,8 +193,12 @@ public class Expression {
         groups.add(group);
     }
 
+    public CallGroup  getGroup() {
+        return groups.get(0);
+    }
+
     public Pointer getReturnType() {
-        return groups.size() == 1 ? groups.get(0).getReturnType() : null;
+        return groups.size() == 1 ? groups.get(0).getRequestPtr() : null;
     }
 
     public boolean isLiteral() {
@@ -446,6 +450,10 @@ public class Expression {
 
     public Pointer getNaturalPtr(Pointer convertFlag) {
         return groups.size() > 0 ? groups.get(0).getNaturalPtr(convertFlag) : Pointer.voidPointer;
+    }
+
+    public void request() {
+        if (groups.size() > 0) groups.get(0).request();
     }
 
     public void requestGet(Pointer pointer) {

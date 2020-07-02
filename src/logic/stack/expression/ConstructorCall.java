@@ -18,6 +18,7 @@ public class ConstructorCall extends Call {
     ConstructorView constructorView;
     ArrayList<Expression> arguments = new ArrayList<>();
     Pointer typePtr;
+    private boolean consumed;
 
     public ConstructorCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -68,6 +69,11 @@ public class ConstructorCall extends Call {
             }
             token = next;
         }
+    }
+
+    public ArrayList<Expression> consume() {
+        consumed = true;
+        return arguments;
     }
 
     public ConstructorView getConstructorView() {
@@ -157,10 +163,12 @@ public class ConstructorCall extends Call {
 
     @Override
     public void build(CppBuilder cBuilder, int idt) {
+        if (consumed) return;
+
         if (token.key == Key.THIS) {
             cBuilder.add("create(").add(arguments, idt).add(")");
         } else {
-            cBuilder.path(typePtr, false).add("::create(").add(arguments, idt).add(")");
+            cBuilder.add(typePtr.type.pathToken).add("::create(").add(arguments, idt).add(")");
         }
     }
 }

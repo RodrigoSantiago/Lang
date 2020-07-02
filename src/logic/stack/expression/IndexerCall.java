@@ -64,6 +64,11 @@ public class IndexerCall extends Call {
     }
 
     @Override
+    public boolean isMethodSetter() {
+        return indexerView != null;
+    }
+
+    @Override
     public Pointer getNaturalPtr(Pointer convertFlag) {
         if (indexerView != null) {
             naturalPtr = indexerView.getTypePtr();

@@ -7,7 +7,7 @@ import logic.params.Parameters;
 import logic.stack.Stack;
 import logic.stack.expression.CallGroup;
 import logic.stack.expression.Expression;
-import logic.templates.Generic;
+import logic.stack.expression.LiteralCall;
 import logic.templates.Template;
 import logic.Pointer;
 import logic.typdef.Type;
@@ -21,6 +21,9 @@ public class CppBuilder {
     private int indent = 0, sourcePos, headerPos, genericPos;
     private StringBuilder sBuilder, hBuilder, gBuilder, tBuilder, dBuilder;
     private ArrayList<Type> tDependences, sDependences, hDependences, gDependences, dDependences;
+    private ArrayList<Temp> tempVars;
+    private ArrayList<TempBlock> tempBlocks;
+    private int t;
     private Type type;
     private boolean useTemplates;
 
@@ -36,6 +39,9 @@ public class CppBuilder {
         gDependences = new ArrayList<>();
         dDependences = new ArrayList<>();
         tDependences = sDependences;
+
+        tempVars = new ArrayList<>();
+        tempBlocks = new ArrayList<>();
 
         indents = new String[10];
         for (int i = 0; i < indents.length; i++) {
@@ -70,6 +76,7 @@ public class CppBuilder {
 
     public void reset(Type type) {
         sourcePos = headerPos = genericPos = 0;
+        t = 0;
 
         sBuilder.setLength(0);
         hBuilder.setLength(0);
@@ -80,6 +87,9 @@ public class CppBuilder {
         gDependences.clear();
         dDependences.clear();
         toHeader();
+
+        tempBlocks.clear();
+        tempVars.clear();
 
         this.type = type;
         this.useTemplates = false;
@@ -216,6 +226,11 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder add(Key key) {
+        tBuilder.append(key.string);
+        return this;
+    }
+
     public CppBuilder add(Expression expression, int idt) {
         if (expression != null) expression.build(this, idt);
         return this;
@@ -230,12 +245,19 @@ public class CppBuilder {
     }
 
     public CppBuilder add(CallGroup group, int idt) {
-        if (group != null) group.build(this, idt);
+        if (group != null) {
+            group.build(this, idt);
+        }
         return this;
     }
+
     public CppBuilder add(Stack stack) {
-        stack.build(this);
+        stack.build(this, 1);
         return this;
+    }
+
+    public CppBuilder add(Temp temp) {
+        return add(temp.name);
     }
 
     public CppBuilder nameGeneric(Token token) {
@@ -246,6 +268,10 @@ public class CppBuilder {
 
     public CppBuilder nameField(Token nameToken) {
         return add("f_").add(nameToken);
+    }
+
+    public CppBuilder nameStaticField(Token nameToken) {
+        return add("s_").add(nameToken);
     }
 
     public CppBuilder nameField(String nameToken) {
@@ -305,10 +331,8 @@ public class CppBuilder {
     }
 
     public CppBuilder nameOp(Key operator, Pointer typePtr) {
-        if (operator == Key.CAST) {
-            return add("cast_")._namePtr(typePtr);
-        } else if (operator == Key.AUTO) {
-            return add("auto_")._namePtr(typePtr);
+        if (operator == Key.CAST || operator == Key.AUTO) {
+            return add("c_")._namePtr(typePtr);
         } else {
             return add(operator.name().toLowerCase());
         }
@@ -316,13 +340,17 @@ public class CppBuilder {
 
     private CppBuilder _namePtr(Pointer typePtr) {
         if (typePtr == Pointer.voidPointer) return add("void");
-        if (typePtr.isOpen()) return add("open");
+        if (typePtr.typeSource != null) return nameGeneric(typePtr.typeSource.nameToken);
+        if (typePtr.let) add("let_");
         add(typePtr.type.pathToken);
         if (typePtr.pointers != null) {
-            for (Pointer pointer : typePtr.pointers) {
-                _namePtr(pointer);
+            add("_s_");
+            Pointer[] pointers = typePtr.pointers;
+            for (int i = 0; i < pointers.length; i++) {
+                if (i > 0) add("_d_");
+                _namePtr(pointers[i]);
             }
-            add("_cast");
+            add("_e_");
         }
         return this;
     }
@@ -487,6 +515,61 @@ public class CppBuilder {
             add("v_value");
         }
         return this;
+    }
+
+    public void cast(Pointer src, Pointer dst, CallGroup group, int idt) {
+        add("cast<").add(src).add(", ").add(dst).add(">::val(");
+        group.build(this, idt);
+        add(")");
+    }
+
+    public CppBuilder in(int idt) {
+        add("{").ln();
+        tempBlocks.add(new TempBlock(tBuilder.length(), idt));
+        return this;
+    }
+
+    public Temp temp(Pointer typePtr) {
+        return temp(typePtr, false);
+    }
+
+    public Temp temp(Pointer typePtr, boolean pure) {
+        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (t++), pure);
+        tempVars.add(temp);
+        return temp;
+    }
+
+    public CppBuilder out() {
+        StringBuilder prev = tBuilder;
+        TempBlock tblock = tempBlocks.remove(tempBlocks.size() - 1);
+        boolean has = false;
+        tBuilder = dBuilder;
+        for (int i = 0; i < tempVars.size(); i++) {
+            Temp tempVar = tempVars.get(i);
+            if (tempVar.block == tempBlocks.size()) {
+                has = true;
+                idt(tblock.idt);
+                if (tempVar.pure) {
+                    path(tempVar.typePtr, false);
+                    add("*");
+                } else {
+                    add(tempVar.typePtr);
+                }
+                add(" ").add(tempVar.name).add(";").ln();
+                tempVars.remove(i);
+                i--;
+            }
+        }
+        tBuilder = prev;
+
+        if (has) {
+            tBuilder.insert(tblock.pos, dBuilder);
+            dBuilder.setLength(0);
+        }
+        if (tempBlocks.size() == 0) {
+            t = 0;
+        }
+        return idt(tblock.idt - 1).add("}");
     }
 
     public CppBuilder idt() {

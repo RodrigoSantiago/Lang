@@ -165,6 +165,7 @@ public class Parser {
             Token next = token.getNext();
             if (state == 0 && token.key == Key.BRACE) {     // [{}]
                 block.add(token, next);
+                start = next;
                 state = 0;
             } else if (state == 0 && (token.key == Key.CASE || token.key == Key.DEFAULT)) { // [{}]
 

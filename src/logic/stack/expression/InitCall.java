@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 public class InitCall extends Call {
 
-    private ArrayList<Expression> arguments = new ArrayList<>();
+    public ArrayList<Expression> arguments = new ArrayList<>();
     Pointer requestType;
     Pointer requestArray;
 

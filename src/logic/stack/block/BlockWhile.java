@@ -96,11 +96,11 @@ public class BlockWhile extends Block {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
-        cBuilder.idt(idt).add("while (").add(conditionExp, idt).add(") {").ln();
+        cBuilder.idt(idt).add("while (").add(conditionExp, idt).add(") ").in(idt + 1);
         for (Line line : lines) {
             line.build(cBuilder, idt + 1, idt + 1);
         }
-        cBuilder.idt(idt).add("}").ln();
+        cBuilder.out().ln();
     }
 
     @Override

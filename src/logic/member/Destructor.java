@@ -85,14 +85,14 @@ public class Destructor extends Member {
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add("void ").path(type.self, false).add("::destroy() {").ln()
+                .add("void ").path(type.self, false).add("::destroy() ").in(1)
                 .add(stack);
 
         if (type.parent != null) {
             cBuilder.idt(1).path(type.parent, false).add("::destroy();").ln();
         }
 
-        cBuilder.add("}").ln()
+        cBuilder.out().ln()
                 .ln();
     }
 

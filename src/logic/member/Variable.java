@@ -18,6 +18,7 @@ public class Variable extends Member {
 
     private ArrayList<Token> nameTokens = new ArrayList<>();
     private ArrayList<TokenGroup> initTokens = new ArrayList<>();
+    private ArrayList<Stack> initExpressions = new ArrayList<>();
 
     public Variable(Type type, Token start, Token end) {
         super(type);
@@ -91,6 +92,9 @@ public class Variable extends Member {
                 Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
                 stack.read(initToken.start, initToken.end, true);
                 stack.load();
+                initExpressions.add(stack);
+            } else {
+                initExpressions.add(null);
             }
         }
     }
@@ -101,24 +105,31 @@ public class Variable extends Member {
         }
 
         cBuilder.toHeader();
-        cBuilder.idt(1);
-        if (isStatic()) {
-            cBuilder.add("static ");
-        }
-        for (Token name : nameTokens) {
+        for (int i = 0; i < nameTokens.size(); i++) {
+            Token name = nameTokens.get(i);
+            cBuilder.idt(1);
+            if (isStatic()) {
+                cBuilder.add("static ");
+            }
             cBuilder.add(typePtr)
                     .add(" f_").add(name).add(";").ln();
+            if (isStatic() && isInitialized(i) && !isLiteral(i)) {
+                cBuilder.idt(1).add("static ")
+                        .add(typePtr)
+                        .add("& s_").add(name).add("();").ln();
+            }
         }
 
         if (isStatic()) {
-            for (Token name : nameTokens) {
-                cBuilder.toSource(type.template != null);
-                if (!isStatic()) {
-                    cBuilder.add(type.template);
-                }
+            for (int i = 0; i < nameTokens.size(); i++) {
+                Token name = nameTokens.get(i);
+                cBuilder.toSource();
                 cBuilder.add(typePtr)
                         .add(" ").path(type.self, isStatic()).add("::f_").add(name).add(" = ");
-                if (typePtr.typeSource != null) {
+                if (isInitialized(i) && isLiteral(i)) {
+                    initExpressions.get(i).build(cBuilder, 1);
+                    cBuilder.add(";").ln();
+                } else if (typePtr.typeSource != null) {
                     cBuilder.add("lang::generic<").add(typePtr).add(">::def();").ln();
                 } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
                     cBuilder.add("nullptr;").ln();
@@ -127,45 +138,71 @@ public class Variable extends Member {
                 } else {
                     cBuilder.add("0;").ln();
                 }
+                cBuilder.ln();
 
-                // Static Init Values should be on Constructors. Always start with 0
+                if (isInitialized(i) && !isLiteral(i)) {
+                    cBuilder.add(typePtr)
+                            .add("& ").path(type.self, isStatic()).add("::s_").add(name).add("() ").in(1)
+                            .idt(1).add("init();").ln()
+                            .idt(1).add("return f_").add(name).add(";").ln()
+                            .out().ln()
+                            .ln();
+                }
             }
         }
     }
+
+    public void buildDefault(CppBuilder cBuilder) {
+        for (int i = 0; i < nameTokens.size(); i++) {
+            Token name = nameTokens.get(i);
+            if (i > 0) {
+                cBuilder.add(", ").ln();
+            }
+
+            cBuilder.idt(1).add("f_").add(name).add("(");
+            if (isInitialized(i) && isLiteral(i)) {
+                initExpressions.get(i).build(cBuilder, 1);
+            } else if (typePtr.typeSource != null) {
+                cBuilder.add("lang::generic<").add(typePtr).add(">::def()");
+            } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
+                cBuilder.add("nullptr");
+            } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
+                cBuilder.add(typePtr).add("()");
+            } else {
+                cBuilder.add("0");
+            }
+            cBuilder.add(")");
+        }
+    }
+
     public void buildInit(CppBuilder cBuilder) {
         if (isStatic()) {
-            // TODO - Use Init Block
-            for (Token name : nameTokens) {
-                cBuilder.idt(1).add("f_").add(name).add(" = ");
-                if (typePtr.typeSource != null) {
-                    cBuilder.add("lang::generic<").add(typePtr).add(">::def()");
-                } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
-                    cBuilder.add("nullptr");
-                } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
-                    cBuilder.path(typePtr, false).add("()");
-                } else {
-                    cBuilder.add("0");
+            for (int i = 0; i < nameTokens.size(); i++) {
+                Token name = nameTokens.get(i);
+
+                if (isInitialized(i) && !isLiteral(i)) {
+                    cBuilder.idt(1).add("f_").add(name).add(" = ");
+                    initExpressions.get(i).build(cBuilder, 1);
+                    cBuilder.add(";").ln();
                 }
-                cBuilder.add(";").ln();
             }
         } else {
             for (int i = 0; i < nameTokens.size(); i++) {
                 Token name = nameTokens.get(i);
-                if (i > 0) {
-                    cBuilder.add(", ").ln();
-                }
+                Stack init = initExpressions.get(i);
 
-                cBuilder.idt(1).add("f_").add(name).add("(");
-                if (typePtr.typeSource != null) {
-                    cBuilder.add("lang::generic<").add(typePtr).add(">::def()");
+                cBuilder.idt(1).add("this->").nameField(name).add(" = ");
+                if (isInitialized(i)) {
+                    cBuilder.add(init).add(";").ln();
+                } else if (typePtr.typeSource != null) {
+                    cBuilder.add("lang::generic<").add(typePtr).add(">::def();").ln();
                 } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
-                    cBuilder.add("nullptr");
+                    cBuilder.add("nullptr;").ln();
                 } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
-
+                    cBuilder.add(typePtr).add("();").ln();
                 } else {
-                    cBuilder.add("0");
+                    cBuilder.add("0;").ln();
                 }
-                cBuilder.add(")");
             }
         }
     }
@@ -178,6 +215,14 @@ public class Variable extends Member {
         return fields;
     }
 
+    public boolean isLiteral(int pos) {
+        return initTokens.get(pos) == null || initTokens.get(pos).isLiteral();
+    }
+
+    public boolean isConstant(int pos) {
+        return isFinal() && isLiteral(pos);
+    }
+
     public boolean isInitialized(int pos) {
         return initTokens.get(pos) != null;
     }
@@ -188,5 +233,9 @@ public class Variable extends Member {
 
     public TokenGroup getTypeToken() {
         return typeToken;
+    }
+
+    public int count() {
+        return nameTokens.size();
     }
 }

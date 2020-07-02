@@ -120,10 +120,25 @@ public class Constructor extends Member {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .path(type.self, false).add("*")
-                        .add(" ").path(type.self, false).add("::create(").add(params).add(") {").ln() // TODO - DEFAULT DCONSTRUCTOR PARENT
-                        .add(stack)
+                        .add(" ").path(type.self, false).add("::create(").add(params).add(") ").in(1);
+                if (stack.getConstructorCall() == null && constructorTarget != null) {
+                    cBuilder.idt(1).add(type.parent.type.pathToken).add("::create();").ln();
+                }
+                if (constructorTarget == null || constructorTarget.type != type) {
+                    for (Variable variable : type.variables) {
+                        if (!variable.isStatic()) {
+                            variable.buildInit(cBuilder);
+                        }
+                    }
+                    for (Property property : type.properties) {
+                        if (!property.isStatic()) {
+                            property.buildInit(cBuilder);
+                        }
+                    }
+                }
+                cBuilder.add(stack)
                         .idt(1).add("return this;").ln()
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             } else {
                 cBuilder.toHeader();
@@ -139,15 +154,19 @@ public class Constructor extends Member {
                 cBuilder.add(type.template)
                         .path(type.self, false).add("::").add(type.pathToken);
                 if (params.isEmpty()) {
-                    cBuilder.add("(empty e) : ").add(type.pathToken).add("() {").ln();
+                    cBuilder.add("(empty e) : ");
                 } else if (params.getCount() == 1 && params.getTypePtr(0).equals(type.self)) {
-                    cBuilder.add("(empty e, ").add(type.self)
-                            .add(" v_").add(params.getNameToken(0)).add(") : ").add(type.pathToken).add("() {").ln();
+                    cBuilder.add("(empty e, ").add(type.self).add(" v_").add(params.getNameToken(0)).add(") : ");
                 } else {
-                    cBuilder.add("(").add(params).add(") : ").add(type.pathToken).add("() {").ln();
+                    cBuilder.add("(").add(params).add(") : ");
+                }
+                if (constructorTarget == null) {
+                    cBuilder.add(type.pathToken).add("() ").in(1);
+                } else {
+                    cBuilder.add(type.pathToken).add("(").add(stack.getConstructorCall().consume(), 0).add(") ").in(1);
                 }
                 cBuilder.add(stack)
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             }
         }

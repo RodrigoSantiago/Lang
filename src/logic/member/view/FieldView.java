@@ -211,7 +211,7 @@ public class FieldView {
     public boolean isReadOnly(Stack stack) {
         if (srcVar != null) {
             if (srcVar.isInitialized(srcID)) {
-                return true;
+                return srcVar.isFinal();
             } else if (stack.isStaticConstructor() || stack.isConstructor()) {
                 return false;
             } else {

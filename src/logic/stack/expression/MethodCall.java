@@ -8,6 +8,7 @@ import logic.Pointer;
 import logic.member.Method;
 import logic.member.view.MethodView;
 import logic.stack.Context;
+import logic.stack.Field;
 
 import java.util.ArrayList;
 
@@ -17,6 +18,7 @@ public class MethodCall extends Call {
     MethodView methodView;
     ArrayList<Expression> arguments = new ArrayList<>();
     private boolean clearAcess;
+    public Field thisField;
 
     public MethodCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -86,6 +88,9 @@ public class MethodCall extends Call {
                 }
                 if (!context.isBegin() && !context.isStatic() && methodView.isStatic()) {
                     cFile.erro(token, "Cannot use a Static Member on a Instance Environment", this);
+                }
+                if (clearAcess && !methodView.isStatic()) {
+                    thisField = getStack().findField(new Token("this", 0 , 4, Key.THIS, false));
                 }
             }
             if (methodView == null) {
@@ -193,7 +198,14 @@ public class MethodCall extends Call {
 
     @Override
     public void build(CppBuilder cBuilder, int idt) {
-        if (clearAcess && methodView.isStatic()) cBuilder.path(methodView.getType().self, true).add("::");
+        if (clearAcess) {
+            if (methodView.isStatic()) {
+                cBuilder.path(methodView.getType().self, true).add("::");
+            } else {
+                thisField.build(cBuilder);
+                cBuilder.add("->");
+            }
+        }
         cBuilder.nameMethod(methodView.getName()).add("(").add(arguments, idt).add(")");
     }
 }

@@ -1,5 +1,6 @@
 package logic.stack;
 
+import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
@@ -79,12 +80,12 @@ public class Stack {
         }
     }
 
-    public void build(CppBuilder cBuilder) {
+    public void build(CppBuilder cBuilder, int idt) {
         if (isExpression) {
-            expression.build(cBuilder, 0);
+            expression.build(cBuilder, idt);
         } else {
             for (Line line : block.lines) {
-                line.build(cBuilder, 1, 1);
+                line.build(cBuilder, idt, idt);
             }
         }
     }
@@ -153,16 +154,16 @@ public class Stack {
     }
 
     public void value (Pointer valuePtr) {
-        Token nameValue = new Token("value");
+        Token nameValue = new Token("value", 0, 5, Key.WORD, false);
         fields.put(nameValue, new Field(this, referenceToken, nameValue, valuePtr, false, block));
     }
 
-    private void thisBase() {
-        Token nameThis = new Token("this");
+    void thisBase() {
+        Token nameThis = new Token("this", 0, 4, Key.THIS, false);
         fields.put(nameThis, new Field(this, referenceToken, nameThis, sourcePtr.toLet(), true, block));
 
         if (sourcePtr.type.parent != null) {
-            Token nameBase = new Token("base");
+            Token nameBase =  new Token("base", 0, 4, Key.BASE, false);
             fields.put(nameBase, new Field(this, referenceToken, nameBase, sourcePtr.type.parent.toLet(), true, block));
         }
     }
@@ -173,5 +174,9 @@ public class Stack {
 
     public void setContainsConstructorCall() {
         hasConstructorCall = true;
+    }
+
+    public boolean isLiteral() {
+        return isExpression && expression.isLiteral();
     }
 }

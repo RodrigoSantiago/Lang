@@ -361,7 +361,7 @@ public class Context {
                 ArrayList<OperatorView> operators = ptr.type.getOperator(opToken);
                 for (OperatorView ov : operators) {
                     if (ov.getParams().getArgsCount() == 2) {
-                        if (!isStatic && pointer.pointers != null) ov = new OperatorView(pointer, ov);
+                        if (ptr.pointers != null) ov = new OperatorView(ptr, ov);
 
                         int ret = ov.getParams().verifyArguments(closer, result, left, right, found != null);
                         if (ret == 0) {

@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.CppBuilder;
+import data.Temp;
 import logic.Pointer;
 import logic.member.Constructor;
 import logic.member.Method;
@@ -24,7 +25,7 @@ public class InstanceCall extends Call {
     ConstructorView constructorView;
     ArrayList<Expression> indexArguments = new ArrayList<>();
     ArrayList<Expression> arguments = new ArrayList<>();
-    Expression arrayInit;
+    ArrayList<Expression>  arrayInitArgs = new ArrayList<>();
 
     ArrayList<TokenGroup> initTokens = new ArrayList<>();
     ArrayList<FieldView> initFields = new ArrayList<>();
@@ -201,10 +202,15 @@ public class InstanceCall extends Call {
             if (indexArguments.size() > 0) {
                 // [Init Block] -> array
                 if (initToken != null) {
-                    arrayInit = new Expression(getLine(), initToken, initToken.getNext(), typePtr);
-                    arrayInit.load(new Context(context));
-                    arrayInit.requestOwn(typePtr);
+                    readInitTokens(initToken.getChild(), initToken.getLastChild());
+                    for (TokenGroup initArg : initTokens) {
+                        Expression arg = new Expression(getLine(), initArg.start, initArg.end, typePtr);
+                        arg.load(new Context(context));
+                        arg.requestOwn(typePtr.pointers[0]);
+                        arrayInitArgs.add(arg);
+                    }
                 }
+                // TODO - ARRAY PARAM AND ARRAY INIT PROBLEM
 
                 if (paramToken != null) {
                     for (Expression argument : arguments) {
@@ -340,11 +346,23 @@ public class InstanceCall extends Call {
         cFile.erro(getToken(), "SET not allowed", this);
     }
 
-
     @Override
     public void build(CppBuilder cBuilder, int idt) {
         if (typePtr.isPointer()) {
-            cBuilder.add("(new ").path(typePtr, false).add("())->create(").add(arguments, idt).add(")");
+            if (arrayInitArgs.size() > 0) {
+                Temp t = cBuilder.temp(typePtr, true);
+                Temp t2 = cBuilder.temp(typePtr.pointers[0], true);
+                cBuilder.add("(").add(t).add(" = ")
+                        .add("(new ").path(typePtr, false).add("())->create(").add(arrayInitArgs.size()).add(")");
+                cBuilder.add(", ").add(t2).add(" = ").add(t).add("->data");
+                for (int i = 0; i < arrayInitArgs.size(); i++) {
+                    Expression arg = arrayInitArgs.get(i);
+                    cBuilder.add(", ").add(t2).add("[").add(i).add("] = ").add(arg, idt);
+                }
+                cBuilder.add(", ").add(t).add(")");
+            } else {
+                cBuilder.add("(new ").path(typePtr, false).add("())->create(").add(arguments, idt).add(")");
+            }
         } else {
             cBuilder.path(typePtr, false).add("(").add(arguments, idt).add(")");
         }

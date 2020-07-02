@@ -279,9 +279,9 @@ public class Indexer extends Member {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(getPtr)
-                        .add(" ").path(type.self, false).add("::get").add("(").add(params).add(") {").ln()
+                        .add(" ").path(type.self, false).add("::get").add("(").add(params).add(") ").in(1)
                         .add(stackGet == null ? stackOwn : stackGet)
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             }
         }
@@ -300,9 +300,9 @@ public class Indexer extends Member {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(typePtr)
-                        .add(" ").path(type.self, false).add("::own").add("(").add(params).add(") {").ln()
+                        .add(" ").path(type.self, false).add("::own").add("(").add(params).add(") ").in(1)
                         .add(stackOwn == null ? stackGet : stackOwn)
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             }
         }
@@ -320,9 +320,9 @@ public class Indexer extends Member {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add("void ").path(type.self, false).add("::set")
-                        .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) {").ln()
+                        .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) ").in(1)
                         .add(stackSet)
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             }
         }

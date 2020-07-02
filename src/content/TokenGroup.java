@@ -44,4 +44,24 @@ public class TokenGroup {
         }
         return str.toString();
     }
+
+    public boolean isLiteral() {
+        return recursiveLiteral(start, end);
+    }
+
+    private boolean recursiveLiteral(Token start, Token end) {
+        Token token = start;
+        while (token != end) {
+            if (token.key == Key.PARAM && token.getChild() != null) {
+                if (!recursiveLiteral(token.getChild(), token.getLastChild())) {
+                    return false;
+                }
+            } else if (token.key != Key.NUMBER && token.key != Key.TRUE && token.key != Key.FALSE &&
+                    token.key != Key.NULL && token.key != Key.DEFAULT && !token.key.isOperator) {
+                return false;
+            }
+            token = token.getNext();
+        }
+        return true;
+    }
 }

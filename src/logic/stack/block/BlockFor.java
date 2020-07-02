@@ -149,7 +149,7 @@ public class BlockFor extends Block {
                     }
                 }
                 if (foreachVar.typePtr != null) {
-                    foreachItPtr = cFile.langIterablePtr(foreachVar.typePtr);
+                    foreachItPtr = cFile.langIteratorPtr(foreachVar.typePtr);
                 }
                 if (foreachVar.nameTokens.size() > 0) {
                     if (!stack.addField(foreachVar.nameTokens.get(0), foreachVar.typePtr, foreachVar.isFinal, parent)) {
@@ -166,7 +166,7 @@ public class BlockFor extends Block {
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
         if (foreachVar != null) {
-            cBuilder.idt(idt).add("/*foreach*/{").ln()
+            cBuilder.idt(idt).add("/*foreach*/").in(idt + 1)
                     .idt(idt + 1).add(foreachItPtr).add(" it_").add(idt).add(" = ");
             if (strInt) {
                 cBuilder.add(loopExp, idt)
@@ -182,22 +182,22 @@ public class BlockFor extends Block {
                         .add(loopExp.getReturnType().isPointer() ? "->" : ".")
                         .nameMethod("iterate").add("();").ln();
             }
-            cBuilder.idt(idt + 1).add("while (it_").add(idt).add("->").nameMethod("hasNext").add("()) {").ln()
+            cBuilder.idt(idt + 1).add("while (it_").add(idt).add("->").nameMethod("hasNext").add("()) ").in(idt + 2)
                     .idt(idt + 2).add(foreachVar.typePtr).add(" ").nameParam(foreachVar.nameTokens.get(0))
                     .add(" = it_").add(idt).add("->").nameMethod("next").add("();").ln();
             for (Line line : lines) {
                 line.build(cBuilder, idt + 2, idt + 2);
             }
-            cBuilder.idt(idt + 1).add("}").ln()
-                    .idt(idt).add("}").ln();
+            cBuilder.out().ln()
+                    .out().ln();
         } else {
             cBuilder.idt(idt).add(" for (");
             if (firstLine != null) firstLine.build(cBuilder, idt, 0);
-            cBuilder.add("; ").add(conditionExp, idt).add("; ").add(loopExp, idt).add(") {").ln();
+            cBuilder.add(firstLine == null, "; ").add(conditionExp, idt).add("; ").add(loopExp, idt).add(") ").in(idt + 1);
             for (Line line : lines) {
-                line.build(cBuilder, idt + 1, idt + 2);
+                line.build(cBuilder, idt + 1, idt + 1);
             }
-            cBuilder.idt(idt).add("}").ln();
+            cBuilder.out().ln();
         }
     }
 

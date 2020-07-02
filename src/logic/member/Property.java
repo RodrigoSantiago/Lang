@@ -17,7 +17,7 @@ public class Property extends Member {
 
     private TokenGroup contentToken;
     private TokenGroup initToken;
-    public Stack stackGet, stackSet, stackOwn;
+    public Stack stackGet, stackSet, stackOwn, stackInit;
     private Token getContentToken, setContentToken, ownContentToken;
 
     private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
@@ -271,9 +271,9 @@ public class Property extends Member {
             stackSet.load();
         }
         if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
-            Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
-            stack.read(initToken.start, initToken.end, true);
-            stack.load();
+            stackInit = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
+            stackInit.read(initToken.start, initToken.end, true);
+            stackInit.load();
         }
     }
 
@@ -293,18 +293,16 @@ public class Property extends Member {
                     .add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isGetAbstract()) {
-                cBuilder.toSource(type.template != null);
+                cBuilder.toSource(!isStatic() && type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
                 cBuilder.add(getPtr)
-                        .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() {").ln()
+                        .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() ").in(1)
                         .add(stackGet == null ? stackOwn : stackGet)
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             }
-
-
         }
 
         if (hasOwn()) {
@@ -320,14 +318,14 @@ public class Property extends Member {
                     .add(isOwnAbstract() ? " = 0;" : ";").ln();
 
             if (!isOwnAbstract()) {
-                cBuilder.toSource(type.template != null);
+                cBuilder.toSource(!isStatic() && type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
                 cBuilder.add(typePtr)
-                        .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() {").ln()
+                        .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() ").in(1)
                         .add(stackOwn == null ? stackGet : stackOwn)
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             }
         }
@@ -344,16 +342,22 @@ public class Property extends Member {
                     .add(isSetAbstract() ? " = 0;" : ";").ln();
 
             if (!isSetAbstract()) {
-                cBuilder.toSource(type.template != null);
+                cBuilder.toSource(!isStatic() && type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
                 cBuilder.add("void ").path(type.self, isStatic()).add("::set_").add(nameToken)
-                        .add("(").add(typePtr).add(" v_value) {").ln()
+                        .add("(").add(typePtr).add(" v_value) ").in(1)
                         .add(stackSet)
-                        .add("}").ln()
+                        .out().ln()
                         .ln();
             }
+        }
+    }
+
+    public void buildInit(CppBuilder cBuilder) {
+        if (stackInit != null) {
+            cBuilder.idt(1).namePropertySet(nameToken).add("(").add(stackInit).add(");").ln();
         }
     }
 
@@ -401,6 +405,10 @@ public class Property extends Member {
                 .idt(1).path(self.type.parent, false).add("::set_").add(nameToken).add("(v_value);").ln()
                 .add("}").ln()
                 .ln();
+    }
+
+    public boolean isInitialized() {
+        return initToken != null;
     }
 
     public FieldView getField() {
@@ -479,6 +487,4 @@ public class Property extends Member {
     public String toString() {
         return nameToken+" : "+ typeToken+" {} ";
     }
-
-
 }

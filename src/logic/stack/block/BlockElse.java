@@ -100,11 +100,11 @@ public class BlockElse extends Block {
         if (isElseIf) {
             cBuilder.add(" if (").add(conditionExp, idt).add(")");
         }
-        cBuilder.add(" {").ln();
+        cBuilder.add(" ").in(idt + 1);
         for (Line line : lines) {
             line.build(cBuilder, idt + 1, idt + 1);
         }
-        cBuilder.idt(idt).add("}").ln();
+        cBuilder.out().ln();
     }
 
     @Override

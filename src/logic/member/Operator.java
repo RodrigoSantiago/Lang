@@ -169,9 +169,9 @@ public class Operator extends Member {
             cBuilder.add(type.template)
                     .add(typePtr)
                     .add(" ").path(type.self, false).add("::").nameOp(op, typePtr)
-                    .add("(").add(params).add(") {").ln()
+                    .add("(").add(params).add(") ").in(1)
                     .add(stack)
-                    .add("}").ln()
+                    .out().ln()
                     .ln();
         }
 

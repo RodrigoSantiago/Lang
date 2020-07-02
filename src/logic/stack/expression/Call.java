@@ -50,6 +50,10 @@ public abstract class Call {
         return false;
     }
 
+    public boolean isMethodSetter() {
+        return false;
+    }
+
     public int getLiteralType() {
         return 0;
     }
@@ -70,6 +74,10 @@ public abstract class Call {
 
     public void build(CppBuilder cBuilder, int idt) {
 
+    }
+
+    public void buildSet(CppBuilder cBuilder, int idt) {
+        build(cBuilder, idt);
     }
 
     public String next() {

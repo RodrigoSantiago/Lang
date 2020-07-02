@@ -3,8 +3,10 @@ package logic.stack.expression;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
+import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Context;
+import logic.stack.Field;
 import logic.stack.StackExpansion;
 
 import java.util.ArrayList;
@@ -308,5 +310,27 @@ public class LambdaCall extends Call {
     @Override
     public void requestSet() {
         cFile.erro(getToken(), "SET not allowed", this);
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt) {
+        if (innerStack.shadowFields.size() > 0) {
+            cBuilder.add("(");
+            for (Field shadow : innerStack.shadowFields.values()) {
+                shadow.buildParam(cBuilder);
+                cBuilder.add(", ");
+            }
+        }
+        cBuilder.add("[=](");
+        for (int i = 0; i < nameTokens.size(); i++) {
+            if (i > 0) cBuilder.add(", ");
+            cBuilder.add(naturalPtr.pointers[i + 1]).add(" ").nameParam(nameTokens.get(i));
+        }
+        cBuilder.add(") mutable -> ").add(naturalPtr.pointers[0]).add(" ").in(idt + 1);
+        innerStack.build(cBuilder, idt + 1);
+        cBuilder.out();
+        if (innerStack.shadowFields.size() > 0) {
+            cBuilder.add(")");
+        }
     }
 }

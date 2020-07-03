@@ -3,15 +3,16 @@ package builder;
 import logic.Pointer;
 
 public class Temp {
-    int block;
-    Pointer typePtr;
-    String name;
-    boolean pure;
 
-    public Temp(int block, Pointer typePtr, String name, boolean pure) {
-        this.block = block;
+    public final int blockID;
+    public final Pointer typePtr;
+    public final String name;
+    public final boolean ptr;
+
+    public Temp(int blockID, Pointer typePtr, String name, boolean ptr) {
+        this.blockID = blockID;
         this.typePtr = typePtr;
         this.name = name;
-        this.pure = pure;
+        this.ptr = ptr;
     }
 }

@@ -3,24 +3,18 @@ package data;
 import content.Key;
 import content.Token;
 import logic.Namespace;
-import logic.Pointer;
 import logic.typdef.Type;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Compiler {
 
     private Library langLibrary;
-    private HashMap<String, Library> libraries = new HashMap<>();
+    private final HashMap<String, Library> libraries = new HashMap<>();
 
     private Namespace langSpace;
-    private Type langObject, langWrapper, langArray,  langIterable, langIterator, langString,
-            langByte, langShort, langInt, langLong, langFloat, langDouble, langBool, langLocker, langFunction;
-
-    public void setMainFile(ContentFile main) {
-
-    }
+    private Type langObject, langWrapper, langIterable, langIterator, langArray, langLocker, langFunction, langString,
+            langBool, langByte, langShort, langInt, langLong, langFloat, langDouble;
 
     public Library libAdd(Library library) {
         if (library.name.equals("lang")) {
@@ -223,7 +217,20 @@ public class Compiler {
         if (library == langLibrary) {
             langSpace = null;
             langObject = null;
+            langWrapper = null;
+            langIterable = null;
+            langIterator = null;
             langArray = null;
+            langLocker = null;
+            langFunction = null;
+            langString = null;
+            langBool = null;
+            langByte = null;
+            langShort = null;
+            langInt = null;
+            langLong = null;
+            langFloat = null;
+            langDouble = null;
         }
     }
 }

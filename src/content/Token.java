@@ -1,7 +1,5 @@
 package content;
 
-import data.ContentFile;
-
 /**
  * Regras :
  * Token sempre aponta para o próximo

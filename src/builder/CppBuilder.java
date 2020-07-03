@@ -264,6 +264,7 @@ public class CppBuilder {
     public CppBuilder add(ArrayList<Expression> parameters, int idt) {
         for (int i = 0; i < parameters.size(); i++) {
             if (i > 0) add(", ");
+            parameters.get(i).markArgument();
             parameters.get(i).build(this, idt);
         }
         return this;
@@ -541,10 +542,10 @@ public class CppBuilder {
         tBuilder = dBuilder;
         for (int i = 0; i < tempVars.size(); i++) {
             Temp tempVar = tempVars.get(i);
-            if (tempVar.block == tempBlocks.size()) {
+            if (tempVar.blockID == tempBlocks.size()) {
                 has = true;
                 idt(tblock.idt);
-                if (tempVar.pure) {
+                if (tempVar.ptr) {
                     path(tempVar.typePtr, false);
                     add("*");
                 } else {

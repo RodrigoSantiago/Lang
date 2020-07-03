@@ -183,7 +183,7 @@ public class Library {
     }
 
     /**
-     * Cross : Identify Hinreritence, Members
+     * Cross : Identify Inheritence members conflicts
      *
      * */
     public void cross() {
@@ -195,7 +195,7 @@ public class Library {
     }
 
     /**
-     * Make : Read Tokens to create Lines and Block
+     * Make : Read Tokens to create Lines and Block. Identify all lines and values
      *
      * */
     public void make() {
@@ -245,26 +245,41 @@ public class Library {
         }
     }
 
+    /**
+     * Build : Write the start (Main Method)
+     *
+     * */
     public void buildMain(CppBuilder cBuilder) {
         if (mainFile != null) {
             cBuilder.reset(getCompiler().getLangObject());
             Method method = mainFile.getMainMethod();
             method.buildMain(cBuilder);
 
-            File main = new File(srcDir, "main.cpp");
-            try (PrintWriter pw = new PrintWriter(main)) {
+            File mainSource = new File(srcDir, "main.cpp");
+            try (PrintWriter pw = new PrintWriter(mainSource)) {
                 pw.print(cBuilder.getSource());
             } catch (Exception e) {
-                mainFile.erro(0, 0, "Unable to write to file[" + main + "]", this);
+                mainFile.erro(0, 0, "Unable to write to file[" + mainSource + "]", this);
             }
 
+            File mainHeader = new File(srcDir, "main.h");
+            try (PrintWriter pw = new PrintWriter(mainHeader)) {
+                pw.print(cBuilder.getHeader());
+            } catch (Exception e) {
+                mainFile.erro(0, 0, "Unable to write to file[" + mainHeader + "]", this);
+            }
         }
     }
 
     /**
-     * Destroi todas as dependencias dos arquivos deletados
-     * Destroi os arquivos deletados
-     *
+     * Free all Lines and Blocks. Type and Members remain on memory
+     */
+    public void unmake() {
+
+    }
+
+    /**
+     * Free all content
      */
     public void unload() {
         for (ContentFile cFile : cFiles.values()) {
@@ -286,10 +301,6 @@ public class Library {
         subs.clear();
 
         compiler.langInvalidate(this);
-    }
-
-    public void unmake() {
-
     }
 
     public void release() {

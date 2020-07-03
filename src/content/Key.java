@@ -248,6 +248,13 @@ public enum Key {
         }
     }
 
+    public boolean isSet() {
+        return this == Key.SETVAL || this == Key.SETADD || this == Key.SETSUB ||
+                this == Key.SETMUL || this == Key.SETDIV || this == Key.SETMOD ||
+                this == Key.SETLSHIFT || this == Key.SETRSHIFT || this == Key.SETAND ||
+                this == Key.SETOR || this == Key.SETNOT || this == Key.SETXOR;
+    }
+
     private boolean isEqual(String str, int start, int end) {
         for (int i = 0, len = end - start; i < len; i++) {
             if (str.charAt(start + i) != string.charAt(i)) return false;
@@ -258,12 +265,5 @@ public enum Key {
     @Override
     public String toString() {
         return "KEY[" + string + "]";
-    }
-
-    public boolean isSet() {
-        return this == Key.SETVAL || this == Key.SETADD || this == Key.SETSUB ||
-                this == Key.SETMUL || this == Key.SETDIV || this == Key.SETMOD ||
-                this == Key.SETLSHIFT || this == Key.SETRSHIFT || this == Key.SETAND ||
-                this == Key.SETOR || this == Key.SETNOT || this == Key.SETXOR;
     }
 }

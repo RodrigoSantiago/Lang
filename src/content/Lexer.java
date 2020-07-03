@@ -18,14 +18,11 @@ public class  Lexer {
     private int pIndex;
     private int ppChr;
 
-    private ContentFile cFile;
+    private final ContentFile cFile;
 
     public Lexer(ContentFile cFile) {
         this.cFile = cFile;
         index = 0;
-        if (cFile.name.contains("Test")) {
-            System.out.println("");
-        }
     }
 
     public Token read() {

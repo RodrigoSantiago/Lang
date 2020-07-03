@@ -33,7 +33,7 @@ public class ContentFile {
 
     private int state;
     private boolean invalid;
-    private HashSet<ContentFile> usedBy = new HashSet<>();
+    private final HashSet<ContentFile> usedBy = new HashSet<>();
 
     public ContentFile(Library library, String name, String content) {
         this.library = library;
@@ -49,8 +49,7 @@ public class ContentFile {
         }
 
         if (token != null) {
-            Parser parser = new Parser();
-            parser.parseWorkspace(this, token);
+            Parser.parseWorkspace(this, token);
 
             if (namespace == null) {
                 namespace = library.getNamespace(null);
@@ -91,7 +90,7 @@ public class ContentFile {
             method = new Method(langObject(), this, mainMethodToken.start, mainMethodToken.end);
             method.toStatic();
             if (method.getName() != null && !method.getName().equals("main")) {
-                erro(method.getName(), "the Main method should be named 'main'", this);
+                erro(method.getName(), "The Main Method should be named 'main'", this);
             }
         }
         state = 4;
@@ -107,10 +106,10 @@ public class ContentFile {
                 method = null;
             } else {
                 if (method.getTypePtr() != Pointer.voidPointer) {
-                    erro(method.token, "The Main Method should return void", this);
+                    erro(method.getTypeToken(), "The Main Method should return void", this);
                 }
                 if (!method.getParams().isEmpty()) {
-                    erro(method.token, "The Main Method cannot have parameters", this);
+                    erro(method.getParams().token, "The Main Method cannot have parameters", this);
                 }
             }
         }
@@ -173,19 +172,37 @@ public class ContentFile {
     }
 
     public void setNamespace(Token start, Token end) {
-        Token keyToken = null;
-        Token tokenName = null;
+        String name = null;
 
         int state = 0;
         Token next;
         Token token = start;
-        while (token != end) {
+        while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.NAMESPACE) {
-                keyToken = token;
                 state = 1;
             } else if (state == 1 && token.key == Key.WORD) {
-                tokenName = token;
+                if (token.endsWith("::")) {
+                    erro(token, "A namespace section cannot be empty", this);
+                } else {
+                    name = token.toString();
+                    String[] parts = name.split("::");
+                    for (String part : parts) {
+                        if (part.startsWith("_")) {
+                            erro(token, "A namespace section cannot start with underline", this);
+                            name = null;
+                            break;
+                        } else if (part.length() < 3) {
+                            erro(token, "A namespace section shold have at least 3 characters", this);
+                            name = null;
+                            break;
+                        } else if (part.charAt(0) >= '0' && part.charAt(0) < '9') {
+                            erro(token, "A namespace section cannot start with a number", this);
+                            name = null;
+                            break;
+                        }
+                    }
+                }
                 state = 2;
             } else if (state == 2 && token.key == Key.SEMICOLON) {
                 state = 3;
@@ -195,28 +212,7 @@ public class ContentFile {
             if (next == end && state != 3) {
                 erro(token, "Unexpected end of tokens", this);
             }
-
             token = next;
-        }
-
-        String name = null;
-        if (tokenName == null) {
-            erro(keyToken == null ? start : keyToken, "Invalid Namespace : Name expected", this);
-        } else {
-            name = tokenName.toString();
-            if (tokenName.endsWith("::")) {
-                name = null;
-                erro(tokenName, "Invalid Namespace : Invalid name", this);
-            } else {
-                String[] parts = name.split("::");
-                for (String part : parts) {
-                    if (part.startsWith("_")) {
-                        erro(tokenName, "A namespace cannot start with underline (_)", this);
-                    } else if (part.length() < 3) {
-                        erro(tokenName, "A namespace shold have at least 3 characters", this);
-                    }
-                }
-            }
         }
 
         namespace = library.getNamespace(name);
@@ -232,10 +228,6 @@ public class ContentFile {
 
     public void link(Namespace namespace) {
         namespace.link(this);
-    }
-
-    public Type langObject() {
-        return getCompiler().getLangObject();
     }
 
     public Type langBool() {
@@ -274,8 +266,8 @@ public class ContentFile {
         return getCompiler().getLangFunction();
     }
 
-    public Type langArray() {
-        return getCompiler().getLangArray();
+    public Type langObject() {
+        return getCompiler().getLangObject();
     }
 
     public Type langWrapper() {
@@ -286,16 +278,20 @@ public class ContentFile {
         return getCompiler().getLangIterable();
     }
 
-    public Pointer langObjectPtr() {
-        return new Pointer(mark(getCompiler().getLangObject()));
+    public Type langIterator() {
+        return getCompiler().getLangIterator();
     }
 
-    public Pointer langObjectPtr(boolean isLet) {
-        return new Pointer(mark(getCompiler().getLangObject()), null, null, isLet);
+    public Type langArray() {
+        return getCompiler().getLangArray();
     }
 
-    public Pointer langStringPtr() {
-        return new Pointer(mark(getCompiler().getLangString()));
+    public Type langLocker() {
+        return getCompiler().getLangLocker();
+    }
+
+    public Pointer langBoolPtr() {
+        return new Pointer(mark(getCompiler().getLangBool()));
     }
 
     public Pointer langBytePtr() {
@@ -322,20 +318,24 @@ public class ContentFile {
         return new Pointer(mark(getCompiler().getLangDouble()));
     }
 
-    public Pointer langBoolPtr() {
-        return new Pointer(mark(getCompiler().getLangBool()));
+    public Pointer langStringPtr() {
+        return new Pointer(mark(getCompiler().getLangString()));
     }
 
     public Pointer langFunctionPtr(Pointer[] pointers) {
         return new Pointer(mark(getCompiler().getLangFunction()), pointers, false);
     }
 
-    public Pointer langLockerPtr() {
-        return new Pointer(mark(getCompiler().getLangLocker()));
+    public Pointer langObjectPtr() {
+        return new Pointer(mark(getCompiler().getLangObject()));
     }
 
-    public Pointer langArrayPtr(Pointer pointer) {
-        return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer}, false);
+    public Pointer langObjectPtr(boolean isLet) {
+        return new Pointer(mark(getCompiler().getLangObject()), null, null, isLet);
+    }
+
+    public Pointer langWrapperPtr(Type type) {
+        return new Pointer(mark(getCompiler().getLangWrapper()), new Pointer[]{new Pointer(type)}, false);
     }
 
     public Pointer langIterablePtr(Pointer pointer) {
@@ -346,8 +346,12 @@ public class ContentFile {
         return new Pointer(mark(getCompiler().getLangIterator()), new Pointer[]{pointer}, false);
     }
 
-    public Pointer langWrapperPtr(Type type) {
-        return new Pointer(mark(getCompiler().getLangWrapper()), new Pointer[]{new Pointer(type)}, false);
+    public Pointer langArrayPtr(Pointer pointer) {
+        return new Pointer(mark(getCompiler().getLangArray()), new Pointer[]{pointer}, false);
+    }
+
+    public Pointer langLockerPtr() {
+        return new Pointer(mark(getCompiler().getLangLocker()));
     }
 
     public Compiler getCompiler() {
@@ -596,8 +600,6 @@ public class ContentFile {
 
     @Override
     public String toString() {
-        return "ContentFile{" +
-                "name='" + name + '\'' +
-                '}';
+        return "ContentFile{" + name + "}";
     }
 }

@@ -3,6 +3,7 @@ package content;
 public class TokenGroup {
     public final Token start;
     public final Token end;
+    private int literal;
 
     public TokenGroup(Token start) {
         this(start, start.getNext());
@@ -13,7 +14,6 @@ public class TokenGroup {
         this.end = end;
     }
 
-    // TODO - OPEN INDEXER
     public static Token nextType(Token next, Token end) {
         if (next != end && (next.key == Key.GENERIC)) {
             next = next.getNext();
@@ -24,14 +24,27 @@ public class TokenGroup {
         return next;
     }
 
-    public static String toString(Token start, Token end) {
-        String str = "";
+    public boolean isLiteral() {
+        return literal == 1 || (literal != 2 && recursiveLiteral(start, end));
+    }
+
+    private boolean recursiveLiteral(Token start, Token end) {
         Token token = start;
         while (token != end) {
-            str += token;
+            if (token.key == Key.PARAM && token.getChild() != null) {
+                if (!recursiveLiteral(token.getChild(), token.getLastChild())) {
+                    literal = 2;
+                    return false;
+                }
+            } else if (token.key != Key.NUMBER && token.key != Key.TRUE && token.key != Key.FALSE &&
+                    token.key != Key.NULL && token.key != Key.DEFAULT && !token.key.isOperator) {
+                literal = 2;
+                return false;
+            }
             token = token.getNext();
         }
-        return str;
+        literal = 1;
+        return true;
     }
 
     @Override
@@ -43,25 +56,5 @@ public class TokenGroup {
             s = s.getNext();
         }
         return str.toString();
-    }
-
-    public boolean isLiteral() {
-        return recursiveLiteral(start, end);
-    }
-
-    private boolean recursiveLiteral(Token start, Token end) {
-        Token token = start;
-        while (token != end) {
-            if (token.key == Key.PARAM && token.getChild() != null) {
-                if (!recursiveLiteral(token.getChild(), token.getLastChild())) {
-                    return false;
-                }
-            } else if (token.key != Key.NUMBER && token.key != Key.TRUE && token.key != Key.FALSE &&
-                    token.key != Key.NULL && token.key != Key.DEFAULT && !token.key.isOperator) {
-                return false;
-            }
-            token = token.getNext();
-        }
-        return true;
     }
 }

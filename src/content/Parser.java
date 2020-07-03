@@ -49,9 +49,8 @@ public class Parser {
                 start = next;
                 state = 0;
             } else if (state == 0 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == null)) {
-                // undefined scope
                 if (start.getNext() != next || token.key != Key.SEMICOLON) {
-                    cFile.add(new TokenGroup(start, next));
+                    cFile.add(new TokenGroup(start, next)); // main method
                 }
                 start = next;
                 state = 0;
@@ -157,7 +156,6 @@ public class Parser {
     }
 
     public static void parseLines(Block block, Token init, Token end) {
-
         Token token = init;
         Token start = token;
         int state = 0;

@@ -179,7 +179,7 @@ public class BlockFor extends Block {
                         .add(".").nameMethod("iterateUTF8").add("();").ln();
             } else {
                 cBuilder.add(loopExp, idt)
-                        .add(loopExp.getReturnType().isPointer() ? "->" : ".")
+                        .add(loopExp.getRequestPtr().isPointer() ? "->" : ".")
                         .nameMethod("iterate").add("();").ln();
             }
             cBuilder.idt(idt + 1).add("while (it_").add(idt).add("->").nameMethod("hasNext").add("()) ").in(idt + 2)

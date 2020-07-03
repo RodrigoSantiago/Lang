@@ -82,7 +82,7 @@ public class TypeCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         cBuilder.add(typePtr);
     }
 }

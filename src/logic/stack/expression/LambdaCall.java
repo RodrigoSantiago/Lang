@@ -313,7 +313,7 @@ public class LambdaCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (innerStack.shadowFields.size() > 0) {
             cBuilder.add("(");
             for (Field shadow : innerStack.shadowFields.values()) {
@@ -331,6 +331,9 @@ public class LambdaCall extends Call {
         cBuilder.out();
         if (innerStack.shadowFields.size() > 0) {
             cBuilder.add(")");
+        }
+        if (next) {
+            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
     }
 }

@@ -197,7 +197,7 @@ public class Expression {
         return groups.get(0);
     }
 
-    public Pointer getReturnType() {
+    public Pointer getRequestPtr() {
         return groups.size() == 1 ? groups.get(0).getRequestPtr() : null;
     }
 

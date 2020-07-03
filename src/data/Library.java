@@ -217,7 +217,7 @@ public class Library {
                     cFile.erro(0, 0, "Unable to write to file[" + source + "]", this);
                 }
 
-                if (type.hasGeneric()) {
+                if (type.hasGenericFile()) {
                     File generic = new File(srcDir, type.fileName + ".hpp");
                     try (PrintWriter pw = new PrintWriter(generic)) {
                         pw.print(cppBuilder.getGeneric());

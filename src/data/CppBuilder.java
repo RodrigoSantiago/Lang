@@ -121,7 +121,17 @@ public class CppBuilder {
                     dependence(p);
                 }
             }
+            if (pointer.type.isValue()) dependence(pointer.type.parent);
         }
+    }
+
+    public void addDependence(Pointer pointer) {
+        if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
+            if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
+                tDependences.add(pointer.type);
+            }
+        }
+        if (pointer.type.isValue()) addDependence(pointer.type.parent);
     }
 
     // Header indirect Dependencies (Forward Declaration)
@@ -142,11 +152,11 @@ public class CppBuilder {
 
     // Source Dependencies (Include Generic Sources)
     public void sourceDependence() {
-        dBuilder.append("#include \"").append(type.fileName).append(type.hasGeneric() ? ".hpp\"\n" : ".h\"\n");
+        dBuilder.append("#include \"").append(type.fileName).append(type.hasGenericFile() ? ".hpp\"\n" : ".h\"\n");
 
         for (Type type : sDependences) {
             if (type != this.type) {
-                dBuilder.append("#include \"").append(type.fileName).append(type.hasGeneric() ? ".hpp\"\n" : ".h\"\n");
+                dBuilder.append("#include \"").append(type.fileName).append(type.hasGenericFile() ? ".hpp\"\n" : ".h\"\n");
             }
         }
         sBuilder.insert(sourcePos, dBuilder);
@@ -159,7 +169,7 @@ public class CppBuilder {
 
         for (Type type : gDependences) {
             if (type != this.type) {
-                dBuilder.append("#include \"").append(type.fileName).append(type.hasGeneric() ? ".hpp\"\n" : ".h\"\n");
+                dBuilder.append("#include \"").append(type.fileName).append(type.hasGenericFile() ? ".hpp\"\n" : ".h\"\n");
             }
         }
         gBuilder.insert(genericPos, dBuilder);
@@ -252,7 +262,11 @@ public class CppBuilder {
     }
 
     public CppBuilder add(Stack stack) {
-        stack.build(this, 1);
+        return add(stack, 1);
+    }
+
+    public CppBuilder add(Stack stack, int idt) {
+        stack.build(this, idt);
         return this;
     }
 
@@ -371,11 +385,7 @@ public class CppBuilder {
                 add("Ptr<").nameGeneric(pointer.typeSource.nameToken).add(">");
             }
         } else {
-            if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
-                if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
-                    tDependences.add(pointer.type);
-                }
-            }
+            addDependence(pointer);
 
             if (pointer.type.isValue()) {
                 add(pointer.type.pathToken);
@@ -410,11 +420,7 @@ public class CppBuilder {
         if (pointer.typeSource != null) {
             nameGeneric(pointer.typeSource.nameToken);
         } else {
-            if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
-                if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
-                    tDependences.add(pointer.type);
-                }
-            }
+            addDependence(pointer);
 
             if (_static) {
                 add(pointer.type.staticPathToken);

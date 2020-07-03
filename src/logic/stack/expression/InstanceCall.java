@@ -7,12 +7,9 @@ import data.CppBuilder;
 import data.Temp;
 import logic.Pointer;
 import logic.member.Constructor;
-import logic.member.Method;
 import logic.member.view.ConstructorView;
 import logic.member.view.FieldView;
 import logic.stack.Context;
-import logic.stack.Line;
-import logic.stack.StackExpansion;
 
 import java.util.ArrayList;
 
@@ -347,7 +344,7 @@ public class InstanceCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (typePtr.isPointer()) {
             if (arrayInitArgs.size() > 0) {
                 Temp t = cBuilder.temp(typePtr, true);
@@ -365,6 +362,9 @@ public class InstanceCall extends Call {
             }
         } else {
             cBuilder.path(typePtr, false).add("(").add(arguments, idt).add(")");
+        }
+        if (next) {
+            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
     }
 }

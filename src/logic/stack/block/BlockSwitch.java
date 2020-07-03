@@ -156,6 +156,6 @@ public class BlockSwitch extends Block {
     }
 
     public Pointer getTypePtr() {
-        return expression == null ? null : expression.getReturnType();
+        return expression == null ? null : expression.getRequestPtr();
     }
 }

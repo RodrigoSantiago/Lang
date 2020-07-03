@@ -157,24 +157,65 @@ public class Operator extends Member {
     }
 
     public void build(CppBuilder cBuilder) {
-
-        cBuilder.toHeader();
-        cBuilder.idt(1).add(type.template, 1);
-        cBuilder.add("static ")
-                .add(typePtr)
-                .add(" ").nameOp(op, typePtr).add("(").add(params).add(");").ln();
-
-        if (!isAbstract()) {
-            cBuilder.toSource(type.template != null);
-            cBuilder.add(type.template)
+        if (!isCasting()) {
+            cBuilder.toHeader();
+            cBuilder.idt(1).add(type.template, 1);
+            cBuilder.add("static ")
                     .add(typePtr)
-                    .add(" ").path(type.self, false).add("::").nameOp(op, typePtr)
-                    .add("(").add(params).add(") ").in(1)
+                    .add(" ").nameOp(op, typePtr).add("(").add(params).add(");").ln();
+
+            if (!isAbstract()) {
+                cBuilder.toSource(type.template != null);
+                cBuilder.add(type.template)
+                        .add(typePtr)
+                        .add(" ").path(type.self, false).add("::").nameOp(op, typePtr)
+                        .add("(").add(params).add(") ").in(1)
+                        .add(stack)
+                        .out().ln()
+                        .ln();
+            }
+        } else {
+            /*
+            template<typename F, typename T>
+            struct cast {
+                inline static T val(const F& from) { return lang::generic<T>::def(); }
+            };*/
+
+            cBuilder.toSource(true);
+            if (type.template != null) {
+                cBuilder.add(type.template);
+            } else {
+                cBuilder.add("template<>").ln();
+            }
+            cBuilder.add("struct cast<").add(type.self).add(", ").add(getTypePtr()).add("> {").ln()
+                    .idt(1).add("static ").add(getTypePtr()).add(" val(").add(params).add(") ").in(2)
+                    .add(stack, 2)
+                    .out().ln()
+                    .add("};").ln()
+                    .ln();
+
+            /*cBuilder.toHeader();
+            if (type.template != null) {
+                cBuilder.add(type.template);
+            } else {
+                cBuilder.add("template<>").ln();
+            }
+            cBuilder.add("struct cast<").add(type.self).add(", ").add(getTypePtr()).add("> {").ln()
+                    .idt(1).add("static ").add(getTypePtr()).add(" val(").add(params).add(");").ln()
+                    .add("};").ln()
+                    .ln();
+
+            cBuilder.toSource(type.template != null);
+            if (type.template != null) {
+                cBuilder.add(type.template);
+            } else {
+                cBuilder.add("template<>").ln();
+            }
+            cBuilder.add(getTypePtr()).add(" cast<").add(type.self).add(", ").add(getTypePtr()).add(">::val(").add(params).add(") ").in(1)
                     .add(stack)
                     .out().ln()
-                    .ln();
+                    .ln();*/
         }
-
         cBuilder.toHeader();
     }
 
@@ -188,6 +229,10 @@ public class Operator extends Member {
 
     public Parameters getParams() {
         return params;
+    }
+
+    public boolean isCasting() {
+        return op == Key.CAST || op == Key.AUTO;
     }
 
     @Override

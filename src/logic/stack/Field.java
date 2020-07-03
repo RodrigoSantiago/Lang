@@ -68,22 +68,31 @@ public class Field {
     public void buildParam(CppBuilder cBuilder) {
         temp = cBuilder.temp(typePtr.toLet());
         cBuilder.add(temp).add(" = ");
-        copy.build(cBuilder);
+        copy.build(cBuilder, false);
     }
 
-    public void build(CppBuilder cBuilder) {
+    public void build(CppBuilder cBuilder, boolean next) {
         if (temp != null) {
             cBuilder.add(temp);
+            if (next) {
+                cBuilder.add(typePtr.isPointer() ? "->" : ".");
+            }
         } else if (nameToken.key == Key.THIS) {
-            if (typePtr.isPointer()) {
+            if (next) {
+                cBuilder.add("this->");
+            } else if (typePtr.isPointer()) {
                 cBuilder.add("this");
             } else {
                 cBuilder.add("(*this)");
             }
         } else if (nameToken.key == Key.BASE) {
-            cBuilder.add(typePtr.type.parent.type.pathToken);
+            cBuilder.add(typePtr.type.parent.type.pathToken).add(next, "::");
         } else {
-            cBuilder.nameParam(nameToken);
+            cBuilder.nameParam(nameToken).add(next, typePtr.isPointer() ? "->" : ".");
         }
+    }
+
+    public String next() {
+        return typePtr.isPointer() ? "->" : ".";
     }
 }

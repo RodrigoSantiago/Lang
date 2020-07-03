@@ -2,7 +2,6 @@ package logic.stack.expression;
 
 import content.Key;
 import content.Token;
-import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.stack.Context;
@@ -62,7 +61,7 @@ public class InnerCall extends Call {
         if (pointer != null) pointer = pointer.toLet();
         if (innerExpression != null) {
             innerExpression.requestGet(pointer);
-            requestPtr = innerExpression.getReturnType();
+            requestPtr = innerExpression.getRequestPtr();
         }
     }
 
@@ -70,7 +69,7 @@ public class InnerCall extends Call {
     public void requestOwn(Pointer pointer) {
         if (innerExpression != null) {
             innerExpression.requestOwn(pointer);
-            requestPtr = innerExpression.getReturnType();
+            requestPtr = innerExpression.getRequestPtr();
         }
     }
 
@@ -80,7 +79,10 @@ public class InnerCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         cBuilder.add("(").add(innerExpression, idt).add(")");
+        if (next) {
+            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
+        }
     }
 }

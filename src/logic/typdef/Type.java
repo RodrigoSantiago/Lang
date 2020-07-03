@@ -46,8 +46,8 @@ public abstract class Type implements GenericOwner {
     private ArrayList<Indexer> indexers = new ArrayList<>();
     private ArrayList<Operator> operators = new ArrayList<>();
     private ArrayList<Constructor> constructors = new ArrayList<>();
-    private ArrayList<Destructor> destructors = new ArrayList<>(1);
     private ArrayList<Native> natives = new ArrayList<>();
+    private Destructor destructor;
     private Constructor staticConstructor;
     private Constructor emptyConstructor;
     private Constructor parentEmptyConstructor;
@@ -494,7 +494,7 @@ public abstract class Type implements GenericOwner {
         if (staticConstructor != null) {
             staticConstructor.make();
         }
-        for (Destructor destructor : destructors) {
+        if (destructor != null) {
             destructor.make();
         }
 
@@ -548,9 +548,12 @@ public abstract class Type implements GenericOwner {
         cBuilder.markSource();
         cBuilder.ln();
 
-        if (hasGeneric()) {
+        if (hasGenericFile()) {
             cBuilder.toGeneric();
-            cBuilder.add("// ").add(fileName).add(".hpp").ln();
+            cBuilder.add("// ").add(fileName).add(".hpp").ln()
+                    .ln()
+                    .add("#ifndef HPP_").add(fileName.toUpperCase()).ln()
+                    .add("#define HPP_").add(fileName.toUpperCase()).ln();
             cBuilder.markGeneric();
             cBuilder.ln();
         }
@@ -573,12 +576,12 @@ public abstract class Type implements GenericOwner {
                 .idt(1).add("using P = ").add(isPointer(), "Ptr<").path(self, false).add(isPointer() ? ">;" : ";").ln()
                 .idt(1).add("using L = ").add(isPointer(), "Let<").path(self, false).add(isPointer() ? ">;" : ";").ln();
         if (isValue()) {
-            cBuilder.idt(1).add("using W = ").add(parent).add(";").ln();
+            cBuilder.idt(1).add("using W = ").path(parent, false).add(";").ln();
         }
         cBuilder.idt(1).add("static lang::type* typeOf() { return getType<T_").add(fileName.toUpperCase()).add(">(); }").ln()
                 .idt(1).add(isPointer(), "virtual lang::type* getTypeOf() { return typeOf(); }").ln();
 
-        if (isClass()) cBuilder.idt(1).add("virtual void* self() { return &weak; }").ln();
+        if (isClass()) cBuilder.idt(1).add("virtual lang_Object* self() { return this; }").ln();
 
         // Natives
         for (Native nat : natives) {
@@ -647,8 +650,10 @@ public abstract class Type implements GenericOwner {
         }
 
         // Destructor
-        for (Destructor destructor : destructors) {
+        if (destructor != null) {
             destructor.build(cBuilder);
+        } else if (isClass() && parent != null) {
+            cBuilder.idt(1).add("virtual void destroy() { ").path(parent, false).add("::destroy(); }").ln();
         }
 
          // Methods
@@ -663,12 +668,20 @@ public abstract class Type implements GenericOwner {
 
         // Operators
         for (Operator operator : operators) {
-            operator.build(cBuilder);
+            if (!operator.isCasting()) {
+                operator.build(cBuilder);
+            }
         }
 
         cBuilder.toHeader();
         cBuilder.add("};").ln()
                 .ln();
+
+        for (Operator operator : operators) {
+            if (operator.isCasting()) {
+                operator.build(cBuilder);
+            }
+        }
 
         // Static Members
         cBuilder.toHeader();
@@ -734,6 +747,11 @@ public abstract class Type implements GenericOwner {
 
         cBuilder.toHeader();
         cBuilder.add("#endif");
+
+        if (hasGenericFile()) {
+            cBuilder.toGeneric();
+            cBuilder.add("#endif");
+        }
     }
 
     public boolean hasStaticInit() {
@@ -806,6 +824,10 @@ public abstract class Type implements GenericOwner {
 
     public boolean hasGeneric() {
         return hasGeneric;
+    }
+
+    public boolean hasGenericFile() {
+        return hasGeneric || autoCast.size() > 0  || casts.size() > 0;
     }
 
     @Override
@@ -901,8 +923,9 @@ public abstract class Type implements GenericOwner {
                     && variable.getTypePtr().type.isStruct()
                     && variable.getTypePtr().type.cyclicVariableVerify(this)) {
                 cFile.erro(variable.getTypeToken().start, "Cyclic variable type", this);
+            } else if (!variable.isStatic() && isValue() && isStatic() && !variable.getTypePtr().type.isStatic()) {
+                cFile.erro(variable.getTypeToken().start, "A Static Type can only have Static Types as it's field", this);
             } else {
-
                 for (FieldView field : variable.getFields()) {
                     if (fields.containsKey(field.nameToken)) {
                         cFile.erro(field.nameToken, "Repeated field name", this);
@@ -1071,12 +1094,12 @@ public abstract class Type implements GenericOwner {
 
     public void add(Destructor destructor) {
         if (destructor.load()) {
-            if (destructors.size() > 0) {
+            if (this.destructor != null) {
                 cFile.erro(destructor.token, "Repeated destructor", this);
             } else if (!isClass()) {
                 cFile.erro(destructor.token, "Destructors not allowed", this);
             } else {
-                destructors.add(destructor);
+                this.destructor = destructor;
             }
         }
     }

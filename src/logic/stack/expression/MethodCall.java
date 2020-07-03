@@ -2,7 +2,6 @@ package logic.stack.expression;
 
 import content.Key;
 import content.Token;
-import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.member.Method;
@@ -197,15 +196,45 @@ public class MethodCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (clearAcess) {
             if (methodView.isStatic()) {
                 cBuilder.path(methodView.getType().self, true).add("::");
             } else {
-                thisField.build(cBuilder);
-                cBuilder.add("->");
+                thisField.build(cBuilder, true);
             }
         }
-        cBuilder.nameMethod(methodView.getName()).add("(").add(arguments, idt).add(")");
+        cBuilder.nameMethod(methodView.getName());
+        if (methodView.templateView != null) {
+            Pointer[] captureList = methodView.getCaptureList();
+            naturalPtr = methodView.getTypePtr();
+            for (int j = 0; j < methodView.getTemplate().getGenCount(); j++) {
+                Pointer ptr = Pointer.capture(
+                        methodView.getTemplate().getGeneric(j),
+                        methodView.getTypePtr(), naturalPtr);
+                if (ptr != null) {
+                    captureList[j] = ptr;
+                    continue;
+                }
+                for (int i = 0; i < arguments.size(); i++) {
+                    ptr = Pointer.capture(
+                            methodView.getTemplate().getGeneric(j),
+                            methodView.getParams().getArgTypePtr(i), arguments.get(i).getRequestPtr());
+                    if (ptr != null) {
+                        captureList[j] = ptr;
+                        break;
+                    }
+                }
+            }
+            cBuilder.add("<");
+            for (int i = 0; i < captureList.length; i++) {
+                cBuilder.add(i > 0, ", ").add(captureList[i]);
+            }
+            cBuilder.add(">");
+        }
+        cBuilder.add("(").add(arguments, idt).add(")");
+        if (next) {
+            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
+        }
     }
 }

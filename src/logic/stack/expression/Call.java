@@ -72,15 +72,19 @@ public abstract class Call {
 
     public abstract void requestSet();
 
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
 
     }
 
     public void buildSet(CppBuilder cBuilder, int idt) {
-        build(cBuilder, idt);
+        build(cBuilder, idt, false);
     }
 
     public String next() {
         return requestPtr.isPointer() ? "->" : ".";
+    }
+
+    public boolean isDirectCall() {
+        return false;
     }
 }

@@ -2,7 +2,6 @@ package logic.stack.expression;
 
 import content.Key;
 import content.Token;
-import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
@@ -43,6 +42,11 @@ public class FieldCall extends Call {
     @Override
     public boolean isTypeCall() {
         return staticCall != null;
+    }
+
+    @Override
+    public boolean isDirectCall() {
+        return field != null && field.temp == null && (field.getName().key == Key.THIS || field.getName().key == Key.BASE);
     }
 
     @Override
@@ -239,9 +243,9 @@ public class FieldCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (staticCall != null) {
-            cBuilder.path(staticCall.self, true);
+            cBuilder.path(staticCall.self, true).add(next, "::");
         } else if (fieldView != null) {
             if (clearAcess) {
                 if (fieldView.isStatic()) {
@@ -265,8 +269,11 @@ public class FieldCall extends Call {
             } else if (useSet) {
                 cBuilder.namePropertySet(token).add("(");
             }
+            if (next) {
+                cBuilder.add(fieldView.typePtr.isPointer() ? "->" : ".");
+            }
         } else {
-            field.build(cBuilder);
+            field.build(cBuilder, next);
         }
     }
 
@@ -277,8 +284,7 @@ public class FieldCall extends Call {
                 if (fieldView.isStatic()) {
                     cBuilder.path(fieldView.getType().self, true).add("::");
                 } else {
-                    thisField.build(cBuilder);
-                    cBuilder.add("->");
+                    thisField.build(cBuilder, true);
                 }
             }
             if (fieldView.isVariable()) {
@@ -291,13 +297,14 @@ public class FieldCall extends Call {
                 cBuilder.namePropertySet(token).add("(");
             }
         } else {
-            field.build(cBuilder);
+            field.build(cBuilder, false);
         }
     }
 
     @Override
     public String next() {
         if (staticCall != null || token.key == Key.BASE) return "::";
+        if (field != null) field.next();
         return super.next();
     }
 }

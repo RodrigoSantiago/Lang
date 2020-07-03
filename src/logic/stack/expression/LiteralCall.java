@@ -2,7 +2,6 @@ package logic.stack.expression;
 
 import content.Key;
 import content.Token;
-import content.TokenGroup;
 import data.CppBuilder;
 import data.Error;
 import logic.Pointer;
@@ -302,11 +301,11 @@ public class LiteralCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (literalType == NULL) {
             cBuilder.add("nullptr");
         } else if (literalType == DEFAULT) {
-            cBuilder.add("lang::generic<GPtr<g_T>>::def()");
+            cBuilder.add("lang::value<GPtr<g_T>>::def()");
         } else if (literalType == BOOL) {
             cBuilder.add(resultBool ? "true" : "false");
         } else if (literalType == STRING) {
@@ -335,6 +334,9 @@ public class LiteralCall extends Call {
             } else {
                 cBuilder.add(resultDouble);
             }
+        }
+        if (next) {
+            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
     }
 }

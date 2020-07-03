@@ -2,12 +2,10 @@ package logic.stack.expression;
 
 import content.Key;
 import content.Token;
-import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.member.Constructor;
 import logic.member.view.ConstructorView;
-import logic.member.view.MethodView;
 import logic.stack.Context;
 
 import java.util.ArrayList;
@@ -162,13 +160,16 @@ public class ConstructorCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (consumed) return;
 
         if (token.key == Key.THIS) {
             cBuilder.add("create(").add(arguments, idt).add(")");
         } else {
             cBuilder.add(typePtr.type.pathToken).add("::create(").add(arguments, idt).add(")");
+        }
+        if (next) {
+            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
     }
 }

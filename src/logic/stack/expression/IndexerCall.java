@@ -2,7 +2,6 @@ package logic.stack.expression;
 
 import content.Key;
 import content.Token;
-import content.TokenGroup;
 import data.CppBuilder;
 import logic.Pointer;
 import logic.member.view.IndexerView;
@@ -206,13 +205,16 @@ public class IndexerCall extends Call {
     }
 
     @Override
-    public void build(CppBuilder cBuilder, int idt) {
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (useGet) {
             cBuilder.nameIndexerGet().add("(").add(arguments, idt).add(")");
         } else if (useOwn) {
             cBuilder.nameIndexerOwn().add("(").add(arguments, idt).add(")");
         } else if (useSet) {
             cBuilder.nameIndexerSet().add("(").add(arguments, idt).add(arguments.size() > 0, ", ");
+        }
+        if (next) {
+            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
     }
 }

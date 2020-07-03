@@ -130,7 +130,7 @@ public class Variable extends Member {
                     initExpressions.get(i).build(cBuilder, 1);
                     cBuilder.add(";").ln();
                 } else if (typePtr.typeSource != null) {
-                    cBuilder.add("lang::generic<").add(typePtr).add(">::def();").ln();
+                    cBuilder.add("lang::value<").add(typePtr).add(">::def();").ln();
                 } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
                     cBuilder.add("nullptr;").ln();
                 } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
@@ -163,7 +163,7 @@ public class Variable extends Member {
             if (isInitialized(i) && isLiteral(i)) {
                 initExpressions.get(i).build(cBuilder, 1);
             } else if (typePtr.typeSource != null) {
-                cBuilder.add("lang::generic<").add(typePtr).add(">::def()");
+                cBuilder.add("lang::value<").add(typePtr).add(">::def()");
             } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
                 cBuilder.add("nullptr");
             } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
@@ -195,7 +195,7 @@ public class Variable extends Member {
                 if (isInitialized(i)) {
                     cBuilder.add(init).add(";").ln();
                 } else if (typePtr.typeSource != null) {
-                    cBuilder.add("lang::generic<").add(typePtr).add(">::def();").ln();
+                    cBuilder.add("lang::value<").add(typePtr).add(">::def();").ln();
                 } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
                     cBuilder.add("nullptr;").ln();
                 } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {

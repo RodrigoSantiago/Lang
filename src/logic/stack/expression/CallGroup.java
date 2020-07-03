@@ -119,7 +119,7 @@ public class CallGroup {
     public boolean isLineCall() {
         if (calls.size() <= 1) return false;
         if (calls.size() == 2) {
-            return !calls.get(0).isTypeCall();
+            return !calls.get(0).isTypeCall() && !calls.get(0).isDirectCall();
         }
         return true;
     }
@@ -450,7 +450,7 @@ public class CallGroup {
 
     public void build(CppBuilder cBuilder, int idt) {
         boolean autocast = requestPtr != null && !requestPtr.equalsIgnoreLet(naturalPtr) &&
-                (!requestPtr.isLangBase() || !naturalPtr.isLangBase());
+                naturalPtr != Pointer.nullPointer && (!requestPtr.isLangBase() || !naturalPtr.isLangBase());
         if (autocast) {
             cBuilder.add("cast<").add(naturalPtr).add(", ").add(requestPtr).add(">::val(");
         }
@@ -488,11 +488,7 @@ public class CallGroup {
         } else if (calls.size() > 0) {
             for (int i = 0; i < calls.size(); i++) {
                 Call call = calls.get(i);
-                call.build(cBuilder, idt);
-
-                if (i <  calls.size() - 1) {
-                    cBuilder.add(call.next());
-                }
+                call.build(cBuilder, idt, i <  calls.size() - 1);
             }
         }
 
@@ -502,12 +498,10 @@ public class CallGroup {
     }
 
     public void buildLine(CppBuilder cBuilder, int idt) {
-        for (int i = 0; i < calls.size() - 1; i++) {
-            Call call = calls.get(i);
-            call.build(cBuilder, idt);
-
-            if (i <  calls.size() - 2) {
-                cBuilder.add(call.next());
+        if (isLineCall()) {
+            for (int i = 0; i < calls.size() - 1; i++) {
+                Call call = calls.get(i);
+                call.build(cBuilder, idt, i <  calls.size() - 2);
             }
         }
     }
@@ -518,17 +512,19 @@ public class CallGroup {
             if (set) {
                 calls.get(calls.size() - 1).buildSet(cBuilder, idt);
             } else {
-                calls.get(calls.size() - 1).build(cBuilder, idt);
+                calls.get(calls.size() - 1).build(cBuilder, idt, false);
             }
         } else {
             for (int i = 0; i < calls.size(); i++) {
                 Call call = calls.get(i);
                 if (i <  calls.size() - 1) {
-                    call.build(cBuilder, idt);
-                    cBuilder.add(call.next());
+                    call.build(cBuilder, idt, true);
                 } else {
-                    if (set) call.buildSet(cBuilder, idt);
-                    else call.build(cBuilder, idt);
+                    if (set) {
+                        call.buildSet(cBuilder, idt);
+                    } else {
+                        call.build(cBuilder, idt, false);
+                    }
                 }
             }
         }

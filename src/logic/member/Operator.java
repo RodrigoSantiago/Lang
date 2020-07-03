@@ -3,7 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.params.Parameters;
 import logic.Pointer;
 import logic.stack.Stack;
@@ -23,7 +23,7 @@ public class Operator extends Member {
     private boolean hasImplementation;
 
     public Operator(Type type, Token start, Token end) {
-        super(type);
+        super(type, type.cFile);
 
         int state = 0;
         Token next;
@@ -162,15 +162,15 @@ public class Operator extends Member {
             cBuilder.idt(1).add(type.template, 1);
             cBuilder.add("static ")
                     .add(typePtr)
-                    .add(" ").nameOp(op, typePtr).add("(").add(params).add(");").ln();
+                    .add(" ").nameOp(op).add("(").add(params).add(");").ln();
 
             if (!isAbstract()) {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(typePtr)
-                        .add(" ").path(type.self, false).add("::").nameOp(op, typePtr)
+                        .add(" ").path(type.self, false).add("::").nameOp(op)
                         .add("(").add(params).add(") ").in(1)
-                        .add(stack)
+                        .add(stack, 1)
                         .out().ln()
                         .ln();
             }

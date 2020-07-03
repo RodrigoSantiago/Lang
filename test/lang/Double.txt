@@ -9,21 +9,21 @@ public final class Double {
 
     public static long doubleToLongBits(double value) {
         native(return) {
-            return reinterpret_cast<long long int>(v_value);
+            return*reinterpret_cast<lang_long*>(&v_value);
         }
     }
 
     public static double longBitsToDouble(long value) {
         native(return) {
-            return reinterpret_cast<double>(v_value);
+            return *reinterpret_cast<lang_double*>(&v_value);
         }
     }
 
-    public static Double parse(string s) {
+    public static double parse(string s) {
         return parse(s, false);
     }
 
-    public static Double parse(string s, bool hex) {
+    public static double parse(string s, bool hex) {
         return 0;
     }
 

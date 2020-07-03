@@ -3,7 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.typdef.Type;
 
 public class Native extends Member {
@@ -16,7 +16,7 @@ public class Native extends Member {
     private TokenGroup contentToken;
 
     public Native(Type type, Token start, Token end) {
-        super(type);
+        super(type, type.cFile);
 
         int state = 0;
         Token next;

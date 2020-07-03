@@ -7,11 +7,11 @@ public final class Byte {
         this.value = value;
     }
 
-    public static Byte parse(string s) {
+    public static byte parse(string s) {
         return parse(s, 10);
     }
 
-    public static Byte parse(string s, int radix) {
+    public static byte parse(string s, int radix) {
         return 0;
     }
 

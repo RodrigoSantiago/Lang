@@ -2,7 +2,7 @@ package logic.member;
 
 import content.Key;
 import content.Token;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.member.view.FieldView;
 import logic.typdef.Type;
 
@@ -14,7 +14,7 @@ public class Num extends Member {
     private ArrayList<Token> initTokens = new ArrayList<>();
 
     public Num(Type type, Token start, Token end) {
-        super(type);
+        super(type, type.cFile);
 
         int state = 0;
         Token next;

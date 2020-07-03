@@ -20,7 +20,7 @@ public final class Long {
     }
 
     public static string toString(long value, int radix) {
-        return 0;
+        return "0";
     }
 
     public string toString() {

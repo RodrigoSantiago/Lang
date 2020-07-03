@@ -4,22 +4,22 @@ public final class Console {
 
     public static void Write(string value) {
         native (source) {
-            lang::console::write(f_value->data);
+            lang::console::write(v_value.data);
         }
     }
 
     public static void Write(let Object value) {
-        print(value == null ? "null" : value.toString());
+        Write(value == null ? "null" : value.toString());
     }
 
     public static void WriteLine(string value) {
         native (source) {
-            lang::console::writeline(f_value->data);
+            lang::console::writeline(v_value.data);
         }
     }
 
     public static void WriteLine(let Object value) {
-        println(value == null ? "null" : value.toString());
+        WriteLine(value == null ? "null" : value.toString());
     }
 
     public static string ReadChar() {

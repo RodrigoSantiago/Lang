@@ -47,10 +47,10 @@ public class Text {
         }
 
         native (source) {
-            char* tData = &this->f_data->data[this->f_cursor];
+            char* tData = reinterpret_cast<char*>(&this->f_data->data[this->f_cursor]);
 
             for (long i = 0, len = v_value.data->length; i < len; i ++) {
-                tData[i] = v_value.data[i];
+                tData[i] = v_value.data->chars[i];
             }
         }
         return this;

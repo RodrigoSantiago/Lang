@@ -3,7 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
 import logic.stack.Stack;
@@ -21,7 +21,7 @@ public class Variable extends Member {
     private ArrayList<Stack> initExpressions = new ArrayList<>();
 
     public Variable(Type type, Token start, Token end) {
-        super(type);
+        super(type, type.cFile);
 
         int state = 0;
         Token next;
@@ -101,7 +101,7 @@ public class Variable extends Member {
 
     public void build(CppBuilder cBuilder) {
         if (typePtr.type != null && typePtr.typeSource == null && typePtr.type.isStruct()) {
-            cBuilder.dependence(typePtr);
+            cBuilder.dependenceAdd(typePtr);
         }
 
         cBuilder.toHeader();
@@ -181,7 +181,7 @@ public class Variable extends Member {
                 Token name = nameTokens.get(i);
 
                 if (isInitialized(i) && !isLiteral(i)) {
-                    cBuilder.idt(1).add("f_").add(name).add(" = ");
+                    cBuilder.idt(1).nameField(name).add(" = ");
                     initExpressions.get(i).build(cBuilder, 1);
                     cBuilder.add(";").ln();
                 }
@@ -189,19 +189,11 @@ public class Variable extends Member {
         } else {
             for (int i = 0; i < nameTokens.size(); i++) {
                 Token name = nameTokens.get(i);
-                Stack init = initExpressions.get(i);
 
-                cBuilder.idt(1).add("this->").nameField(name).add(" = ");
-                if (isInitialized(i)) {
-                    cBuilder.add(init).add(";").ln();
-                } else if (typePtr.typeSource != null) {
-                    cBuilder.add("lang::value<").add(typePtr).add(">::def();").ln();
-                } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
-                    cBuilder.add("nullptr;").ln();
-                } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
-                    cBuilder.add(typePtr).add("();").ln();
-                } else {
-                    cBuilder.add("0;").ln();
+                if (isInitialized(i) && !isLiteral(i)) {
+                    cBuilder.idt(1).add("this->").nameField(name).add(" = ");
+                    initExpressions.get(i).build(cBuilder, 1);
+                    cBuilder.add(";").ln();
                 }
             }
         }

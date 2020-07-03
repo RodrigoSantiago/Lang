@@ -3,7 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.Pointer;
 import logic.member.view.ConstructorView;
 import logic.params.Parameters;
@@ -21,7 +21,7 @@ public class Constructor extends Member {
     private Constructor constructorTarget;
 
     public Constructor(Type type, Token start, Token end) {
-        super(type);
+        super(type, type.cFile);
 
         int state = 0;
         Token next;
@@ -124,19 +124,10 @@ public class Constructor extends Member {
                 if (stack.getConstructorCall() == null && constructorTarget != null) {
                     cBuilder.idt(1).add(type.parent.type.pathToken).add("::create();").ln();
                 }
-                if (constructorTarget == null || constructorTarget.type != type) {
-                    for (Variable variable : type.variables) {
-                        if (!variable.isStatic()) {
-                            variable.buildInit(cBuilder);
-                        }
-                    }
-                    for (Property property : type.properties) {
-                        if (!property.isStatic()) {
-                            property.buildInit(cBuilder);
-                        }
-                    }
+                if (stack.getConstructorCall() == null && type.hasInstanceInit()) {
+                    cBuilder.idt(1).add("init();").ln();
                 }
-                cBuilder.add(stack)
+                cBuilder.add(stack, 1)
                         .idt(1).add("return this;").ln()
                         .out().ln()
                         .ln();
@@ -162,10 +153,13 @@ public class Constructor extends Member {
                 }
                 if (constructorTarget == null) {
                     cBuilder.add(type.pathToken).add("() ").in(1);
+                    if (type.hasInstanceInit()) {
+                        cBuilder.idt(1).add("init();").ln();
+                    }
                 } else {
                     cBuilder.add(type.pathToken).add("(").add(stack.getConstructorCall().consume(), 0).add(") ").in(1);
                 }
-                cBuilder.add(stack)
+                cBuilder.add(stack, 1)
                         .out().ln()
                         .ln();
             }

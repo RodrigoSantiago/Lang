@@ -3,9 +3,8 @@ package logic.stack.block;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.stack.Block;
-import logic.stack.expression.Expression;
 
 public class BlockNative extends Block {
 

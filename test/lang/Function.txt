@@ -2,66 +2,14 @@ namespace lang;
 
 public class Function {
     native (header) {
-        lang_int length;
-        lang_long* typeList;
-        lang_long* tempList;
-
-        template<typename R, typename... Args>
-        lang_Function* create(lang_function<R, Args...> function);
-        template<typename R, typename... Args>
-        lang_function<R, Args...> getFunction();
+        lang::functor f_value;
+        lang_Function* create(lang::functor f_value);
     }
 
     native (source) {
-        template<typename R, typename... Args>
-        lang_Function* lang_Function::create(lang_function<R, Args...> function) {
-            length = lang::templates<R, Args...>::count();
-            typeList = sCast(lang_long*, lang::memory::array(sizeof(lang_long), length));
-            tempList = sCast(lang_long*, lang::memory::array(sizeof(lang_long), length));
-
-            lang::templates<R, Args...>::unpack(typeList, 0);
+        lang_Function* lang_Function::create(lang::functor f_value) {
+            this->f_value = f_value;
             return this;
-        }
-
-        template<typename R, typename... Args>
-        lang_function<R, Args...> lang_Function::getFunction() {
-            int len = lang::templates<R, Args...>::count();
-            if (len == length) {
-                lang::templates<R, Args...>::unpack(tempList, 0);
-                lang_bool same = true;
-                for (int i = 0; i < len; i++) {
-                    if (typeList[i] != tempList[i]) {
-                        same = false;
-                    }
-                }
-                if (same) {
-                    return reinterpret_cast<lang_function<R, Args...>>(f_value.function);
-                }
-            }
-            return lang_function<R, Args...>();
-        }
-    }
-
-    public final function<void> value;
-    public this(function<void> value) {
-    }
-
-    public this(Function value) {
-        native (source) {
-            this->f_value = value->f_value;
-            this->length = value->length;
-            typeList = sCast(lang_long*, lang::memory::array(sizeof(lang_long), length));
-            tempList = sCast(lang_long*, lang::memory::array(sizeof(lang_long), length));
-            for (int i = 0; i < length; i++) {
-                typeList[i] = value->typeList[i];
-            }
-        }
-    }
-
-    public ~this() {
-        native(source) {
-            lang::memory::dearray(typeList);
-            lang::memory::dearray(tempList);
         }
     }
 }

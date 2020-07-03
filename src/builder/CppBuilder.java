@@ -1,4 +1,4 @@
-package data;
+package builder;
 
 import content.Key;
 import content.Token;
@@ -7,7 +7,6 @@ import logic.params.Parameters;
 import logic.stack.Stack;
 import logic.stack.expression.CallGroup;
 import logic.stack.expression.Expression;
-import logic.stack.expression.LiteralCall;
 import logic.templates.Template;
 import logic.Pointer;
 import logic.typdef.Type;
@@ -16,16 +15,26 @@ import java.util.ArrayList;
 
 public class CppBuilder {
 
-    private String[] indents;
-
-    private int indent = 0, sourcePos, headerPos, genericPos;
-    private StringBuilder sBuilder, hBuilder, gBuilder, tBuilder, dBuilder;
-    private ArrayList<Type> tDependences, sDependences, hDependences, gDependences, dDependences;
-    private ArrayList<Temp> tempVars;
-    private ArrayList<TempBlock> tempBlocks;
-    private int t;
     private Type type;
-    private boolean useTemplates;
+    private int sourcePos;
+    private int headerPos;
+    private int genericPos;
+    private StringBuilder tBuilder;
+    private final StringBuilder sBuilder;
+    private final StringBuilder hBuilder;
+    private final StringBuilder gBuilder;
+    private final StringBuilder dBuilder;
+    private ArrayList<Type> tDependences;
+    private final ArrayList<Type> sDependences;
+    private final ArrayList<Type> hDependences;
+    private final ArrayList<Type> gDependences;
+    private final ArrayList<Type> dDependences;
+
+    private int tempID;
+    private final ArrayList<Temp> tempVars;
+    private final ArrayList<TempBlock> tempBlocks;
+
+    private final String[] indents;
 
     public CppBuilder() {
         sBuilder = new StringBuilder();
@@ -76,7 +85,6 @@ public class CppBuilder {
 
     public void reset(Type type) {
         sourcePos = headerPos = genericPos = 0;
-        t = 0;
 
         sBuilder.setLength(0);
         hBuilder.setLength(0);
@@ -88,11 +96,11 @@ public class CppBuilder {
         dDependences.clear();
         toHeader();
 
+        tempID = 0;
         tempBlocks.clear();
         tempVars.clear();
 
         this.type = type;
-        this.useTemplates = false;
     }
 
     public void markHeader() {
@@ -107,7 +115,7 @@ public class CppBuilder {
         genericPos = gBuilder.length();
     }
 
-    public void dependence(Pointer pointer) {
+    public void dependenceAdd(Pointer pointer) {
         if (pointer.typeSource == null && pointer.type != null) {
             if (!pointer.type.isLangBase() && !dDependences.contains(pointer.type)) {
                 dDependences.add(pointer.type);
@@ -118,20 +126,24 @@ public class CppBuilder {
             }
             if (pointer.pointers != null) {
                 for (Pointer p : pointer.pointers) {
-                    dependence(p);
+                    dependenceAdd(p);
                 }
             }
-            if (pointer.type.isValue()) dependence(pointer.type.parent);
+            if (pointer.type.isValue()) {
+                dependenceAdd(pointer.type.parent);
+            }
         }
     }
 
-    public void addDependence(Pointer pointer) {
+    private void dependence(Pointer pointer) {
         if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
             if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
                 tDependences.add(pointer.type);
             }
         }
-        if (pointer.type.isValue()) addDependence(pointer.type.parent);
+        if (pointer.type.isValue()) {
+            dependence(pointer.type.parent);
+        }
     }
 
     // Header indirect Dependencies (Forward Declaration)
@@ -156,7 +168,8 @@ public class CppBuilder {
 
         for (Type type : sDependences) {
             if (type != this.type) {
-                dBuilder.append("#include \"").append(type.fileName).append(type.hasGenericFile() ? ".hpp\"\n" : ".h\"\n");
+                dBuilder.append("#include \"")
+                        .append(type.fileName).append(type.hasGenericFile() ? ".hpp\"\n" : ".h\"\n");
             }
         }
         sBuilder.insert(sourcePos, dBuilder);
@@ -169,7 +182,8 @@ public class CppBuilder {
 
         for (Type type : gDependences) {
             if (type != this.type) {
-                dBuilder.append("#include \"").append(type.fileName).append(type.hasGenericFile() ? ".hpp\"\n" : ".h\"\n");
+                dBuilder.append("#include \"")
+                        .append(type.fileName).append(type.hasGenericFile() ? ".hpp\"\n" : ".h\"\n");
             }
         }
         gBuilder.insert(genericPos, dBuilder);
@@ -179,7 +193,8 @@ public class CppBuilder {
     // Header direct Dependencies (Inheritance and Struct and Enum Variables)
     public void directDependence() {
         for (Type type : dDependences) {
-            dBuilder.append("#include \"").append(type.fileName).append(".h\"\n");
+            dBuilder.append("#include \"")
+                    .append(type.fileName).append(".h\"\n");
         }
         hBuilder.insert(headerPos, dBuilder);
         dBuilder.setLength(0);
@@ -242,7 +257,7 @@ public class CppBuilder {
     }
 
     public CppBuilder add(Expression expression, int idt) {
-        if (expression != null) expression.build(this, idt);
+        expression.build(this, idt);
         return this;
     }
 
@@ -255,14 +270,8 @@ public class CppBuilder {
     }
 
     public CppBuilder add(CallGroup group, int idt) {
-        if (group != null) {
-            group.build(this, idt);
-        }
+        group.build(this, idt);
         return this;
-    }
-
-    public CppBuilder add(Stack stack) {
-        return add(stack, 1);
     }
 
     public CppBuilder add(Stack stack, int idt) {
@@ -274,97 +283,50 @@ public class CppBuilder {
         return add(temp.name);
     }
 
-    public CppBuilder nameGeneric(Token token) {
-        tBuilder.append("g_");
-        token.addToBuilder(tBuilder);
+    public CppBuilder add(Template template) {
+        return add(template, 0);
+    }
+
+    public CppBuilder add(Template template, int indent) {
+        if (template != null) {
+            add("template<");
+            for (int i = 0; i < template.getCount(); i++) {
+                if (i != 0) add(", ");
+                add("typename ").nameGeneric(template.getNameToken(i));
+            }
+            add(">").ln().idt(indent);
+        }
         return this;
     }
 
-    public CppBuilder nameField(Token nameToken) {
-        return add("f_").add(nameToken);
-    }
-
-    public CppBuilder nameStaticField(Token nameToken) {
-        return add("s_").add(nameToken);
-    }
-
-    public CppBuilder nameField(String nameToken) {
-        return add("f_").add(nameToken);
-    }
-
-    public CppBuilder nameParam(Token nameToken) {
-        return add("v_").add(nameToken);
-    }
-
-    public CppBuilder nameParam(String nameToken) {
-        return add("v_").add(nameToken);
-    }
-
-    public CppBuilder nameMethod(Token nameToken) {
-        return add("m_").add(nameToken);
-    }
-
-    public CppBuilder nameMethod(String nameToken) {
-        return add("m_").add(nameToken);
-    }
-
-    public CppBuilder namePropertyGet(Token nameToken) {
-        return add("get_").add(nameToken);
-    }
-
-    public CppBuilder namePropertyGet(String nameToken) {
-        return add("get_").add(nameToken);
-    }
-
-    public CppBuilder namePropertySet(Token nameToken) {
-        return add("set_").add(nameToken);
-    }
-
-    public CppBuilder namePropertySet(String nameToken) {
-        return add("set_").add(nameToken);
-    }
-
-    public CppBuilder namePropertyOwn(Token nameToken) {
-        return add("own_").add(nameToken);
-    }
-
-    public CppBuilder namePropertyOwn(String nameToken) {
-        return add("own_").add(nameToken);
-    }
-
-    public CppBuilder nameIndexerGet() {
-        return add("get");
-    }
-
-    public CppBuilder nameIndexerSet() {
-        return add("set");
-    }
-
-    public CppBuilder nameIndexerOwn() {
-        return add("own");
-    }
-
-    public CppBuilder nameOp(Key operator, Pointer typePtr) {
-        if (operator == Key.CAST || operator == Key.AUTO) {
-            return add("c_")._namePtr(typePtr);
-        } else {
-            return add(operator.name().toLowerCase());
+    public CppBuilder add(Parameters params) {
+        for (int i = 0; i < params.getCount(); i++) {
+            if (i > 0) add(", ");
+            add(params.getTypePtr(i)).add(" v_").add(params.getNameToken(i));
         }
+        return this;
     }
 
-    private CppBuilder _namePtr(Pointer typePtr) {
-        if (typePtr == Pointer.voidPointer) return add("void");
-        if (typePtr.typeSource != null) return nameGeneric(typePtr.typeSource.nameToken);
-        if (typePtr.let) add("let_");
-        add(typePtr.type.pathToken);
-        if (typePtr.pointers != null) {
-            add("_s_");
-            Pointer[] pointers = typePtr.pointers;
-            for (int i = 0; i < pointers.length; i++) {
-                if (i > 0) add("_d_");
-                _namePtr(pointers[i]);
-            }
-            add("_e_");
+    public CppBuilder add(ParamView params) {
+        for (int i = 0; i < params.getArgsCount(); i++) {
+            if (i > 0) add(", ");
+            add(params.getArgTypePtr(i)).add(" v_").add(params.getArgName(i));
+        }
+        return this;
+    }
+
+    public CppBuilder args(ParamView params) {
+        return args(params, false);
+    }
+
+    public CppBuilder args(ParamView params, boolean extraValue) {
+        for (int i = 0; i < params.getArgsCount(); i++) {
+            if (i > 0) add(", ");
+            add("v_").add(params.getArgName(i));
+        }
+        if (extraValue) {
+            if (params.getArgsCount() > 0) add(", ");
+            add("v_value");
         }
         return this;
     }
@@ -385,7 +347,7 @@ public class CppBuilder {
                 add("Ptr<").nameGeneric(pointer.typeSource.nameToken).add(">");
             }
         } else {
-            addDependence(pointer);
+            dependence(pointer);
 
             if (pointer.type.isValue()) {
                 add(pointer.type.pathToken);
@@ -420,7 +382,7 @@ public class CppBuilder {
         if (pointer.typeSource != null) {
             nameGeneric(pointer.typeSource.nameToken);
         } else {
-            addDependence(pointer);
+            dependence(pointer);
 
             if (_static) {
                 add(pointer.type.staticPathToken);
@@ -470,57 +432,84 @@ public class CppBuilder {
     }
 
     public CppBuilder parent(Pointer pointer) {
-        dependence(pointer);
+        dependenceAdd(pointer);
         return path(pointer, false);
     }
 
-    public CppBuilder add(Template template) {
-        return add(template, 0);
+    public CppBuilder nameGeneric(Token token) {
+        return add("g_").add(token);
     }
 
-    public CppBuilder add(Template template, int indent) {
-        if (template != null) {
-            useTemplates = true;
-            add("template<");
-            for (int i = 0; i < template.getCount(); i++) {
-                if (i != 0) add(", ");
-                add("typename ").nameGeneric(template.getNameToken(i));
-            }
-            add(">").ln().idt(indent);
-        }
-        return this;
+    public CppBuilder nameField(Token nameToken) {
+        return add("f_").add(nameToken);
     }
 
-    public CppBuilder add(Parameters params) {
-        for (int i = 0; i < params.getCount(); i++) {
-            if (i > 0) add(", ");
-            add(params.getTypePtr(i)).add(" v_").add(params.getNameToken(i));
-        }
-        return this;
+    public CppBuilder nameField(String name) {
+        return add("f_").add(name);
     }
 
-    public CppBuilder add(ParamView params) {
-        for (int i = 0; i < params.getArgsCount(); i++) {
-            if (i > 0) add(", ");
-            add(params.getArgTypePtr(i)).add(" v_").add(params.getArgName(i));
-        }
-        return this;
+    public CppBuilder nameStaticField(Token nameToken) {
+        return add("s_").add(nameToken);
     }
 
-    public CppBuilder args(ParamView params) {
-        return args(params, false);
+    public CppBuilder nameStaticField(String name) {
+        return add("s_").add(name);
     }
 
-    public CppBuilder args(ParamView params, boolean extraValue) {
-        for (int i = 0; i < params.getArgsCount(); i++) {
-            if (i > 0) add(", ");
-            add("v_").add(params.getArgName(i));
-        }
-        if (extraValue) {
-            if (params.getArgsCount() > 0) add(", ");
-            add("v_value");
-        }
-        return this;
+    public CppBuilder nameParam(Token nameToken) {
+        return add("v_").add(nameToken);
+    }
+
+    public CppBuilder nameParam(String name) {
+        return add("v_").add(name);
+    }
+
+    public CppBuilder nameMethod(Token nameToken) {
+        return add("m_").add(nameToken);
+    }
+
+    public CppBuilder nameMethod(String name) {
+        return add("m_").add(name);
+    }
+
+    public CppBuilder nameGet(Token nameToken) {
+        return add("get_").add(nameToken);
+    }
+
+    public CppBuilder nameGet(String name) {
+        return add("get_").add(name);
+    }
+
+    public CppBuilder nameSet(Token nameToken) {
+        return add("set_").add(nameToken);
+    }
+
+    public CppBuilder nameSet(String name) {
+        return add("set_").add(name);
+    }
+
+    public CppBuilder nameOwn(Token nameToken) {
+        return add("own_").add(nameToken);
+    }
+
+    public CppBuilder nameOwn(String name) {
+        return add("own_").add(name);
+    }
+
+    public CppBuilder nameGet() {
+        return add("get");
+    }
+
+    public CppBuilder nameSet() {
+        return add("set");
+    }
+
+    public CppBuilder nameOwn() {
+        return add("own");
+    }
+
+    public CppBuilder nameOp(Key operator) {
+        return add(operator.name().toLowerCase());
     }
 
     public void cast(Pointer src, Pointer dst, CallGroup group, int idt) {
@@ -540,7 +529,7 @@ public class CppBuilder {
     }
 
     public Temp temp(Pointer typePtr, boolean pure) {
-        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (t++), pure);
+        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (tempID++), pure);
         tempVars.add(temp);
         return temp;
     }
@@ -573,13 +562,9 @@ public class CppBuilder {
             dBuilder.setLength(0);
         }
         if (tempBlocks.size() == 0) {
-            t = 0;
+            tempID = 0;
         }
         return idt(tblock.idt - 1).add("}");
-    }
-
-    public CppBuilder idt() {
-        return this;
     }
 
     public CppBuilder idt(int add) {

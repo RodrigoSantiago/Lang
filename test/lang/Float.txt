@@ -9,13 +9,13 @@ public final class Float {
 
     public static int floatToIntBits(float value) {
         native (return) {
-            return reinterpret_cast<long int>(v_value);
+            return *reinterpret_cast<lang_int*>(&v_value);
         }
     }
 
     public static float intBitsToFloat(int value) {
         native (return) {
-            return reinterpret_cast<float>(v_value);
+            return *reinterpret_cast<lang_float*>(&v_value);
         }
     }
 
@@ -27,11 +27,11 @@ public final class Float {
         return false;
     }
 
-    public static Float parse(string s) {
+    public static float parse(string s) {
         return parse(s, false);
     }
 
-    public static Float parse(string s, bool hex) {
+    public static float parse(string s, bool hex) {
         return 0;
     }
 

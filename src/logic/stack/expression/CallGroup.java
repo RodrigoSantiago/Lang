@@ -4,8 +4,8 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
-import data.CppBuilder;
-import data.Temp;
+import builder.CppBuilder;
+import builder.Temp;
 import logic.Pointer;
 import logic.member.view.OperatorView;
 import logic.stack.Context;
@@ -452,7 +452,11 @@ public class CallGroup {
         boolean autocast = requestPtr != null && !requestPtr.equalsIgnoreLet(naturalPtr) &&
                 naturalPtr != Pointer.nullPointer && (!requestPtr.isLangBase() || !naturalPtr.isLangBase());
         if (autocast) {
-            cBuilder.add("cast<").add(naturalPtr).add(", ").add(requestPtr).add(">::val(");
+            if (naturalPtr.type != null && naturalPtr.isDerivedFrom(requestPtr) > 0) {
+                cBuilder.add("impl<").add(naturalPtr).add(", ").add(requestPtr).add(">::val(");
+            } else {
+                cBuilder.add("cast<").add(naturalPtr).add(", ").add(requestPtr).add(">::val(");
+            }
         }
 
         if (left != null && center != null && right != null && colon != null && option != null) {
@@ -472,7 +476,7 @@ public class CallGroup {
             } else if (operatorView.operator != null && operatorView.operator.type.isLangBase()) {
                 cBuilder.add(left, idt).add(" ").add(center.operatorToken).add(" ").add(right, idt);
             } else {
-                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.op, null)
+                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.op)
                         .add("(").add(left, idt).add(", ").add(right, idt).add(")");
             }
         } else if (left != null && left.isCastingOperator() && center != null) {
@@ -602,7 +606,7 @@ public class CallGroup {
             left.buildCall(cBuilder, idt, false);
             cBuilder.add(" ").add(op).add(" ").add(right, idt);
         } else {
-            cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.op, null);
+            cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.op);
             cBuilder.add("(");
             if (tl != null) {
                 cBuilder.add(tl);

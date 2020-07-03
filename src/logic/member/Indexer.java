@@ -3,7 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.Pointer;
 import logic.member.view.IndexerView;
 import logic.params.Parameters;
@@ -26,7 +26,7 @@ public class Indexer extends Member {
     private boolean isGetOwn;
 
     public Indexer(Type type, Token start, Token end) {
-        super(type);
+        super(type, type.cFile);
 
         int state = 0;
         Token next;
@@ -280,7 +280,7 @@ public class Indexer extends Member {
                 cBuilder.add(type.template)
                         .add(getPtr)
                         .add(" ").path(type.self, false).add("::get").add("(").add(params).add(") ").in(1)
-                        .add(stackGet == null ? stackOwn : stackGet)
+                        .add(stackGet == null ? stackOwn : stackGet, 1)
                         .out().ln()
                         .ln();
             }
@@ -301,7 +301,7 @@ public class Indexer extends Member {
                 cBuilder.add(type.template)
                         .add(typePtr)
                         .add(" ").path(type.self, false).add("::own").add("(").add(params).add(") ").in(1)
-                        .add(stackOwn == null ? stackGet : stackOwn)
+                        .add(stackOwn == null ? stackGet : stackOwn, 1)
                         .out().ln()
                         .ln();
             }
@@ -321,7 +321,7 @@ public class Indexer extends Member {
                 cBuilder.add(type.template)
                         .add("void ").path(type.self, false).add("::set")
                         .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) ").in(1)
-                        .add(stackSet)
+                        .add(stackSet, 1)
                         .out().ln()
                         .ln();
             }

@@ -72,10 +72,10 @@ public static struct string : String {
         lang_string::~lang_string() {
             lang::text::dsg(data);
         }
-        lang_string& lang_string::operator=() {
-            if (this->data != other->data) {
+        lang_string& lang_string::operator=(const lang_string& other) {
+            if (this->data != other.data) {
                 lang::text::dsg(data);
-                this->data = other->data;
+                this->data = other.data;
                 lang::text::asg(data);
             }
         }
@@ -108,7 +108,7 @@ public static struct string : String {
         if (length > chars.Length) length = chars.Length;
 
         native (source) {
-            this->data = lang::text::str(&v_chars->data[v_start], v_length, v_charSet);
+            this->data = lang::text::str(reinterpret_cast<char*>(&v_chars->data[v_start]), v_length, v_charSet);
         }
     }
 
@@ -122,7 +122,7 @@ public static struct string : String {
         if (length > chars.Length) length = chars.Length;
 
         native (source) {
-            this->data = lang::text::str(&v_chars->data[v_start], v_length, 16);
+            this->data = lang::text::str(reinterpret_cast<char*>(&v_chars->data[v_start]), v_length, 16);
         }
     }
 
@@ -136,14 +136,14 @@ public static struct string : String {
         if (length > chars.Length) length = chars.Length;
 
         native (source) {
-            this->data = lang::text::str(&v_chars->data[v_start], v_length, 32);
+            this->data = lang::text::str(reinterpret_cast<char*>(&v_chars->data[v_start]), v_length, 32);
         }
     }
 
     public bool equalsIgnoreCase(string other) {
         native (return) {
-            if (this->data == v_other->data) return true;
-            if (this->data == nullptr || v_other->data == nullptr) return false;
+            if (this->data == v_other.data) return true;
+            if (this->data == nullptr || v_other.data == nullptr) return false;
         }
 
         if (other.CodePoints != CodePoints) return false;
@@ -171,10 +171,10 @@ public static struct string : String {
         return toUpperCase(Locale.GlobalLocale);
     }
 
-    public string toUpperCase(Locale locale) {
+    public string toUpperCase(locale customLocale) {
         final Text text = new Text(CodePoints);
         for (int i : this) {
-            text.addCodePoint(locale.toUpperCase(i));
+            text.addCodePoint(customLocale.toUpperCase(i));
         }
         return text.toString();
     }
@@ -183,10 +183,10 @@ public static struct string : String {
         return toLowerCase(Locale.GlobalLocale);
     }
 
-    public string toLowerCase(Locale locale) {
+    public string toLowerCase(locale customLocale) {
         final Text text = new Text(CodePoints);
         for (int i : this) {
-            text.addCodePoint(locale.toLowerCase(i));
+            text.addCodePoint(customLocale.toLowerCase(i));
         }
         return text.toString();
     }
@@ -205,16 +205,31 @@ public static struct string : String {
 
     bool operator ==(string value, string other) {
         native (return) {
-            if (this->data == v_other->data) return true;
-            if (this->data == nullptr || v_other->data == nullptr) return false;
-            if (this->data.length != v_other.data.length) return false;
+            if (v_value.data == v_other.data) return true;
+            if (v_value.data == nullptr || v_other.data == nullptr) return false;
+            if (v_value.data->length != v_other.data->length) return false;
 
-            for (int i = 0, len = this->data.length; i < len; i++) {
-                if (this->data[i] != v_other->data[i]) {
+            for (int i = 0, len = v_value.data->length; i < len; i++) {
+                if (v_value.data->chars[i] != v_other.data->chars[i]) {
                     return false;
                 }
             }
             return true;
+        }
+    }
+
+    bool operator !=(string value, string other) {
+        native (return) {
+            if (v_value.data == v_other.data) return false;
+            if (v_value.data == nullptr || v_other.data == nullptr) return true;
+            if (v_value.data->length != v_other.data->length) return true;
+
+            for (int i = 0, len = v_value.data->length; i < len; i++) {
+                if (v_value.data->chars[i] != v_other.data->chars[i]) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -232,6 +247,18 @@ public static struct string : String {
 
     string operator +(string value, string other) {
     }
+
+    string operator +(string value, let Object other) {
+    }
+
+    string operator +(let Object value, string other) {
+    }
+
+    string operator +(string value, let String other) {
+    }
+
+    string operator +(let String value, string other) {
+    }
 }
 
 final class StringUTF8Iterator : Iterator<byte> {
@@ -246,7 +273,7 @@ final class StringUTF8Iterator : Iterator<byte> {
     public byte next() {
         if (index < content.Length) {
             native (source) {
-                return content.data->chars[f_index ++];
+                return f_content.data->chars[f_index ++];
             }
         } else {
             return 0;

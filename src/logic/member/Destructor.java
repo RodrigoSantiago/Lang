@@ -3,7 +3,7 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.Pointer;
 import logic.stack.Stack;
 import logic.typdef.Type;
@@ -15,7 +15,7 @@ public class Destructor extends Member {
     public Stack stack;
 
     public Destructor(Type type, Token start, Token end) {
-        super(type);
+        super(type, type.cFile);
 
         int state = 0;
         Token next;
@@ -86,7 +86,7 @@ public class Destructor extends Member {
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add("void ").path(type.self, false).add("::destroy() ").in(1)
-                .add(stack);
+                .add(stack, 1);
 
         if (type.parent != null) {
             cBuilder.idt(1).path(type.parent, false).add("::destroy();").ln();

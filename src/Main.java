@@ -1,9 +1,8 @@
+import builder.CppBuilder;
 import content.Token;
 import data.*;
 import data.Compiler;
 import data.Error;
-import logic.Namespace;
-import logic.typdef.Type;
 
 import java.io.File;
 import java.io.IOException;
@@ -75,7 +74,10 @@ public class Main {
                 }
             }
 
-            lang.build(new CppBuilder());
+            CppBuilder cBuilder = new CppBuilder();
+            lang.build(cBuilder);
+            lang.buildMain(cBuilder);
+
             for (ContentFile cFile : lang.cFiles.values()) {
                 if (cFile.erros.size() > 0) {
                     System.out.println("Erros at " + cFile.name);

@@ -12,9 +12,9 @@ public abstract  class Member {
 
     boolean isPrivate, isPublic, isAbstract, isFinal, isStatic, isLet, isDefault;
 
-    public Member(Type type) {
+    public Member(Type type, ContentFile cFile) {
         this.type = type;
-        this.cFile = type.cFile;
+        this.cFile = cFile;
     }
 
     public boolean load() {

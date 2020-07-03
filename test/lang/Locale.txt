@@ -107,11 +107,11 @@ public struct locale : Locale {
     }
 
     public string formatDate(date value) {
-        return fformatDate ? fformatDate.run(value) : Date.ToString(value);
+        return fformatDate ? fformatDate.run(value) : Date.toString(value);
     }
 
     public string formatMoney(long value, long decimal) {
-        return fformatMoney ? fformatMoney.run(value, decimal) : Long.ToString(value) + "." + Long.ToString(decimal);
+        return fformatMoney ? fformatMoney.run(value, decimal) : Long.toString(value) + "." + Long.toString(decimal);
     }
 
     public int toUpperCase(int cp) {

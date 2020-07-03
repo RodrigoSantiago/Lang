@@ -1,6 +1,8 @@
 package data;
 
+import builder.CppBuilder;
 import logic.Namespace;
+import logic.member.Method;
 import logic.typdef.Type;
 
 import java.io.File;
@@ -24,8 +26,9 @@ public class Library {
     public HashSet<String> subs = new HashSet<>();
 
     Compiler compiler;
+    ContentFile mainFile;
     private File srcDir, objDir;
-    private boolean loaded;
+    private boolean loaded, mainErroRelated;
 
     public Library(String name, long version) {
         this.name = name;
@@ -114,6 +117,19 @@ public class Library {
         return loaded;
     }
 
+    public boolean setMainFile(ContentFile mainFile) {
+        if (this.mainFile == null) {
+            this.mainFile = mainFile;
+            return true;
+        } else {
+            if (!mainErroRelated) {
+                mainErroRelated = true;
+                mainFile.erro(mainFile.mainMethodToken, "Duplicated Main Method", this);
+            }
+            return false;
+        }
+    }
+
     /**
      * Lexer : Read TextFiles to create Tokens
      * Parser : Read Tokens to create Types, Members and Lines
@@ -194,25 +210,25 @@ public class Library {
      * Build : Transpiler the code to C++ language
      *
      * */
-    public void build(CppBuilder cppBuilder) {
+    public void build(CppBuilder cBuilder) {
         for (ContentFile cFile : cFiles.values()) {
             for (Type type : cFile.types) {
                 if (type.isLangBase()) {
                     continue;
                 }
-                cppBuilder.reset(type);
-                type.build(cppBuilder);
+                cBuilder.reset(type);
+                type.build(cBuilder);
 
                 File header = new File(srcDir, type.fileName + ".h");
                 try (PrintWriter pw = new PrintWriter(header)) {
-                    pw.print(cppBuilder.getHeader());
+                    pw.print(cBuilder.getHeader());
                 } catch (Exception e) {
                     cFile.erro(0, 0, "Unable to write to file[" + header + "]", this);
                 }
 
                 File source = new File(srcDir, type.fileName + ".cpp");
                 try (PrintWriter pw = new PrintWriter(source)) {
-                    pw.print(cppBuilder.getSource());
+                    pw.print(cBuilder.getSource());
                 } catch (Exception e) {
                     cFile.erro(0, 0, "Unable to write to file[" + source + "]", this);
                 }
@@ -220,12 +236,28 @@ public class Library {
                 if (type.hasGenericFile()) {
                     File generic = new File(srcDir, type.fileName + ".hpp");
                     try (PrintWriter pw = new PrintWriter(generic)) {
-                        pw.print(cppBuilder.getGeneric());
+                        pw.print(cBuilder.getGeneric());
                     } catch (Exception e) {
                         cFile.erro(0, 0, "Unable to write to file[" + generic + "]", this);
                     }
                 }
             }
+        }
+    }
+
+    public void buildMain(CppBuilder cBuilder) {
+        if (mainFile != null) {
+            cBuilder.reset(getCompiler().getLangObject());
+            Method method = mainFile.getMainMethod();
+            method.buildMain(cBuilder);
+
+            File main = new File(srcDir, "main.cpp");
+            try (PrintWriter pw = new PrintWriter(main)) {
+                pw.print(cBuilder.getSource());
+            } catch (Exception e) {
+                mainFile.erro(0, 0, "Unable to write to file[" + main + "]", this);
+            }
+
         }
     }
 
@@ -249,6 +281,7 @@ public class Library {
             cFiles.put(entry.getKey(), new ContentFile(this, entry.getKey(), entry.getValue()));
         }
 
+        mainFile = null;
         adds.clear();
         subs.clear();
 

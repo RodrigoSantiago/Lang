@@ -5,7 +5,7 @@ import content.Parser;
 import content.Token;
 import content.TokenGroup;
 import data.ContentFile;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.GenericOwner;
 import logic.ViewList;
 import logic.member.view.*;
@@ -54,7 +54,7 @@ public abstract class Type implements GenericOwner {
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
-    boolean isLoaded, isCrossed, isBase, isFunction, hasGeneric, hasStaticInit;
+    boolean isLoaded, isCrossed, isBase, isFunction, hasGeneric, hasInstanceVars, hasInstanceInit, hasStaticInit;
 
     private HashMap<Token, FieldView> fields = new HashMap<>();
     private ViewList<MethodView> methodView = new ViewList<>();
@@ -219,16 +219,17 @@ public abstract class Type implements GenericOwner {
             } else {
                 for (Property property : properties) {
                     if (property.isInitialized()) {
-                        hasStaticInit = true;
+                        hasInstanceInit = hasInstanceInit || !property.isStatic();
+                        hasStaticInit = hasStaticInit || property.isStatic();
                     }
                 }
                 if (!hasStaticInit) {
-                    loop:
                     for (Variable variable : variables) {
+                        hasInstanceVars = hasInstanceVars || !variable.isStatic();
                         for (int i = 0; i < variable.count(); i++) {
                             if (variable.isInitialized(i) && !variable.isLiteral(i)) {
-                                hasStaticInit = true;
-                                break loop;
+                                hasInstanceInit = hasInstanceInit || !variable.isStatic();
+                                hasStaticInit = hasStaticInit || variable.isStatic();
                             }
                         }
                     }
@@ -583,6 +584,29 @@ public abstract class Type implements GenericOwner {
 
         if (isClass()) cBuilder.idt(1).add("virtual lang_Object* self() { return this; }").ln();
 
+
+        if (hasInstanceInit()) {
+            cBuilder.idt(1).add("void init();").ln();
+
+            cBuilder.toSource(template != null);
+            cBuilder.add(template)
+                    .add("void ").path(self, false).add("::init() ").in(1);
+            for (Variable variable : variables) {
+                if (!variable.isStatic()) {
+                    variable.buildInit(cBuilder);
+                }
+            }
+            for (Property property : properties) {
+                if (!property.isStatic()) {
+                    property.buildInit(cBuilder);
+                }
+            }
+            cBuilder.out().ln()
+                    .ln();
+        }
+
+        // TODO - Using methods on parent-overloading case
+
         // Natives
         for (Native nat : natives) {
             if (!nat.isStatic()) {
@@ -628,12 +652,13 @@ public abstract class Type implements GenericOwner {
         }
 
         // Constructors
-        if (isValue()) {
+        if (hasInstanceVars() || isValue()) {
             cBuilder.toHeader();
             cBuilder.idt(1).add(pathToken).add("();").ln();
 
             cBuilder.toSource(hasGeneric());
-            cBuilder.path(self, false).add("::").add(pathToken).add("()");
+            cBuilder.add(template)
+                    .path(self, false).add("::").add(pathToken).add("()");
             boolean first = true;
             for (Variable variable : variables) {
                 if (!variable.isStatic()) {
@@ -652,7 +677,8 @@ public abstract class Type implements GenericOwner {
         // Destructor
         if (destructor != null) {
             destructor.build(cBuilder);
-        } else if (isClass() && parent != null) {
+        } else if (isClass() && parent != null && parents.size() > 1) {
+            cBuilder.toHeader();
             cBuilder.idt(1).add("virtual void destroy() { ").path(parent, false).add("::destroy(); }").ln();
         }
 
@@ -758,6 +784,14 @@ public abstract class Type implements GenericOwner {
         return hasStaticInit;
     }
 
+    public boolean hasInstanceInit() {
+        return hasInstanceInit;
+    }
+
+    public boolean hasInstanceVars() {
+        return hasInstanceVars;
+    }
+
     public boolean isPrivate() {
         return isPrivate;
     }
@@ -827,7 +861,7 @@ public abstract class Type implements GenericOwner {
     }
 
     public boolean hasGenericFile() {
-        return hasGeneric || autoCast.size() > 0  || casts.size() > 0;
+        return !isInterface() && (hasGeneric || autoCast.size() > 0  || casts.size() > 0);
     }
 
     @Override

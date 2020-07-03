@@ -20,7 +20,7 @@ public class Int : Object {
     }
 
     public static string toString(int value, int radix) {
-        return 0;
+        return "0";
     }
 
     public string toString() {

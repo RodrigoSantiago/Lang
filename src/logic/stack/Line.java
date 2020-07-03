@@ -2,7 +2,7 @@ package logic.stack;
 
 import content.Token;
 import data.ContentFile;
-import data.CppBuilder;
+import builder.CppBuilder;
 
 public abstract class Line {
     public final Stack stack;

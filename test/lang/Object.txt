@@ -2,7 +2,7 @@ namespace lang;
 
 public class Object {
     native (header) {
-        void* weak;
+        lang::weakptr* weak;
 
         void * operator new(unsigned int size) { return lang::memory::alloc(size); }
         void operator delete(void * p) { return lang::memory::dealloc(p); }

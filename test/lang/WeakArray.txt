@@ -61,7 +61,7 @@ public class WeakArray<T> : List<T> {
             } else {
                 this->f_length = v_length;
                 for (long i = 0; i < v_length; i++) {
-                    this->data[i] = lang::generic<GLet<g_T>>::def();
+                    this->data[i] = lang::value<GLet<g_T>>::def();
                 }
             }
         }

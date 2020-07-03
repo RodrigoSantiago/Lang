@@ -5,6 +5,7 @@ import logic.GenericOwner;
 import logic.Namespace;
 import logic.Pointer;
 import logic.Using;
+import logic.member.Method;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
@@ -24,6 +25,9 @@ public class ContentFile {
     public ArrayList<Using> usingsDirect = new ArrayList<>();
     public ArrayList<Using> usingsStatic = new ArrayList<>();
     public ArrayList<Using> usingsStaticDirect = new ArrayList<>();
+
+    public Method method;
+    public TokenGroup mainMethodToken;
 
     public ArrayList<Error> erros = new ArrayList<>();
 
@@ -83,6 +87,13 @@ public class ContentFile {
             type.internal();
         }
 
+        if (mainMethodToken != null) {
+            method = new Method(langObject(), this, mainMethodToken.start, mainMethodToken.end);
+            method.toStatic();
+            if (method.getName() != null && !method.getName().equals("main")) {
+                erro(method.getName(), "the Main method should be named 'main'", this);
+            }
+        }
         state = 4;
     }
 
@@ -91,6 +102,18 @@ public class ContentFile {
             type.cross();
         }
 
+        if (method != null) {
+            if (!method.load()) {
+                method = null;
+            } else {
+                if (method.getTypePtr() != Pointer.voidPointer) {
+                    erro(method.token, "The Main Method should return void", this);
+                }
+                if (!method.getParams().isEmpty()) {
+                    erro(method.token, "The Main Method cannot have parameters", this);
+                }
+            }
+        }
         state = 5;
     }
 
@@ -99,6 +122,9 @@ public class ContentFile {
             type.make();
         }
 
+        if (method != null) {
+            method.make();
+        }
         state = 5;
     }
 
@@ -355,6 +381,21 @@ public class ContentFile {
         }
     }
 
+    public void add(TokenGroup mainMethodToken) {
+        if (this.mainMethodToken != null) {
+            erro(mainMethodToken, "Unexpected statment", this);
+        } else {
+            this.mainMethodToken = mainMethodToken;
+            if (!library.setMainFile(this)) {
+                erro(mainMethodToken, "Duplicated Main Method", this);
+            }
+        }
+    }
+
+    public Method getMainMethod() {
+        return method;
+    }
+
     public Type findType(Token typeToken) {
         Type type;
 
@@ -551,5 +592,12 @@ public class ContentFile {
             return ((ContentFile) obj).name.equals(name);
         }
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return "ContentFile{" +
+                "name='" + name + '\'' +
+                '}';
     }
 }

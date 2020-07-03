@@ -51,7 +51,7 @@ public class Parser {
             } else if (state == 0 && (token.key == Key.SEMICOLON || token.key == Key.BRACE || next == null)) {
                 // undefined scope
                 if (start.getNext() != next || token.key != Key.SEMICOLON) {
-                    cFile.add(new Class(cFile, start, next));
+                    cFile.add(new TokenGroup(start, next));
                 }
                 start = next;
                 state = 0;
@@ -70,7 +70,7 @@ public class Parser {
         Token start = token;
 
         // todo - Verificar se todos os loops se protejem de nulo
-        while (token != end) {
+        while (token != null && token != end) {
             Token next = token.getNext();
 
             if (type.isEnum() && state == 0) {

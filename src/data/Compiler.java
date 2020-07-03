@@ -192,7 +192,7 @@ public class Compiler {
             langWrapper = getLangType(new Token("Wrapper"));
         }
 
-        return langArray;
+        return langWrapper;
     }
 
     public Type getLangArray() {

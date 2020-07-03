@@ -3,7 +3,8 @@ package logic.member;
 import content.Key;
 import content.Token;
 import content.TokenGroup;
-import data.CppBuilder;
+import builder.CppBuilder;
+import data.ContentFile;
 import logic.GenericOwner;
 import logic.stack.Stack;
 import logic.member.view.MethodView;
@@ -24,11 +25,16 @@ public class Method extends Member implements GenericOwner {
     private TokenGroup typeToken;
 
     private TokenGroup contentToken;
-    private boolean hasImplementation;
+    private boolean hasImplementation, mainMethod;
     Stack stack;
 
     public Method(Type type, Token start, Token end) {
-        super(type);
+        this(type, type.cFile, start, end);
+    }
+
+    public Method(Type type, ContentFile cFile, Token start, Token end) {
+        super(type, cFile);
+        mainMethod = (cFile != type.cFile);
 
         int state = 0;
         Token next;
@@ -36,9 +42,13 @@ public class Method extends Member implements GenericOwner {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, true, false);
+                readModifier(cFile, token, true, true, !mainMethod && type.isAbsAllowed(), type.isFinalAllowed(), true, !mainMethod, false);
             } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null) {
-                template = new Template(cFile, token, true);
+                if (mainMethod) {
+                    cFile.erro(token, "The Main method cannot have templates", this);
+                } else {
+                    template = new Template(cFile, token, true);
+                }
                 state = 1;
             } else if ((state == 0 || state == 1) && token.key == Key.VOID) {
                 if (isLet()) {
@@ -99,6 +109,10 @@ public class Method extends Member implements GenericOwner {
             isAbstract = true;
             return true;
         }
+    }
+
+    public void toStatic() {
+        isStatic = true;
     }
 
     public boolean isTemplateReturnEntry() {
@@ -204,7 +218,7 @@ public class Method extends Member implements GenericOwner {
                     .add(typePtr)
                     .add(" ").path(type.self, isStatic()).add("::m_").add(nameToken)
                     .add("(").add(params).add(") ").in(1)
-                    .add(stack)
+                    .add(stack, 1)
                     .out().ln()
                     .ln();
         }
@@ -230,6 +244,17 @@ public class Method extends Member implements GenericOwner {
                 .add("(").args(mw.getParams()).add(");").ln()
                 .add("}").ln()
                 .ln();
+    }
+
+    public void buildMain(CppBuilder cBuilder) {
+        cBuilder.toSource();
+        cBuilder.markSource();
+        cBuilder.ln();
+        cBuilder.add("void MainMethod() ").in(1)
+                .add(stack, 1)
+                .out().ln()
+                .ln();
+        cBuilder.sourceDependence();
     }
 
     @Override

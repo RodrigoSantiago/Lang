@@ -10,7 +10,7 @@ public final class Date {
     public static date Current {
         get {
             native (return) {
-                return lang::date(lang::date::millis());
+                return lang_date(lang::date::millis());
             }
         }
     }
@@ -37,7 +37,7 @@ public final class Date {
     }
 
     public int hash() {
-        return (int) value;
+        return (int) value.value;
     }
 
     public bool equals(let Object other) {

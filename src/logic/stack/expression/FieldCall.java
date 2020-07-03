@@ -2,7 +2,7 @@ package logic.stack.expression;
 
 import content.Key;
 import content.Token;
-import data.CppBuilder;
+import builder.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
 import logic.stack.Context;
@@ -263,11 +263,11 @@ public class FieldCall extends Call {
                     cBuilder.nameStaticField(token).add("()");
                 }
             } else if (useGet) {
-                cBuilder.namePropertyGet(token).add("()");
+                cBuilder.nameGet(token).add("()");
             } else if (useOwn) {
-                cBuilder.namePropertyOwn(token).add("()");
+                cBuilder.nameOwn(token).add("()");
             } else if (useSet) {
-                cBuilder.namePropertySet(token).add("(");
+                cBuilder.nameSet(token).add("(");
             }
             if (next) {
                 cBuilder.add(fieldView.typePtr.isPointer() ? "->" : ".");
@@ -294,7 +294,7 @@ public class FieldCall extends Call {
                     cBuilder.nameStaticField(token).add("()");
                 }
             } else if (useGet) {
-                cBuilder.namePropertySet(token).add("(");
+                cBuilder.nameSet(token).add("(");
             }
         } else {
             field.build(cBuilder, false);

@@ -7,10 +7,9 @@ import logic.Pointer;
 public class Arg {
 
     public boolean isLet;
-    public TokenGroup typeToken;
     public Token nameToken;
-
     public Pointer typePtr;
+    public TokenGroup typeToken;
 
     public Arg(Token nameToken, TokenGroup typeToken, boolean isLet) {
         this.isLet = isLet;
@@ -20,6 +19,6 @@ public class Arg {
 
     @Override
     public String toString() {
-        return (isLet ? "let " : "") + typeToken + " " + nameToken;
+        return typePtr + " " + nameToken;
     }
 }

@@ -7,8 +7,9 @@ import logic.templates.Template;
 
 public class TemplateView {
 
-    public final Template template;
     private Pointer[] typePtrs;
+
+    public final Template template;
 
     public TemplateView(Pointer caller, Template template) {
         this.template = template;

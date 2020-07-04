@@ -26,7 +26,7 @@ public class Method extends Member implements GenericOwner {
 
     private TokenGroup contentToken;
     private boolean hasImplementation, mainMethod;
-    Stack stack;
+    private Stack stack;
 
     public Method(Type type, Token start, Token end) {
         this(type, type.cFile, start, end);
@@ -97,26 +97,6 @@ public class Method extends Member implements GenericOwner {
             isAbstract = false;
             isFinal = true;
         }
-    }
-
-    public boolean toAbstract() {
-        if (template != null) {
-            if (!isAbstract) {
-                cFile.erro(template.token, "A abstract method cannot have templates", this);
-            }
-            return false;
-        } else {
-            isAbstract = true;
-            return true;
-        }
-    }
-
-    public void toStatic() {
-        isStatic = true;
-    }
-
-    public boolean isTemplateReturnEntry() {
-        return templateReturnEntry;
     }
 
     @Override
@@ -247,6 +227,17 @@ public class Method extends Member implements GenericOwner {
     }
 
     public void buildMain(CppBuilder cBuilder) {
+        cBuilder.toHeader();
+        cBuilder.add("// main.h").ln()
+                .ln()
+                .add("#ifndef H_MAIN").ln()
+                .add("#define H_MAIN").ln();
+        cBuilder.markHeader();
+        cBuilder.ln();
+        cBuilder.add("void MainMethod();");
+        cBuilder.ln();
+        cBuilder.add("#endif");
+
         cBuilder.toSource();
         cBuilder.markSource();
         cBuilder.ln();
@@ -269,12 +260,24 @@ public class Method extends Member implements GenericOwner {
         return pointer;
     }
 
-    public Parameters getParams() {
-        return params;
+    public boolean toAbstract() {
+        if (template != null) {
+            if (!isAbstract) {
+                cFile.erro(template.token, "A abstract method cannot have templates", this);
+            }
+            return false;
+        } else {
+            isAbstract = true;
+            return true;
+        }
     }
 
-    public Template getTemplate() {
-        return template;
+    public void toStatic() {
+        isStatic = true;
+    }
+
+    public TokenGroup getTypeToken() {
+        return typeToken;
     }
 
     public Token getName() {
@@ -283,6 +286,22 @@ public class Method extends Member implements GenericOwner {
 
     public Pointer getTypePtr() {
         return typePtr;
+    }
+
+    public Parameters getParams() {
+        return params;
+    }
+
+    public Template getTemplate() {
+        return template;
+    }
+
+    public boolean isTemplateReturnEntry() {
+        return templateReturnEntry;
+    }
+
+    public Stack getStack() {
+        return stack;
     }
 
     @Override

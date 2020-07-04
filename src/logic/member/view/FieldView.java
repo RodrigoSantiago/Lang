@@ -11,38 +11,51 @@ import logic.typdef.Type;
 
 public class FieldView {
 
-    Pointer caller;
-    public Token nameToken;
-    public Pointer typePtr;
+    private final Token nameToken;
+    private final Pointer typePtr;
 
-    public Variable srcVar;
-    public int srcID;
+    public final Pointer caller;
+    public final Property srcPro;
+    public final Variable srcVar;
+    public final Num srcNum;
+    public final int srcID;
 
-    public Num srcNum;
-    public Property srcPro;
-
-    public Property srcGet;
-    public Property srcSet;
-    public Property srcOwn;
+    private Property srcGet;
+    private Property srcSet;
+    private Property srcOwn;
 
     public FieldView(Token nameToken, Pointer typePtr, Variable variable, int index) {
+        this.caller = null;
         this.nameToken = nameToken;
         this.typePtr = typePtr;
         this.srcVar = variable;
         this.srcID = index;
+
+        this.srcPro = null;
+        this.srcNum = null;
     }
 
     public FieldView(Token nameToken, Pointer typePtr, Num num, int index) {
+        this.caller = null;
         this.nameToken = nameToken;
         this.typePtr = typePtr;
         this.srcNum = num;
         this.srcID = index;
+
+        this.srcPro = null;
+        this.srcVar = null;
     }
 
     public FieldView(Token nameToken, Pointer typePtr, Property property) {
+        this.caller = null;
         this.nameToken = nameToken;
         this.typePtr = typePtr;
         this.srcPro = property;
+
+        this.srcNum = null;
+        this.srcVar = null;
+        this.srcID = 0;
+
         srcGet = property.hasGet() ? property : null;
         srcSet = property.hasSet() ? property : null;
         srcOwn = property.hasOwn() ? property : null;
@@ -50,7 +63,7 @@ public class FieldView {
 
     public FieldView(Pointer caller, FieldView fieldView) {
         this.caller = caller;
-        this.nameToken = fieldView.nameToken;
+        this.nameToken = fieldView.getName();
         this.srcVar = fieldView.srcVar;
         this.srcNum = fieldView.srcNum;
         this.srcPro = fieldView.srcPro;
@@ -116,16 +129,28 @@ public class FieldView {
                         (srcOwn.isPublic()) || (srcPro.cFile.library == type.cFile.library));
     }
 
-    public void setGetSource(FieldView other) {
+    public void setSourceGet(FieldView other) {
         srcGet = other.srcGet;
     }
 
-    public void setSetSource(FieldView other) {
+    public Property getSourceGet() {
+        return srcGet;
+    }
+
+    public void setSourceSet(FieldView other) {
         srcSet = other.srcSet;
     }
 
-    public void setOwnSource(FieldView other) {
+    public Property getSourceSet() {
+        return srcSet;
+    }
+
+    public void setSourceOwn(FieldView other) {
         srcOwn = other.srcOwn;
+    }
+
+    public Property getSourceOwn() {
+        return srcOwn;
     }
 
     public boolean isProperty() {
@@ -220,9 +245,5 @@ public class FieldView {
         } else {
             return srcNum != null;
         }
-    }
-
-    public Type getType() {
-        return srcPro != null ? srcPro.type : srcVar != null ? srcVar.type : srcNum.type;
     }
 }

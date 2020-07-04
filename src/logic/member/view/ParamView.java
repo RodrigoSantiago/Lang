@@ -11,8 +11,9 @@ import java.util.ArrayList;
 
 public class ParamView {
 
-    private Parameters params;
     private Pointer[] typePtrs;
+
+    public final Parameters params;
 
     public ParamView(Pointer caller, Parameters params) {
         this.params = params;

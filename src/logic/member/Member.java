@@ -1,5 +1,6 @@
 package logic.member;
 
+import builder.CppBuilder;
 import content.Key;
 import content.Token;
 import data.ContentFile;
@@ -19,6 +20,14 @@ public abstract  class Member {
 
     public boolean load() {
         return false;
+    }
+
+    public void make() {
+
+    }
+
+    public void build(CppBuilder cBuilder) {
+
     }
 
     public boolean isPrivate() {

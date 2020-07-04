@@ -11,18 +11,6 @@ import java.nio.file.Files;
 
 public class Main {
 
-    static class classA<T> {
-        public void method(Object o) {
-            System.out.println("object");
-        }
-        public void method(Integer o) {
-            System.out.println("integer");
-        }
-        public void work(T t) {
-            method(t);
-        }
-    }
-
     public static void main(String... args) {
         Library lang = new Library("lang", 0);
         File dir = new File(System.getProperty("user.dir"), "test/lang/");
@@ -38,7 +26,7 @@ public class Main {
         Compiler compiler = new Compiler();
         compiler.libAdd(lang);
 
-        // The compiler should pass all dependencies at least at same stage before use
+        // The compiler should pass all dependencies at least at same stage before go to next
         lang.read();
         lang.preload();
         lang.load();
@@ -48,13 +36,7 @@ public class Main {
         // The compiler can choose wich one will make
         lang.make();
 
-        // The compiler can only build if all makes are done, and have no erros
         boolean erros = false;
-        /*for (ContentFile cFile : lang.cFiles.values()) {
-            for (Type type : cFile.types) {
-                System.out.println(type + ":" +type.parent);
-            }
-        }*/
         for (ContentFile cFile : lang.cFiles.values()) {
             if (cFile.erros.size() > 0) {
                 erros = true;

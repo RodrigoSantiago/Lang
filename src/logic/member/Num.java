@@ -12,6 +12,7 @@ public class Num extends Member {
 
     private ArrayList<Token> nameTokens = new ArrayList<>();
     private ArrayList<Token> initTokens = new ArrayList<>();
+    private ArrayList<FieldView> fields;
 
     public Num(Type type, Token start, Token end) {
         super(type, type.cFile);
@@ -54,15 +55,31 @@ public class Num extends Member {
         return nameTokens.size() > 0;
     }
 
+    @Override
+    public void make() {
+
+    }
+
+    @Override
     public void build(CppBuilder cBuilder) {
 
     }
 
+    public int getCount() {
+        return nameTokens.size();
+    }
+
+    public Token getName(int pos) {
+        return nameTokens.get(pos);
+    }
+
     public ArrayList<FieldView> getFields() {
-        ArrayList<FieldView> fields = new ArrayList<>();
-        for (int i = 0; i < nameTokens.size(); i++) {
-            Token nameToken = nameTokens.get(i);
-            fields.add(new FieldView(nameToken, type.self, this, i));
+        if (fields == null) {
+            fields = new ArrayList<>();
+            for (int i = 0; i < nameTokens.size(); i++) {
+                Token nameToken = nameTokens.get(i);
+                fields.add(new FieldView(nameToken, type.self, this, i));
+            }
         }
         return fields;
     }

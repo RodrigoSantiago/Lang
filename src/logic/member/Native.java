@@ -97,6 +97,12 @@ public class Native extends Member {
         return contentToken != null && sourceToken != null && !isReturn;
     }
 
+    @Override
+    public void make() {
+
+    }
+
+    @Override
     public void build(CppBuilder cBuilder) {
 
         if (isHeader()) {

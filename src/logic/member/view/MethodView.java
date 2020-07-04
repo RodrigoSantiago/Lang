@@ -10,14 +10,17 @@ import logic.typdef.Type;
 import java.util.ArrayList;
 
 public class MethodView {
-    public final Pointer caller;
-    public final Method method;
-    public final ParamView paramView;
-    public final TemplateView templateView;
+
     private Pointer typePtr;
 
-    public MethodView overrided;
-    Pointer[] captureList;
+    public final Pointer caller;
+    public final Method method;
+
+    private final ParamView paramView;
+    private final TemplateView templateView;
+
+    private MethodView overrided;
+    private Pointer[] captureList;
 
     public MethodView(Pointer caller, Method method) {
         this.caller = caller;

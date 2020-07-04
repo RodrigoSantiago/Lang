@@ -29,6 +29,7 @@ public class CallGroup {
     private boolean setOperator;
     private boolean rightOperator;
     private boolean directRequest;
+    private boolean argument;
 
     private Pointer naturalPtr;
     private Pointer requestPtr;
@@ -90,6 +91,10 @@ public class CallGroup {
         } else {
             return parent.getTokenGroup();
         }
+    }
+
+    public void markArgument() {
+        //argument = true;
     }
 
     public Token getOperatorToken() {
@@ -460,6 +465,8 @@ public class CallGroup {
         }
 
         if (left != null && center != null && right != null && colon != null && option != null) {
+            right.markArgument();
+            option.markArgument();
             cBuilder.add(left, idt).add(" ? ").add(right, idt).add(" : ").add(option, idt);
         } else if (left != null && center != null && right != null) {
             if (operatorView == OperatorView.EQUAL || operatorView == OperatorView.DIF ||
@@ -476,7 +483,9 @@ public class CallGroup {
             } else if (operatorView.operator != null && operatorView.operator.type.isLangBase()) {
                 cBuilder.add(left, idt).add(" ").add(center.operatorToken).add(" ").add(right, idt);
             } else {
-                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.op)
+                left.markArgument();
+                right.markArgument();
+                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp())
                         .add("(").add(left, idt).add(", ").add(right, idt).add(")");
             }
         } else if (left != null && left.isCastingOperator() && center != null) {
@@ -488,6 +497,8 @@ public class CallGroup {
                 } else {
                     cBuilder.add(left.operatorToken).add(center, idt);
                 }
+            } else {
+                // TODO - LEFT RIGHT IMPLEMENTATION
             }
         } else if (calls.size() > 0) {
             for (int i = 0; i < calls.size(); i++) {
@@ -542,6 +553,7 @@ public class CallGroup {
         if (directRequest) {
             if (left.isMethodSetter()) {
                 left.build(cBuilder, idt);
+                right.markArgument();
                 right.build(cBuilder, idt);
                 cBuilder.add(")");
             } else {
@@ -555,6 +567,7 @@ public class CallGroup {
             left.build(cBuilder, idt);
             if (!left.isMethodSetter()) {
                 cBuilder.add(" = ");
+                right.markArgument();
             }
             cBuilder.add(t1).add(" = ").add(right, idt);
             if (left.isMethodSetter()) {
@@ -606,12 +619,13 @@ public class CallGroup {
             left.buildCall(cBuilder, idt, false);
             cBuilder.add(" ").add(op).add(" ").add(right, idt);
         } else {
-            cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.op);
+            cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp());
             cBuilder.add("(");
             if (tl != null) {
                 cBuilder.add(tl);
             }
             left.buildCall(cBuilder, idt, false);
+            right.markArgument();
             cBuilder.add(", ").add(right, idt).add(")");
         }
         if (tr != null) {

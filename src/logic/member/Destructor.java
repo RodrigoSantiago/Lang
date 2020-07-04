@@ -12,7 +12,8 @@ public class Destructor extends Member {
 
     private TokenGroup contentToken;
     private boolean hasImplementation;
-    public Stack stack;
+
+    private Stack stack;
 
     public Destructor(Type type, Token start, Token end) {
         super(type, type.cFile);
@@ -71,6 +72,7 @@ public class Destructor extends Member {
         return contentToken != null;
     }
 
+    @Override
     public void make() {
         if (hasImplementation) {
             stack = new Stack(cFile, token, type.self, Pointer.voidPointer, type, false, false, false);
@@ -79,6 +81,7 @@ public class Destructor extends Member {
         }
     }
 
+    @Override
     public void build(CppBuilder cBuilder) {
         cBuilder.toHeader();
         cBuilder.idt(1).add("virtual void destroy();").ln();
@@ -94,6 +97,10 @@ public class Destructor extends Member {
 
         cBuilder.out().ln()
                 .ln();
+    }
+
+    public Stack getStack() {
+        return stack;
     }
 
     @Override

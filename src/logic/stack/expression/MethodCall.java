@@ -205,7 +205,7 @@ public class MethodCall extends Call {
             }
         }
         cBuilder.nameMethod(methodView.getName());
-        if (methodView.templateView != null) {
+        if (methodView.getTemplate() != null) {
             Pointer[] captureList = methodView.getCaptureList();
             naturalPtr = methodView.getTypePtr();
             for (int j = 0; j < methodView.getTemplate().getGenCount(); j++) {

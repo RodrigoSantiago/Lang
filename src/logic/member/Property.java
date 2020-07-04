@@ -17,13 +17,14 @@ public class Property extends Member {
 
     private TokenGroup contentToken;
     private TokenGroup initToken;
-    public Stack stackGet, stackSet, stackOwn, stackInit;
     private Token getContentToken, setContentToken, ownContentToken;
 
     private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
     private boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate;
     private boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate;
     private boolean isGetOwn;
+
+    private Stack stackGet, stackSet, stackOwn, stackInit;
 
     public Property(Type type, Token start, Token end) {
         super(type, type.cFile);
@@ -91,7 +92,7 @@ public class Property extends Member {
 
         int state = 0;
         Token next;
-        Token end =  group.end;
+        Token end = group.end;
         Token token = group.start;
         while (token != null && token != end) {
             next = token.getNext();
@@ -423,6 +424,22 @@ public class Property extends Member {
         return typePtr;
     }
 
+    public Stack getStackGet() {
+        return stackGet;
+    }
+
+    public Stack getStackSet() {
+        return stackSet;
+    }
+
+    public Stack getStackOwn() {
+        return stackOwn;
+    }
+
+    public Stack getStackInit() {
+        return stackInit;
+    }
+
     public boolean hasGet() {
         return hasGet || isGetOwn;
     }
@@ -485,6 +502,10 @@ public class Property extends Member {
 
     @Override
     public String toString() {
-        return nameToken+" : "+ typeToken+" {} ";
+        return nameToken + " : " + typeToken + " {" +
+                (hasGet || isGetOwn ? "get;" : "") +
+                (isGetOwn ? " = " : "") +
+                (hasOwn || isGetOwn? "own;" : "") +
+                (hasSet ? "set;" : "") +"} ";
     }
 }

@@ -25,9 +25,12 @@ public class Struct extends Type {
                 cFile.erro(pTypeToken.start, "Undefined Wrapper", this);
             } else if (parent.typeSource != null) {
                 cFile.erro(pTypeToken.start, "A struct could not have it's template as Wrapper", this);
+            } else if (parent.type.isAbstract()) {
+                cFile.erro(pTypeToken.start, "A struct could not have a abstract Wrapper", this);
             } else if (parent.type.isClass()) {
                 if (this.parent == null) {
                     this.parent = parent;
+                    this. parentTokens.add(pTypeToken.start);
                 } else {
                     cFile.erro(pTypeToken.start, "A struct could not have multiple Wrappers", this);
                 }
@@ -38,6 +41,7 @@ public class Struct extends Type {
 
         if (parent == null) {
             parent = cFile.langWrapperPtr(this);
+            this. parentTokens.add(nameToken);
         }
     }
 

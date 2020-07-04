@@ -130,7 +130,7 @@ public class Context {
             for (MethodView mv : methods) {
                 if (mv.getParams().getArgsCount() == arguments.size()) {
                     if (!isStatic && pointer.pointers != null) mv = new MethodView(pointer, mv);
-                    if (mv.templateView != null) mv = MethodView.byTemplate(arguments, mv);
+                    if (mv.getTemplate() != null) mv = MethodView.byTemplate(arguments, mv);
 
                     int ret = mv.getParams().verifyArguments(closer, result, arguments, found != null);
                     if (ret == 0) {
@@ -258,7 +258,7 @@ public class Context {
         if (left.isCastingOperator()) {
             Pointer castPtr = left.getCastPtr();
             if (castPtr == null || ptr == null) return null;
-            if (castPtr.isOpen()) return OperatorView.CAST;
+            if (castPtr.isOpen() || ptr.isOpen()) return OperatorView.CAST;
             if (castPtr.type != null && castPtr.type.isPointer()) return OperatorView.CAST;
             if (castPtr.type != null && ptr.type != null && castPtr.type.isValue() && ptr.type.isValue()) {
                 if (ptr.type != null && ptr.type.casts.contains(castPtr)) return OperatorView.CAST;

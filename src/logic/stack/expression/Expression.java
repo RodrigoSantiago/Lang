@@ -193,6 +193,10 @@ public class Expression {
         groups.add(group);
     }
 
+    public void markArgument() {
+        if (groups.size() > 0) groups.get(0).markArgument();
+    }
+
     public CallGroup  getGroup() {
         return groups.get(0);
     }

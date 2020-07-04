@@ -226,7 +226,7 @@ public abstract class Type implements GenericOwner {
                 if (!hasStaticInit) {
                     for (Variable variable : variables) {
                         hasInstanceVars = hasInstanceVars || !variable.isStatic();
-                        for (int i = 0; i < variable.count(); i++) {
+                        for (int i = 0; i < variable.getCount(); i++) {
                             if (variable.isInitialized(i) && !variable.isLiteral(i)) {
                                 hasInstanceInit = hasInstanceInit || !variable.isStatic();
                                 hasStaticInit = hasStaticInit || variable.isStatic();
@@ -239,7 +239,7 @@ public abstract class Type implements GenericOwner {
     }
 
     public void cross() {
-        if (isCrossed || !isClass()) return;
+        if (isCrossed) return;
         isCrossed = true;
 
         for (Pointer parent : parents) {
@@ -324,7 +324,7 @@ public abstract class Type implements GenericOwner {
                                 if (!pIW.isGetAbstract()) iw.setGetSource(pIW);
                             } else if (pIW.isGetAbstract()) {
                                 implGet = true;
-                                implIndexerGet = iw.srcGet;
+                                implIndexerGet = iw.getSourceGet();
                             }
                         }
 
@@ -337,7 +337,7 @@ public abstract class Type implements GenericOwner {
                                 if (!pIW.isSetAbstract()) iw.setSetSource(pIW);
                             } else if (pIW.isSetAbstract()) {
                                 implSet = true;
-                                implIndexerSet = iw.srcSet;
+                                implIndexerSet = iw.getSourceSet();
                             }
                         }
                         if (pIW.hasOwn()) {
@@ -349,7 +349,7 @@ public abstract class Type implements GenericOwner {
                                 if (!pIW.isOwnAbstract()) iw.setOwnSource(pIW);
                             } else if (pIW.isOwnAbstract()) {
                                 implOwn = true;
-                                implIndexerOwn = iw.srcOwn;
+                                implIndexerOwn = iw.getSourceOwn();
                             }
                         }
                         add = false;
@@ -397,10 +397,10 @@ public abstract class Type implements GenericOwner {
                             else if (fw.hasGet() && (fw.isGetPrivate() || (!fw.isGetPublic() && pFW.isGetPublic()))) {
                                 cFile.erro(erro, "Incompatible GET acess", this);
                             } else if (!fw.hasGet()) {
-                                if (!pFW.isGetAbstract()) fw.setGetSource(pFW);
+                                if (!pFW.isGetAbstract()) fw.setSourceGet(pFW);
                             } else if (pFW.isGetAbstract()) {
                                 implGet = true;
-                                implFieldGet = fw.srcGet;
+                                implFieldGet = fw.getSourceGet();
                             }
                         }
 
@@ -410,10 +410,10 @@ public abstract class Type implements GenericOwner {
                             else if (fw.hasSet() && (fw.isSetPrivate() || (!fw.isSetPublic() && pFW.isSetPublic()))) {
                                 cFile.erro(erro, "Incompatible SET acess", this);
                             } else if (!fw.hasSet()) {
-                                if (!pFW.isSetAbstract()) fw.setSetSource(pFW);
+                                if (!pFW.isSetAbstract()) fw.setSourceSet(pFW);
                             } else if (pFW.isSetAbstract()) {
                                 implSet = true;
-                                implFieldSet = fw.srcSet;
+                                implFieldSet = fw.getSourceSet();
                             }
                         }
                         if (pFW.hasOwn()) {
@@ -422,10 +422,10 @@ public abstract class Type implements GenericOwner {
                             else if (fw.hasOwn() && (fw.isOwnPrivate() || (!fw.isOwnPublic() && pFW.isOwnPublic()))) {
                                 cFile.erro(erro, "Incompatible OWN acess", this);
                             } else if (!fw.hasOwn()) {
-                                if (!pFW.isOwnAbstract()) fw.setOwnSource(pFW);
+                                if (!pFW.isOwnAbstract()) fw.setSourceOwn(pFW);
                             } else if (pFW.isOwnAbstract()) {
                                 implOwn = true;
-                                implFieldOwn = fw.srcOwn;
+                                implFieldOwn = fw.getSourceOwn();
                             }
                         }
                     } else /*if (!fw.canShadow(pFW))*/ {
@@ -475,7 +475,7 @@ public abstract class Type implements GenericOwner {
                             if (!cC.isPublic()) {
                                 cFile.erro(cC.token, "A Default constructor implementation must be public", this);
                             }
-                            cC.markDefault();
+                            cC.toDefault();
                             isImplemented = true;
                             break;
                         }
@@ -484,6 +484,29 @@ public abstract class Type implements GenericOwner {
                         cFile.erro(nameToken, "Default constructor not implemented", this);
                     }
                 }
+            }
+        }
+
+        if (isStruct() && !isFunction()) {
+            FieldView field = parent.type.getField(new Token("value"));
+            if (field == null || !field.isVariable() || field.isStatic() ||
+                    !field.srcVar.isPublic() || !Pointer.byGeneric(field.getTypePtr(), parent).equals(self)) {
+                cFile.erro(parentTokens.get(0), "The Wrapper Must have a public local variable named 'value' of this Struct as Type", this);
+            }
+
+            boolean found = false;
+            for (int i = 0; i < parent.type.getConstructorsCount(); i++) {
+                Constructor constructor = parent.type.getConstructor(i);
+                if (constructor.getParams().getCount() == 1 &&
+                        Pointer.byGeneric(constructor.getParams().getTypePtr(i), parent).equals(self)) {
+                    found = true;
+                    if (!constructor.isPublic()) {
+                        cFile.erro(parentTokens.get(0), "The Wrapper Must have a public constructor as this Struct as unic parameter", this);
+                    }
+                }
+            }
+            if (!found) {
+                cFile.erro(parentTokens.get(0), "The Wrapper Must have a public constructor as this Struct as unic parameter", this);
             }
         }
     }
@@ -961,10 +984,10 @@ public abstract class Type implements GenericOwner {
                 cFile.erro(variable.getTypeToken().start, "A Static Type can only have Static Types as it's field", this);
             } else {
                 for (FieldView field : variable.getFields()) {
-                    if (fields.containsKey(field.nameToken)) {
-                        cFile.erro(field.nameToken, "Repeated field name", this);
+                    if (fields.containsKey(field.getName())) {
+                        cFile.erro(field.getName(), "Repeated field name", this);
                     } else {
-                        fields.put(field.nameToken, field);
+                        fields.put(field.getName(), field);
                     }
                 }
                 variables.add(variable);
@@ -987,10 +1010,10 @@ public abstract class Type implements GenericOwner {
                 cFile.erro(property.token, "A abstract property OWN cannot have a strong acess modifier", this);
             }
             FieldView field = property.getField();
-            if (fields.containsKey(field.nameToken)) {
-                cFile.erro(field.nameToken, "Repeated field name", this);
+            if (fields.containsKey(field.getName())) {
+                cFile.erro(field.getName(), "Repeated field name", this);
             } else {
-                fields.put(field.nameToken, field);
+                fields.put(field.getName(), field);
             }
             properties.add(property);
         }
@@ -1002,10 +1025,10 @@ public abstract class Type implements GenericOwner {
                 cFile.erro(num.token, "Unexpected enumeration", this);
             } else {
                 for (FieldView field : num.getFields()) {
-                    if (fields.containsKey(field.nameToken)) {
-                        cFile.erro(field.nameToken, "Repeated field name", this);
+                    if (fields.containsKey(field.getName())) {
+                        cFile.erro(field.getName(), "Repeated field name", this);
                     } else {
-                        fields.put(field.nameToken, field);
+                        fields.put(field.getName(), field);
                     }
                 }
                 nums.add(num);
@@ -1064,16 +1087,16 @@ public abstract class Type implements GenericOwner {
                 cFile.erro(operator.token, "Operators not allowed", this);
             } else {
                 for (Operator operatorB : operators) {
-                    if (operator.op == operatorB.op
-                            || (operator.op == Key.CAST && operatorB.op == Key.AUTO)
-                            || (operator.op == Key.AUTO && operatorB.op == Key.CAST)) {
+                    if (operator.getOp() == operatorB.getOp()
+                            || (operator.getOp() == Key.CAST && operatorB.getOp() == Key.AUTO)
+                            || (operator.getOp() == Key.AUTO && operatorB.getOp() == Key.CAST)) {
 
-                        if (operator.op == Key.CAST || operator.op == Key.AUTO) {
-                            if (operator.typePtr.equals(operatorB.typePtr)) {
+                        if (operator.getOp() == Key.CAST || operator.getOp() == Key.AUTO) {
+                            if (operator.getTypePtr().equals(operatorB.getTypePtr())) {
                                 cFile.erro(operator.token, "Invalid overloading", this);
                                 return;
                             }
-                        } else if (!operator.params.canOverload(operatorB.params)) {
+                        } else if (!operator.getParams().canOverload(operatorB.getParams())) {
                             cFile.erro(operator.token, "Invalid overloading", this);
                             return;
                         }
@@ -1081,9 +1104,9 @@ public abstract class Type implements GenericOwner {
                 }
                 operators.add(operator);
 
-                if (operator.op == Key.AUTO) {
+                if (operator.getOp() == Key.AUTO) {
                     autoCast.add(operator.getTypePtr());
-                } else if (operator.op == Key.CAST) {
+                } else if (operator.getOp() == Key.CAST) {
                     casts.add(operator.getTypePtr());
                 } else {
                     operatorView.put(operator.getOperator(), new OperatorView(self, operator));

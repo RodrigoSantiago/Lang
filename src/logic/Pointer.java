@@ -1,7 +1,6 @@
 package logic;
 
 import logic.templates.Generic;
-import logic.templates.Template;
 import logic.typdef.Type;
 
 public class Pointer {
@@ -11,10 +10,10 @@ public class Pointer {
 
     public static final Pointer openPointer = new Pointer(null); // Empty generic [do not use as mark]
 
-    public Type type;
-    public boolean let;
-    public Generic typeSource;
-    public Pointer[] pointers;
+    public final Type type;
+    public final boolean let;
+    public final Generic typeSource;
+    public final Pointer[] pointers;
 
     public Pointer(Type type) {
         this(type, false);

@@ -17,7 +17,7 @@ public class Constructor extends Member {
     private TokenGroup contentToken;
     private boolean hasImplementation;
 
-    public Stack stack;
+    private Stack stack;
     private Constructor constructorTarget;
 
     public Constructor(Type type, Token start, Token end) {
@@ -81,6 +81,7 @@ public class Constructor extends Member {
         return false;
     }
 
+    @Override
     public void make() {
         if (hasImplementation) {
             stack = new Stack(cFile, token, type.self, Pointer.voidPointer, isStatic() ? null : type, false, isStatic(), true);
@@ -94,7 +95,7 @@ public class Constructor extends Member {
                     ConstructorView cv = stack.getConstructorCall().getConstructorView();
                     if (cv != null) {
                         constructorTarget = cv.constructor;
-                        if (constructorTarget.linkTo(this)) {
+                        if (constructorTarget.setTarget(this)) {
                             constructorTarget = null;
                             cFile.erro(call.token, "Cyclic constructor call", this);
                         }
@@ -109,6 +110,7 @@ public class Constructor extends Member {
         }
     }
 
+    @Override
     public void build(CppBuilder cBuilder) {
         if (isStatic()) {
             cBuilder.idt(1).add("// static initializer");
@@ -168,21 +170,25 @@ public class Constructor extends Member {
         cBuilder.toHeader();
     }
 
+    public void toDefault() {
+        isDefault = true;
+    }
+
+    public boolean setTarget(Constructor constructor) {
+        if (this == constructor) {
+            return true;
+        } else if (constructorTarget != null) {
+            return constructorTarget.setTarget(constructor);
+        }
+        return false;
+    }
+
     public Parameters getParams() {
         return params;
     }
 
-    public void markDefault() {
-        isDefault = true;
-    }
-
-    public boolean linkTo(Constructor constructor) {
-        if (this == constructor) {
-            return true;
-        } else if (constructorTarget != null) {
-            return constructorTarget.linkTo(constructor);
-        }
-        return false;
+    public Stack getStack() {
+        return stack;
     }
 
     @Override

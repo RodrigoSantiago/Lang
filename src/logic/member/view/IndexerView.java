@@ -8,24 +8,31 @@ import logic.typdef.Type;
 
 public class IndexerView {
 
-    public Indexer indexer;
-    private ParamView paramView;
-    private Pointer typePtr;
+    private final ParamView paramView;
+    private final Pointer typePtr;
 
-    public IndexerView srcGet, srcSet, srcOwn;
+    public final Indexer indexer;
+
+    private IndexerView srcGet;
+    private IndexerView srcSet;
+    private IndexerView srcOwn;
 
     public IndexerView(Pointer caller, Indexer indexer) {
         this.indexer = indexer;
-        if (indexer.getTypePtr() != null) {
+        if (Pointer.hasGeneric(indexer.getTypePtr(), caller)) {
             typePtr = Pointer.byGeneric(indexer.getTypePtr(), caller);
+        } else {
+            typePtr = indexer.getTypePtr();
         }
         paramView = new ParamView(caller, indexer.getParams());
     }
 
     public IndexerView(Pointer caller, IndexerView indexerView) {
         this.indexer = indexerView.indexer;
-        if (indexerView.typePtr != null) {
+        if (Pointer.hasGeneric(indexerView.getTypePtr(), caller)) {
             typePtr = Pointer.byGeneric(indexerView.getTypePtr(), caller);
+        } else {
+            typePtr = indexerView.getTypePtr();
         }
         paramView = new ParamView(caller, indexerView.getParams());
         srcGet = indexerView.srcGet;
@@ -90,12 +97,24 @@ public class IndexerView {
         srcGet = other.srcGet != null ? other.srcGet : other;
     }
 
+    public IndexerView getSourceGet() {
+        return srcGet;
+    }
+
     public void setSetSource(IndexerView other) {
         srcSet = other.srcSet != null ? other.srcSet : other;
     }
 
+    public IndexerView getSourceSet() {
+        return srcSet;
+    }
+
     public void setOwnSource(IndexerView other) {
         srcOwn = other.srcOwn != null ? other.srcOwn : other;
+    }
+
+    public IndexerView getSourceOwn() {
+        return srcOwn;
     }
 
     public Pointer getTypePtr() {

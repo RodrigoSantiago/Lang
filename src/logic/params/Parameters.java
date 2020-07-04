@@ -146,6 +146,18 @@ public class Parameters {
         }
     }
 
+    public boolean equals(Parameters other) {
+        if (other.args.size() != args.size()) return false;
+        for (int i = 0; i < args.size(); i++) {
+            Arg argA = args.get(i);
+            Arg argB = other.args.get(i);
+            if (!argA.typePtr.equals(argB.typePtr)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) return false;
@@ -173,18 +185,6 @@ public class Parameters {
             if (i > 0) str.append(", ");
             str.append(args.get(i));
         }
-        return str + ")";
-    }
-
-    public boolean equals(Parameters other) {
-        if (other.args.size() != args.size()) return false;
-        for (int i = 0; i < args.size(); i++) {
-            Arg argA = args.get(i);
-            Arg argB = other.args.get(i);
-            if (!argA.typePtr.equals(argB.typePtr)) {
-                return false;
-            }
-        }
-        return true;
+        return str.append(")").toString();
     }
 }

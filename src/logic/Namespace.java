@@ -11,9 +11,9 @@ import java.util.Map;
 
 public class Namespace {
 
-    public String name;
-    public Library library;
-    public HashMap<Token, Type> types = new HashMap<>();
+    public final String name;
+    public final Library library;
+    private HashMap<Token, Type> types = new HashMap<>();
     private HashSet<ContentFile> usedBy = new HashSet<>();
     private HashSet<ContentFile> linkedBy = new HashSet<>();
 

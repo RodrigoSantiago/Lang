@@ -18,12 +18,12 @@ public class Indexer extends Member {
     private Parameters params;
     private TokenGroup contentToken;
     private Token getContentToken, setContentToken, ownContentToken;
-
-    public Stack stackGet, stackSet, stackOwn;
     private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
     private boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate;
     private boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate;
     private boolean isGetOwn;
+
+    private Stack stackGet, stackSet, stackOwn;
 
     public Indexer(Type type, Token start, Token end) {
         super(type, type.cFile);
@@ -174,13 +174,6 @@ public class Indexer extends Member {
         }
     }
 
-    public void toAbstract() {
-        isAbstract = true;
-        isGetAbstract = true;
-        isSetAbstract = true;
-        isOwnAbstract = true;
-    }
-
     @Override
     public boolean load() {
         if (hasGet) {
@@ -234,6 +227,7 @@ public class Indexer extends Member {
         return false;
     }
 
+    @Override
     public void make() {
         if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
             stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
@@ -262,6 +256,7 @@ public class Indexer extends Member {
         }
     }
 
+    @Override
     public void build(CppBuilder cBuilder) {
 
         if (hasGet()) {
@@ -376,12 +371,31 @@ public class Indexer extends Member {
                 .ln();
     }
 
+    public void toAbstract() {
+        isAbstract = true;
+        isGetAbstract = true;
+        isSetAbstract = true;
+        isOwnAbstract = true;
+    }
+
     public Parameters getParams() {
         return params;
     }
 
     public Pointer getTypePtr() {
         return typePtr;
+    }
+
+    public Stack getStackGet() {
+        return stackGet;
+    }
+
+    public Stack getStackSet() {
+        return stackSet;
+    }
+
+    public Stack getStackOwn() {
+        return stackOwn;
     }
 
     public boolean hasGet() {

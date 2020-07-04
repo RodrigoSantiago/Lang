@@ -11,16 +11,16 @@ import logic.typdef.Type;
 
 public class Operator extends Member {
 
-    public TokenGroup typeToken;
-    public Pointer typePtr;
-    public Parameters params;
+    private TokenGroup typeToken;
+    private Pointer typePtr;
+    private Parameters params;
 
-    public Token operator;
-    public Key op = Key.NOONE;
+    private Token operator;
+    private Key op = Key.NOONE;
 
-    public TokenGroup contentToken;
-    public Stack stack;
+    private TokenGroup contentToken;
     private boolean hasImplementation;
+    private Stack stack;
 
     public Operator(Type type, Token start, Token end) {
         super(type, type.cFile);
@@ -93,8 +93,8 @@ public class Operator extends Member {
             if (typePtr == null) {
                 typePtr = cFile.langObjectPtr(isLet());
             } else if (!typePtr.equals(cFile.langBoolPtr())) {
-                if (op == Key.EQUAL || op == Key.DIF || op == Key.LESS || op == Key.ELESS ||
-                        op == Key.MORE || op == Key.EMORE) {
+                if (getOp() == Key.EQUAL || getOp() == Key.DIF || getOp() == Key.LESS || getOp() == Key.ELESS ||
+                        getOp() == Key.MORE || getOp() == Key.EMORE) {
                     cFile.erro(operator, "The comparing operators must return bool", this);
                     return false;
                 }
@@ -108,10 +108,10 @@ public class Operator extends Member {
                         cFile.erro(operator, "The first parameter must be the current Type", this);
 
                         return false;
-                    } else if (op != Key.INC && op != Key.DEC &&
-                                op != Key.ADD && op != Key.SUB &&
-                                op != Key.CAST && op != Key.AUTO &&
-                                op != Key.NOT && op != Key.BITNOT && op != Key.SETVAL) {
+                    } else if (getOp() != Key.INC && getOp() != Key.DEC &&
+                                getOp() != Key.ADD && getOp() != Key.SUB &&
+                                getOp() != Key.CAST && getOp() != Key.AUTO &&
+                                getOp() != Key.NOT && getOp() != Key.BITNOT && getOp() != Key.SETVAL) {
 
                         cFile.erro(operator, "The operator must have two parameters", this);
                         return false;
@@ -120,9 +120,9 @@ public class Operator extends Member {
                     if (!params.getTypePtr(0).equals(type.self) && !params.getTypePtr(1).equals(type.self)) {
                         cFile.erro(operator, "The first or second parameter must be the current Type", this);
                         return false;
-                    } else if (op == Key.INC || op == Key.DEC ||
-                            op == Key.CAST || op == Key.AUTO ||
-                            op == Key.NOT || op == Key.BITNOT || op == Key.SETVAL) {
+                    } else if (getOp() == Key.INC || getOp() == Key.DEC ||
+                            getOp() == Key.CAST || getOp() == Key.AUTO ||
+                            getOp() == Key.NOT || getOp() == Key.BITNOT || getOp() == Key.SETVAL) {
                         cFile.erro(operator, "The operator must have a single parameter", this);
                         return false;
                     }
@@ -131,12 +131,12 @@ public class Operator extends Member {
                     return false;
                 }
 
-                if (typePtr.equals(type.self) && (op == Key.CAST || op == Key.AUTO)) {
+                if (typePtr.equals(type.self) && (getOp() == Key.CAST || getOp() == Key.AUTO)) {
                     cFile.erro(params.token, "The casting operators cannot return the current type", this);
                     return false;
                 }
 
-                if (typePtr.equals(type.parent) && (op == Key.CAST || op == Key.AUTO)) {
+                if (typePtr.equals(type.parent) && (getOp() == Key.CAST || getOp() == Key.AUTO)) {
                     cFile.erro(params.token, "The casting operators cannot return the Wrapper Parent", this);
                     return false;
                 }
@@ -162,25 +162,19 @@ public class Operator extends Member {
             cBuilder.idt(1).add(type.template, 1);
             cBuilder.add("static ")
                     .add(typePtr)
-                    .add(" ").nameOp(op).add("(").add(params).add(");").ln();
+                    .add(" ").nameOp(getOp()).add("(").add(params).add(");").ln();
 
             if (!isAbstract()) {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(typePtr)
-                        .add(" ").path(type.self, false).add("::").nameOp(op)
+                        .add(" ").path(type.self, false).add("::").nameOp(getOp())
                         .add("(").add(params).add(") ").in(1)
                         .add(stack, 1)
                         .out().ln()
                         .ln();
             }
         } else {
-            /*
-            template<typename F, typename T>
-            struct cast {
-                inline static T val(const F& from) { return lang::generic<T>::def(); }
-            };*/
-
             cBuilder.toSource(true);
             if (type.template != null) {
                 cBuilder.add(type.template);
@@ -193,34 +187,16 @@ public class Operator extends Member {
                     .out().ln()
                     .add("};").ln()
                     .ln();
-
-            /*cBuilder.toHeader();
-            if (type.template != null) {
-                cBuilder.add(type.template);
-            } else {
-                cBuilder.add("template<>").ln();
-            }
-            cBuilder.add("struct cast<").add(type.self).add(", ").add(getTypePtr()).add("> {").ln()
-                    .idt(1).add("static ").add(getTypePtr()).add(" val(").add(params).add(");").ln()
-                    .add("};").ln()
-                    .ln();
-
-            cBuilder.toSource(type.template != null);
-            if (type.template != null) {
-                cBuilder.add(type.template);
-            } else {
-                cBuilder.add("template<>").ln();
-            }
-            cBuilder.add(getTypePtr()).add(" cast<").add(type.self).add(", ").add(getTypePtr()).add(">::val(").add(params).add(") ").in(1)
-                    .add(stack)
-                    .out().ln()
-                    .ln();*/
         }
         cBuilder.toHeader();
     }
 
     public Token getOperator() {
         return operator;
+    }
+
+    public Key getOp() {
+        return op;
     }
 
     public Pointer getTypePtr() {
@@ -231,12 +207,16 @@ public class Operator extends Member {
         return params;
     }
 
+    public Stack getStack() {
+        return stack;
+    }
+
     public boolean isCasting() {
-        return op == Key.CAST || op == Key.AUTO;
+        return getOp() == Key.CAST || getOp() == Key.AUTO;
     }
 
     @Override
     public String toString() {
-        return "operator " + op + " (" + params + ") : " + typePtr;
+        return "operator " + getOp() + " (" + params + ") : " + typePtr;
     }
 }

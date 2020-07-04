@@ -22,9 +22,7 @@ public class Using {
         int state = 0;
         Token next;
         Token token = start;
-        Token last = token;
-        while (token != end) {
-            last = token;
+        while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.USING) {
                 state = 1;
@@ -44,6 +42,7 @@ public class Using {
                 state = (next == end ? 5 : 6);
             } else if (state == 3 && token.key == Key.MUL) {
                 isDirect = false;
+                memberToken = token;
                 state = 4;
             } else if (state == 3 && token.key == Key.WORD) {
                 isDirect = true;
@@ -54,21 +53,17 @@ public class Using {
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-
+            if (next == end && state != 6) {
+                cFile.erro(token, "Unexpected end of tokens", this);
+            }
             token = next;
         }
 
-        if (nameToken == null) {
+        if (nameToken == null || (isStatic && memberToken == null)) {
             isUsable = false;
-        }
-
-        if (isDirect && !isStatic && nameToken.endsWith("::")) {
+        } else if (isDirect && !isStatic && nameToken.endsWith("::")) {
             isDirect = false;
-            cFile.erro(nameToken, "Unexpected end of tokens", this);
-        }
-
-        if (state != 6) {
-            cFile.erro(last, "Unexpected end of tokens", this);
+            cFile.erro(nameToken, "Missing Type", this);
         }
     }
 
@@ -114,6 +109,10 @@ public class Using {
 
     public Type getStaticType() {
         return staticType;
+    }
+
+    public Token getMemberToken() {
+        return memberToken;
     }
 
     public Namespace getNamespace() {

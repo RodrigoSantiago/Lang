@@ -18,7 +18,9 @@ public class Variable extends Member {
 
     private ArrayList<Token> nameTokens = new ArrayList<>();
     private ArrayList<TokenGroup> initTokens = new ArrayList<>();
-    private ArrayList<Stack> initExpressions = new ArrayList<>();
+    private ArrayList<FieldView> fields;
+
+    private ArrayList<Stack> initStacks = new ArrayList<>();
 
     public Variable(Type type, Token start, Token end) {
         super(type, type.cFile);
@@ -92,9 +94,9 @@ public class Variable extends Member {
                 Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
                 stack.read(initToken.start, initToken.end, true);
                 stack.load();
-                initExpressions.add(stack);
+                initStacks.add(stack);
             } else {
-                initExpressions.add(null);
+                initStacks.add(null);
             }
         }
     }
@@ -127,7 +129,7 @@ public class Variable extends Member {
                 cBuilder.add(typePtr)
                         .add(" ").path(type.self, isStatic()).add("::f_").add(name).add(" = ");
                 if (isInitialized(i) && isLiteral(i)) {
-                    initExpressions.get(i).build(cBuilder, 1);
+                    initStacks.get(i).build(cBuilder, 1);
                     cBuilder.add(";").ln();
                 } else if (typePtr.typeSource != null) {
                     cBuilder.add("lang::value<").add(typePtr).add(">::def();").ln();
@@ -161,7 +163,7 @@ public class Variable extends Member {
 
             cBuilder.idt(1).add("f_").add(name).add("(");
             if (isInitialized(i) && isLiteral(i)) {
-                initExpressions.get(i).build(cBuilder, 1);
+                initStacks.get(i).build(cBuilder, 1);
             } else if (typePtr.typeSource != null) {
                 cBuilder.add("lang::value<").add(typePtr).add(">::def()");
             } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
@@ -182,7 +184,7 @@ public class Variable extends Member {
 
                 if (isInitialized(i) && !isLiteral(i)) {
                     cBuilder.idt(1).nameField(name).add(" = ");
-                    initExpressions.get(i).build(cBuilder, 1);
+                    initStacks.get(i).build(cBuilder, 1);
                     cBuilder.add(";").ln();
                 }
             }
@@ -192,7 +194,7 @@ public class Variable extends Member {
 
                 if (isInitialized(i) && !isLiteral(i)) {
                     cBuilder.idt(1).add("this->").nameField(name).add(" = ");
-                    initExpressions.get(i).build(cBuilder, 1);
+                    initStacks.get(i).build(cBuilder, 1);
                     cBuilder.add(";").ln();
                 }
             }
@@ -200,11 +202,25 @@ public class Variable extends Member {
     }
 
     public ArrayList<FieldView> getFields() {
-        ArrayList<FieldView> fields =  new ArrayList<>();
-        for (int i = 0; i < nameTokens.size(); i++) {
-            fields.add(new FieldView(nameTokens.get(i), typePtr, this, i));
+        if (fields == null) {
+            fields = new ArrayList<>();
+            for (int i = 0; i < nameTokens.size(); i++) {
+                fields.add(new FieldView(nameTokens.get(i), typePtr, this, i));
+            }
         }
         return fields;
+    }
+
+    public Pointer getTypePtr() {
+        return typePtr;
+    }
+
+    public TokenGroup getTypeToken() {
+        return typeToken;
+    }
+
+    public int getCount() {
+        return nameTokens.size();
     }
 
     public boolean isLiteral(int pos) {
@@ -217,17 +233,5 @@ public class Variable extends Member {
 
     public boolean isInitialized(int pos) {
         return initTokens.get(pos) != null;
-    }
-
-    public Pointer getTypePtr() {
-        return typePtr;
-    }
-
-    public TokenGroup getTypeToken() {
-        return typeToken;
-    }
-
-    public int count() {
-        return nameTokens.size();
     }
 }

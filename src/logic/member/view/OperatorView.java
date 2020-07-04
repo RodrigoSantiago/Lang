@@ -8,6 +8,8 @@ import logic.member.Operator;
 import logic.typdef.Type;
 
 public class OperatorView {
+
+    // Native Operators
     public static final OperatorView OR = new OperatorView(Key.OR);
     public static final OperatorView AND = new OperatorView(Key.AND);
     public static final OperatorView CAST = new OperatorView(Key.CAST);
@@ -17,22 +19,26 @@ public class OperatorView {
     public static final OperatorView EQUAL = new OperatorView(Key.EQUAL);
     public static final OperatorView DIF = new OperatorView(Key.DIF);
 
+    private final Pointer typePtr;
+    private final ParamView paramView;
+
     public final Pointer caller;
     public final Operator operator;
-    public final ParamView paramView;
-    private Pointer typePtr;
 
     private OperatorView(Key key) {
         this.caller = null;
         this.operator = null;
         this.paramView = null;
+        this.typePtr = null;
     }
 
     public OperatorView(Pointer caller, Operator operator) {
         this.caller = caller;
         this.operator = operator;
-        if (operator.getTypePtr() != null) {
+        if (Pointer.hasGeneric(operator.getTypePtr(), caller)) {
             typePtr = Pointer.byGeneric(operator.getTypePtr(), caller);
+        } else {
+            typePtr = operator.getTypePtr();
         }
         paramView = new ParamView(caller, operator.getParams());
     }
@@ -40,8 +46,10 @@ public class OperatorView {
     public OperatorView(Pointer caller, OperatorView operatorView) {
         this.caller = caller;
         this.operator = operatorView.operator;
-        if (operatorView.getTypePtr() != null) {
+        if (Pointer.hasGeneric(operatorView.getTypePtr(), caller)) {
             typePtr = Pointer.byGeneric(operatorView.getTypePtr(), caller);
+        } else {
+            typePtr = operatorView.getTypePtr();
         }
         paramView = new ParamView(caller, operatorView.getParams());
     }

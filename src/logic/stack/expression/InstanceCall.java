@@ -231,7 +231,7 @@ public class InstanceCall extends Call {
 
                     arg.load(new Context(context));
                     if (fieldView != null) {
-                        arg.requestOwn(fieldView.typePtr);
+                        arg.requestOwn(fieldView.getTypePtr());
 
                         if (fieldView.hasSet()) {
                             if (!fieldView.isSetPublic() && !fieldView.isSetPrivate()) {

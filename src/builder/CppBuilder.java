@@ -117,32 +117,36 @@ public class CppBuilder {
 
     public void dependenceAdd(Pointer pointer) {
         if (pointer.typeSource == null && pointer.type != null) {
-            if (!pointer.type.isLangBase() && !dDependences.contains(pointer.type)) {
-                dDependences.add(pointer.type);
-                if (pointer.type.hasGeneric()) {
-                    sDependences.add(pointer.type);
+            if (!dDependences.contains(pointer.type)) {
+                if (!pointer.type.isLangBase()) {
+                    dDependences.add(pointer.type);
+                    if (pointer.type.hasGeneric()) {
+                        sDependences.add(pointer.type);
+                    }
+                    hDependences.remove(pointer.type);
                 }
-                hDependences.remove(pointer.type);
+                if (pointer.type.isValue()) {
+                    dependenceAdd(pointer.type.parent);
+                }
             }
             if (pointer.pointers != null) {
                 for (Pointer p : pointer.pointers) {
                     dependenceAdd(p);
                 }
             }
-            if (pointer.type.isValue()) {
-                dependenceAdd(pointer.type.parent);
-            }
         }
     }
 
     private void dependence(Pointer pointer) {
-        if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
-            if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
-                tDependences.add(pointer.type);
+        if (!tDependences.contains(pointer.type)) {
+            if (!pointer.type.isLangBase()) {
+                if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
+                    tDependences.add(pointer.type);
+                }
             }
-        }
-        if (pointer.type.isValue()) {
-            dependence(pointer.type.parent);
+            if (pointer.type.isValue()) {
+                dependence(pointer.type.parent);
+            }
         }
     }
 

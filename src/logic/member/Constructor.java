@@ -113,7 +113,7 @@ public class Constructor extends Member {
     @Override
     public void build(CppBuilder cBuilder) {
         if (isStatic()) {
-            cBuilder.idt(1).add("// static initializer");
+            cBuilder.add(stack, 1);
         } else {
             if (type.isPointer()) {
                 cBuilder.toHeader();
@@ -136,11 +136,11 @@ public class Constructor extends Member {
             } else {
                 cBuilder.toHeader();
                 if (params.isEmpty()) {
-                    cBuilder.idt(1).add(type.pathToken).add("(empty e);").ln();
+                    cBuilder.idt(1).add("explicit ").add(type.pathToken).add("(empty e);").ln();
                 } else if (params.getCount() == 1 && params.getTypePtr(0).equals(type.self)) {
-                    cBuilder.idt(1).add(type.pathToken).add("(empty e, ").add(type.self).add(" v_").add(params.getNameToken(0)).add(");").ln();
+                    cBuilder.idt(1).add("explicit ").add(type.pathToken).add("(empty e, ").add(type.self).add(" v_").add(params.getNameToken(0)).add(");").ln();
                 } else{
-                    cBuilder.idt(1).add(type.pathToken).add("(").add(params).add(");").ln();
+                    cBuilder.idt(1).add("explicit ").add(type.pathToken).add("(").add(params).add(");").ln();
                 }
 
                 cBuilder.toSource(type.template != null);
@@ -166,8 +166,6 @@ public class Constructor extends Member {
                         .ln();
             }
         }
-
-        cBuilder.toHeader();
     }
 
     public void toDefault() {

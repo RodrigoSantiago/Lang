@@ -136,8 +136,8 @@ public class Operator extends Member {
                     return false;
                 }
 
-                if (typePtr.equals(type.parent) && (getOp() == Key.CAST || getOp() == Key.AUTO)) {
-                    cFile.erro(params.token, "The casting operators cannot return the Wrapper Parent", this);
+                if (typePtr.isPointer() && (getOp() == Key.CAST || getOp() == Key.AUTO)) {
+                    cFile.erro(params.token, "The casting operators cannot return a Class neither an Interface", this);
                     return false;
                 }
 
@@ -157,40 +157,107 @@ public class Operator extends Member {
     }
 
     public void build(CppBuilder cBuilder) {
-        if (!isCasting()) {
-            cBuilder.toHeader();
-            cBuilder.idt(1).add(type.template, 1);
-            cBuilder.add("static ")
-                    .add(typePtr)
-                    .add(" ").nameOp(getOp()).add("(").add(params).add(");").ln();
+        cBuilder.toHeader();
+        cBuilder.idt(1).add(type.template, 1);
+        cBuilder.add("static ")
+                .add(typePtr)
+                .add(" ").nameOp(getOp(), typePtr).add("(").add(params).add(");").ln();
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .add(typePtr)
+                .add(" ").path(type.self, false).add("::").nameOp(getOp(), typePtr)
+                .add("(").add(params).add(") ").in(1)
+                .add(stack, 1)
+                .out().ln()
+                .ln();
+    }
 
-            if (!isAbstract()) {
-                cBuilder.toSource(type.template != null);
-                cBuilder.add(type.template)
-                        .add(typePtr)
-                        .add(" ").path(type.self, false).add("::").nameOp(getOp())
-                        .add("(").add(params).add(") ").in(1)
-                        .add(stack, 1)
-                        .out().ln()
-                        .ln();
-            }
-        } else {
-            cBuilder.toSource(true);
-            if (type.template != null) {
-                cBuilder.add(type.template);
-            } else {
-                cBuilder.add("template<>").ln();
-            }
-            cBuilder.add("struct cast<").add(type.self).add(", ").add(getTypePtr()).add("> {").ln()
-                    .idt(1).add("static ").add(getTypePtr()).add(" val(").add(params).add(") ").in(2)
-                    .add(stack, 2)
-                    .out().ln()
+    public void buildOperator(CppBuilder cBuilder) {
+        if (op == Key.EQUAL || op == Key.DIF) {
+            cBuilder.toHeader();
+            cBuilder.add("bool operator ").add(op.string).add("(const ").path(params.getTypePtr(0), false).add("& left, const ")
+                    .path(params.getTypePtr(1), false).add("& right) ").in(1);
+            cBuilder.idt(1).add("return ").path(type.self, false).add("::").nameOp(op, typePtr).add("(left, right);").ln();
+            cBuilder.out().ln()
+                    .ln();
+        } else if (isCasting()) {
+            cBuilder.toHeader();
+            Pointer in = getParams().getTypePtr(0);
+            cBuilder.add("template<>").ln()
+                    .add("struct cast<").add(type.self).add(", ").add(getTypePtr()).add("> {").ln()
+                    .idt(1).add("inline static ").add(getTypePtr()).add(" as(const ").add(in).add("& from) {").ln()
+                    .idt(2).add("return ").path(type.self, false).add("::").nameOp(op, typePtr).add("(from);").ln()
+                    .idt(1).add("}").ln()
+                    .idt(1).add("inline static bool is(const ").path(type.self, false).add("& from) { return true; }").ln()
+                    .idt(1).add("inline static bool is(const ")
+                    .path(type.self, false).add("& from, ").path(getTypePtr(), false).add("& result) {").ln()
+                    .idt(2).add("result = as(from);").ln()
+                    .idt(2).add("return true;").ln()
+                    .idt(1).add("}").ln()
                     .add("};").ln()
                     .ln();
         }
-        cBuilder.toHeader();
     }
 
+    public static void buildAutomatic(CppBuilder cBuilder, Type type, Operator equal, Operator dif) {
+        if (equal == null && dif == null) {
+            cBuilder.toHeader();
+            cBuilder.idt(1).add(type.template, 1);
+            cBuilder.add("static ")
+                    .add(type.cFile.langBoolPtr())
+                    .add(" equal(").add(type.self).add(" left,").add(type.self).add(" right);").ln();
+
+            cBuilder.toSource(type.template != null);
+            cBuilder.add(type.template)
+                    .add(type.cFile.langBoolPtr())
+                    .add(" ").path(type.self, false).add("::equal(")
+                    .add(type.self).add(" left,").add(type.self).add(" right) ").in(1);
+            boolean val = false;
+            cBuilder.idt(1).add("return ");
+            for (Variable variable : type.variables) {
+                if (!variable.isStatic()) {
+                    for (int i = 0; i < variable.getCount(); i++) {
+                        if (val) {
+                            cBuilder.add(" && ").ln().idt(2);
+                        }
+                        val = true;
+                        cBuilder.add("left.").nameField(variable.getName(i)).add(" == right.")
+                                .nameField(variable.getName(i));
+                    }
+                }
+            }
+            if (!val) {
+                cBuilder.add("true");
+            }
+            cBuilder.add(";").ln();
+            cBuilder.out().ln()
+                    .ln();
+        }
+    }
+
+    public static void buildAutomaticOperator(CppBuilder cBuilder, Type type, Operator equal, Operator dif) {
+        if (equal == null) {
+            cBuilder.toHeader();
+            cBuilder.add("bool operator ==(const ").path(type.self, false).add("& left, const ")
+                    .path(type.self, false).add("& right) ").in(1);
+            if (dif != null) {
+                cBuilder.idt(1).add("return !").path(type.self, false).add("::dif(left, right);").ln();
+            } else {
+                cBuilder.idt(1).add("return ").path(type.self, false).add("::equal(left, right);").ln();
+            }
+            cBuilder.out().ln()
+                    .ln();
+        }
+
+        if (dif == null) {
+            cBuilder.toHeader();
+            cBuilder.add("bool operator !=(const ").path(type.self, false).add("& left, const ")
+                    .path(type.self, false).add("& right) ").in(1);
+            cBuilder.idt(1).add("return !").path(type.self, false).add("::equal(left, right);").ln();
+            cBuilder.out().ln()
+                    .ln();
+        }
+    }
     public Token getOperator() {
         return operator;
     }

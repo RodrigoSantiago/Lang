@@ -8,7 +8,7 @@ import logic.stack.Line;
 
 public class LineContinue extends Line {
 
-    Line continueSource;
+    Block continueSource;
     Token label;
 
     public LineContinue(Block block, Token start, Token end) {
@@ -40,9 +40,7 @@ public class LineContinue extends Line {
             token = next;
         }
 
-        continueSource = parent == null ? null : parent.isContinuable(label);
-
-        continueSource = parent == null ? null : parent.isBreakble(label);
+        continueSource = parent == null ? null : (Block)parent.isContinuable(label);
         if (continueSource == null) {
             if (label == null) {
                 cFile.erro(start, "A Continue Statment should be inside a Loop or Switch Statment", this);
@@ -54,7 +52,11 @@ public class LineContinue extends Line {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
-        cBuilder.idt(off).add("continue").add(";");
+        if (label != null) {
+            cBuilder.idt(off).add("goto continue_").add(continueSource.getLabelID()).add(";");
+        } else {
+            cBuilder.idt(off).add("continue").add(";");
+        }
         if (off > 0) cBuilder.ln();
     }
 }

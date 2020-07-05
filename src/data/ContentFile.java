@@ -62,8 +62,21 @@ public class ContentFile {
     }
 
     public void preload() {
-        for (Using using : usings) {
+        for (int i = 0; i < usings.size(); i++) {
+            Using using = usings.get(i);
             using.preload();
+            if (!using.isUsable()) {
+                if (using.isDirect() && using.isStatic()) {
+                    usingsStaticDirect.remove(using);
+                } else if (using.isDirect()) {
+                    usingsDirect.remove(using);
+                } else if (using.isStatic()) {
+                    usingsStatic.remove(using);
+                } else {
+                    usingsNormal.remove(using);
+                }
+                usings.remove(i--);
+            }
         }
 
         for (Type type : types) {

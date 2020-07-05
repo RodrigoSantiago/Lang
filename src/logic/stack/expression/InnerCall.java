@@ -59,6 +59,7 @@ public class InnerCall extends Call {
     @Override
     public void requestGet(Pointer pointer) {
         if (pointer != null) pointer = pointer.toLet();
+        getNaturalPtr(pointer);
         if (innerExpression != null) {
             innerExpression.requestGet(pointer);
             requestPtr = innerExpression.getRequestPtr();
@@ -67,6 +68,7 @@ public class InnerCall extends Call {
 
     @Override
     public void requestOwn(Pointer pointer) {
+        getNaturalPtr(pointer);
         if (innerExpression != null) {
             innerExpression.requestOwn(pointer);
             requestPtr = innerExpression.getRequestPtr();
@@ -84,5 +86,11 @@ public class InnerCall extends Call {
         if (next) {
             cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
+    }
+
+    @Override
+    public void markArgument() {
+        super.markArgument();
+        if (innerExpression != null) innerExpression.markArgument();
     }
 }

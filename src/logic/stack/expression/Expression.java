@@ -193,10 +193,6 @@ public class Expression {
         groups.add(group);
     }
 
-    public void markArgument() {
-        if (groups.size() > 0) groups.get(0).markArgument();
-    }
-
     public CallGroup  getGroup() {
         return groups.get(0);
     }
@@ -456,6 +452,10 @@ public class Expression {
         return groups.size() > 0 ? groups.get(0).getNaturalPtr(convertFlag) : Pointer.voidPointer;
     }
 
+    public Pointer getNaturalPtr() {
+        return groups.size() > 0 ? groups.get(0).getNaturalPtr() : Pointer.voidPointer;
+    }
+
     public void request() {
         if (groups.size() > 0) groups.get(0).request();
     }
@@ -470,5 +470,9 @@ public class Expression {
 
     public void build(CppBuilder cBuilder, int idt) {
         groups.get(0).build(cBuilder, idt);
+    }
+
+    public void markArgument() {
+        if (groups.size() > 0) groups.get(0).markArgument();
     }
 }

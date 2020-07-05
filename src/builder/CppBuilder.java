@@ -139,6 +139,9 @@ public class CppBuilder {
 
     private void dependence(Pointer pointer) {
         if (!tDependences.contains(pointer.type)) {
+            if (pointer.type == null) {
+                System.out.println("");
+            }
             if (!pointer.type.isLangBase()) {
                 if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
                     tDependences.add(pointer.type);
@@ -268,7 +271,6 @@ public class CppBuilder {
     public CppBuilder add(ArrayList<Expression> parameters, int idt) {
         for (int i = 0; i < parameters.size(); i++) {
             if (i > 0) add(", ");
-            parameters.get(i).markArgument();
             parameters.get(i).build(this, idt);
         }
         return this;
@@ -513,12 +515,39 @@ public class CppBuilder {
         return add("own");
     }
 
-    public CppBuilder nameOp(Key operator) {
-        return add(operator.name().toLowerCase());
+    public CppBuilder nameOp(Key operator, Pointer castPtr) {
+        if (operator == Key.CAST) {
+            return add("cast_").nameTypeOp(castPtr);
+        } else if (operator == Key.AUTO) {
+            return add("auto_").nameTypeOp(castPtr);
+        } else {
+            return add(operator.name().toLowerCase());
+        }
+    }
+
+    private CppBuilder nameTypeOp(Pointer pointer) {
+        if (pointer == Pointer.nullPointer) return add("nullptr");
+        if (pointer == Pointer.voidPointer) return add("void");
+        if (pointer.typeSource != null) {
+            nameGeneric(pointer.typeSource.nameToken);
+        } else {
+            if (pointer.let) add("let_"); // never happens
+            add(pointer.type.pathToken);
+
+            if (pointer.pointers != null) {
+                tBuilder.append("_s_");
+                for (int i = 0; i < pointer.pointers.length; i++) {
+                    if (i > 0) add("_c_");
+                    nameTypeOp(pointer.pointers[i]);
+                }
+                tBuilder.append("_e_");
+            }
+        }
+        return this;
     }
 
     public void cast(Pointer src, Pointer dst, CallGroup group, int idt) {
-        add("cast<").add(src).add(", ").add(dst).add(">::val(");
+        add("cast<").add(src).add(", ").add(dst).add(">::as(");
         group.build(this, idt);
         add(")");
     }
@@ -527,6 +556,10 @@ public class CppBuilder {
         add("{").ln();
         tempBlocks.add(new TempBlock(tBuilder.length(), idt));
         return this;
+    }
+
+    public int temp() {
+        return (tempID++);
     }
 
     public Temp temp(Pointer typePtr) {

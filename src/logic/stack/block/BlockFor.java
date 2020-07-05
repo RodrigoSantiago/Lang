@@ -23,6 +23,8 @@ public class BlockFor extends Block {
     Expression conditionExp, loopExp;
     TokenGroup conditionToken, loopToken;
     LineVar foreachVar;
+    private int labelID;
+    private boolean bk, ct;
 
     Pointer foreachItPtr;
     private boolean strInt, strShort, strByte;
@@ -165,8 +167,10 @@ public class BlockFor extends Block {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
+        labelID = cBuilder.temp();
+
         if (foreachVar != null) {
-            cBuilder.idt(idt).add("/*foreach*/").in(idt + 1)
+            cBuilder.idt(idt).add("/* foreach */ ").in(idt + 1)
                     .idt(idt + 1).add(foreachItPtr).add(" it_").add(idt).add(" = ");
             if (strInt) {
                 cBuilder.add(loopExp, idt)
@@ -209,6 +213,7 @@ public class BlockFor extends Block {
     @Override
     public Line isBreakble(Token label) {
         if (label == null || label.equals(this.label)) {
+            bk = true;
             return this;
         } else {
             return super.isBreakble(label);
@@ -218,10 +223,16 @@ public class BlockFor extends Block {
     @Override
     public Line isContinuable(Token label) {
         if (label == null || label.equals(this.label)) {
+            ct = true;
             return this;
         } else {
             return super.isBreakble(label);
         }
+    }
+
+    @Override
+    public int getLabelID() {
+        return labelID;
     }
 
     private Token readIsForeach(Token start, Token end) {

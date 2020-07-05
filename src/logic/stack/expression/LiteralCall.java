@@ -238,7 +238,7 @@ public class LiteralCall extends Call {
         } else if (literalType == NULL) {
             naturalPtr = Pointer.nullPointer;
         } else if (literalType == DEFAULT) {
-            naturalPtr = Pointer.openPointer;
+            naturalPtr = pointer;
         } else if (pointer.type != null && pointer.type.isPointer()) {
             naturalPtr = getRelativePointer();
         } else if (literalType == BOOL) {
@@ -305,20 +305,24 @@ public class LiteralCall extends Call {
         if (literalType == NULL) {
             cBuilder.add("nullptr");
         } else if (literalType == DEFAULT) {
-            cBuilder.add("lang::value<GPtr<g_T>>::def()");
+            cBuilder.add("lang::value<GPtr<").add(requestPtr).add(">>::def()");
         } else if (literalType == BOOL) {
             cBuilder.add(resultBool ? "true" : "false");
         } else if (literalType == STRING) {
+            // if not acessesed does not need the constructor
             cBuilder.path(cFile.langStringPtr(), false).add("(\"").add(resultStr).add("\")");
         } else if (literalType == LONG) {
             if (naturalPtr.equals(cFile.langLongPtr())) {
                 cBuilder.add(resultNum).add("L");
             } else if (naturalPtr.equals(cFile.langIntPtr())) {
-                cBuilder.add("(").add(cFile.langIntPtr()).add(")").add(resultNum);
+                if (isArg) cBuilder.add("(").add(cFile.langIntPtr()).add(")");
+                cBuilder.add(resultNum);
             } else if (naturalPtr.equals(cFile.langBytePtr())) {
-                cBuilder.add("(").add(cFile.langBytePtr()).add(")").add(resultNum);
+                if (isArg) cBuilder.add("(").add(cFile.langBytePtr()).add(")");
+                cBuilder.add(resultNum);
             } else if (naturalPtr.equals(cFile.langShortPtr())) {
-                cBuilder.add("(").add(cFile.langShortPtr()).add(")").add(resultNum);
+                if (isArg) cBuilder.add("(").add(cFile.langShortPtr()).add(")");
+                cBuilder.add(resultNum);
             } else if (naturalPtr.equals(cFile.langFloatPtr())) {
                 cBuilder.add(resultNum).add(".0F");
             } else if (naturalPtr.equals(cFile.langDoublePtr())) {
@@ -338,5 +342,11 @@ public class LiteralCall extends Call {
         if (next) {
             cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
+    }
+
+    public boolean compareTo(LiteralCall other) {
+        return (literalType == other.literalType &&
+                ((literalType == LONG && resultNum == other.resultNum) ||
+                        (literalType == STRING && resultStr != null && resultStr.equals(other.resultStr))));
     }
 }

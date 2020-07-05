@@ -77,9 +77,6 @@ public class IndexerCall extends Call {
 
     @Override
     public void load(Context context) {
-        if (context.type.nameToken.equals("date")) {
-            System.out.println("");
-        }
         ArrayList<IndexerView> indexers = context.findIndexer(arguments);
         if (indexers == null || indexers.size() == 0) {
             cFile.erro(token, "Indexer not found", this);

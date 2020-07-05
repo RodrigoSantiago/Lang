@@ -15,6 +15,7 @@ public class LineCase extends Line {
     private boolean isDefault;
     TokenGroup caseToken;
     Expression caseExp;
+    private int labelID;
 
     private BlockSwitch switchOwner;
 
@@ -35,9 +36,10 @@ public class LineCase extends Line {
                 if (init != token) {
                     if (isDefault) {
                         cFile.erro(token, "Default Statment should not have a value", this);
+                    } else {
+                        caseToken = new TokenGroup(init, token);
+                        caseExp = new Expression(this, init, token);
                     }
-                    caseToken = new TokenGroup(init, token);
-                    caseExp = new Expression(this, init, token);
                 }
                 state = 2;
             } else if (state != 1) {
@@ -61,14 +63,38 @@ public class LineCase extends Line {
             }
             if (!caseExp.isLiteral()) {
                 cFile.erro(caseToken, "The case value should be Literal", this);
+            } else if (switchOwner != null) {
+                if (switchOwner.compareCase(this)) {
+                    cFile.erro(caseToken, "Repeated Case Expression", this);
+                }
             }
         }
     }
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
-        cBuilder.idt(off).add(isDefault ? "default " : "case ").add(caseExp, idt).add(" : ");
+        if (switchOwner.isSimple()) {
+            if (isDefault) {
+                cBuilder.idt(off).add("default : ");
+            } else {
+                cBuilder.idt(off).add("case ").add(caseExp, idt).add(" : ");
+            }
+        } else {
+            cBuilder.idt(off).add(isDefault ? "default_" : "case_").add(labelID).add(" :;");
+        }
         if (off > 0) cBuilder.ln();
+    }
+
+    public void setLabelID(int id) {
+        this.labelID = id;
+    }
+
+    public int getLabelID() {
+        return labelID;
+    }
+
+    public Expression getExpression() {
+        return caseExp;
     }
 
     public boolean isDefault() {

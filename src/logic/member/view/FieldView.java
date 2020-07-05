@@ -98,6 +98,18 @@ public class FieldView {
         return typePtr;
     }
 
+    public Type getGetType() {
+        return srcGet != null ? srcGet.type : srcPro != null ? srcPro.type : srcVar != null ? srcVar.type : srcNum.type;
+    }
+
+    public Type getSetType() {
+        return srcSet != null ? srcSet.type : srcPro != null ? srcPro.type : srcVar != null ? srcVar.type : srcNum.type;
+    }
+
+    public Type getOwnType() {
+        return srcOwn != null ? srcOwn.type : srcPro != null ? srcPro.type : srcVar != null ? srcVar.type : srcNum.type;
+    }
+
     public boolean isFrom(Type type) {
         return  (srcPro != null && srcPro.type == type) ||
                 (srcVar != null && srcVar.type == type) || (srcNum != null && srcNum.type == type);

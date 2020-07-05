@@ -12,6 +12,7 @@ public abstract class Call {
     public final ContentFile cFile;
     public final CallGroup group;
     public Token token;
+    public boolean isArg;
 
     Pointer naturalPtr;
     Pointer requestPtr;
@@ -36,6 +37,10 @@ public abstract class Call {
 
     public Token getToken() {
         return token;
+    }
+
+    public Pointer getNaturalPtr() {
+        return naturalPtr;
     }
 
     public Pointer getNaturalPtr(Pointer convertFlag) {
@@ -86,5 +91,9 @@ public abstract class Call {
 
     public boolean isDirectCall() {
         return false;
+    }
+
+    public void markArgument() {
+        isArg = true;
     }
 }

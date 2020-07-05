@@ -1,38 +1,16 @@
 namespace lang;
+using lang::Locale.GlobalLocale;
 
 void main () {
-    Console.WriteLine("Hello World");
+    GlobalLocale = default;
 }
 
-public class ClassA {
+public struct Test {
+    int a;
+    int b;
+    int c;
 
-}
-
-public class Test {
-
-    int a = 10;
-    int c = buildS();
-    int d;
-    int b {
-        get{} set{}
-    }
-    int e {
-        get{} set{}
-    } = 10;
-
-    public this() {
-        Object o;
-        int aa;
-        function<void, int> fun = (int a) -> {
-            build(o, aa + a);
-        };
-    }
-
-    public int build(let Object obj, int a) {
-        return 10;
-    }
-
-    public static int buildS() {
-        return 10;
+    int operator cast(Test test) {
+        return 0;
     }
 }

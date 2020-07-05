@@ -4,6 +4,7 @@ import content.Key;
 import content.Token;
 import content.TokenGroup;
 import logic.Pointer;
+import logic.Using;
 import logic.member.Constructor;
 import logic.member.view.*;
 import logic.stack.expression.CallGroup;
@@ -67,6 +68,10 @@ public class Context {
         return isIncorrect;
     }
 
+    public boolean isBegin() {
+        return isBegin;
+    }
+
     public Pointer getPointer(TokenGroup typeToken) {
         return getPointer(typeToken, false);
     }
@@ -91,6 +96,21 @@ public class Context {
         FieldView fieldView = type.getField(nameToken);
         if (fieldView != null) {
             if (!isStatic && pointer.pointers != null) fieldView = new FieldView(pointer, fieldView);
+        } else if (isBegin) {
+            for (Using using : stack.cFile.usingsStaticDirect) {
+                if (using.getMemberToken().equals(nameToken)) {
+                    FieldView sField = using.getStaticType().getField(nameToken);
+                    if (sField != null && sField.isStatic()) {
+                        return sField;
+                    }
+                }
+            }
+            for (Using using : stack.cFile.usingsStatic) {
+                FieldView sField = using.getStaticType().getField(nameToken);
+                if (sField != null && sField.isStatic()) {
+                    return sField;
+                }
+            }
         }
         return fieldView;
     }
@@ -126,29 +146,44 @@ public class Context {
             final int[] closer = new int[arguments.size()];
             final int[] result = new int[arguments.size()];
 
+            // TODO - With no method found, try the closer method with name
+            int markArgs = 0;
+
             ArrayList<MethodView> methods = type.getMethod(nameToken);
             for (MethodView mv : methods) {
                 if (mv.getParams().getArgsCount() == arguments.size()) {
-                    if (!isStatic && pointer.pointers != null) mv = new MethodView(pointer, mv);
-                    if (mv.getTemplate() != null) mv = MethodView.byTemplate(arguments, mv);
-
-                    int ret = mv.getParams().verifyArguments(closer, result, arguments, found != null);
-                    if (ret == 0) {
-                        // invalid
-                    } else if (ret == 1) {
-                        if (found == null) found = new ArrayList<>();
-                        found.clear();
-                        found.add(mv);
-                    } else if (ret == 2) {
-                        if (found == null) found = new ArrayList<>();
-                        found.add(mv);
+                    markArgs++;
+                    found = find(mv, closer, result, arguments, found);
+                }
+            }
+            if (isBegin) {
+                for (Using using : stack.cFile.usingsStaticDirect) {
+                    if (using.getMemberToken().equals(nameToken)) {
+                        methods = using.getStaticType().getMethod(nameToken);
+                        for (MethodView mv : methods) {
+                            if (mv.getParams().getArgsCount() == arguments.size()) {
+                                markArgs++;
+                                found = find(mv, closer, result, arguments, found);
+                            }
+                        }
+                    }
+                }
+                for (Using using : stack.cFile.usingsStatic) {
+                    methods = using.getStaticType().getMethod(nameToken);
+                    for (MethodView mv : methods) {
+                        if (mv.getParams().getArgsCount() == arguments.size()) {
+                            markArgs++;
+                            found = find(mv, closer, result, arguments, found);
+                        }
                     }
                 }
             }
+
             if (found != null) {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
                     arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
+                    if (markArgs > 1) arg.markArgument();
                 }
                 return found;
             }
@@ -157,6 +192,25 @@ public class Context {
             arg.requestOwn(null);
         }
         return null;
+    }
+
+    private ArrayList<MethodView> find(MethodView mv, int[] closer, int[] result, ArrayList<Expression> arguments,
+                                       ArrayList<MethodView> found) {
+        if (!isStatic && pointer.pointers != null) mv = new MethodView(pointer, mv);
+        if (mv.getTemplate() != null) mv = MethodView.byTemplate(arguments, mv);
+
+        int ret = mv.getParams().verifyArguments(closer, result, arguments, found != null);
+        if (ret == 0) {
+            // invalid
+        } else if (ret == 1) {
+            if (found == null) found = new ArrayList<>();
+            found.clear();
+            found.add(mv);
+        } else if (ret == 2) {
+            if (found == null) found = new ArrayList<>();
+            found.add(mv);
+        }
+        return found;
     }
 
     public ArrayList<IndexerView> findIndexer(ArrayList<Expression> arguments) {
@@ -168,9 +222,11 @@ public class Context {
             final int[] closer = new int[arguments.size()];
             final int[] result = new int[arguments.size()];
 
+            int markArgs = 0;
             for (int it = 0; it < type.getIndexersCount(); it++) {
                 IndexerView iv = type.getIndexer(it);
                 if (iv.getParams().getArgsCount() == arguments.size()) {
+                    markArgs ++;
                     if (!isStatic && pointer.pointers != null) iv = new IndexerView(pointer, iv);
 
                     int ret = iv.getParams().verifyArguments(closer, result, arguments, found != null);
@@ -190,6 +246,7 @@ public class Context {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
                     arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
+                    if (markArgs > 1) arg.markArgument();
                 }
                 return found;
             }
@@ -208,10 +265,12 @@ public class Context {
             ArrayList<ConstructorView> found = null;
             final int[] closer = new int[arguments.size()];
             final int[] result = new int[arguments.size()];
+            int markArgs = 0;
 
             for (int it = 0; it < typePtr.type.getConstructorsCount(); it++) {
                 Constructor constructor = typePtr.type.getConstructor(it);
                 if (constructor.getParams().getCount() == arguments.size()) {
+                    markArgs++;
                     ConstructorView cv = new ConstructorView(typePtr, typePtr.type.getConstructor(it));
 
                     int ret = cv.getParams().verifyArguments(closer, result, arguments, found != null);
@@ -240,6 +299,7 @@ public class Context {
                 for (int i = 0; i < arguments.size(); i++) {
                     Expression arg = arguments.get(i);
                     arg.requestOwn(found.get(0).getParams().getArgTypePtr(i));
+                    if (markArgs > 1) arg.markArgument();
                 }
                 return found;
             }
@@ -296,17 +356,16 @@ public class Context {
         Token opToken = center.getOperatorToken();
 
         if (opToken.key == Key.EQUAL || opToken.key == Key.DIF) {
-            Pointer lPointer = left.getNaturalPtr(null);
-            Pointer rPointer = right.getNaturalPtr(null);
-            if (lPointer != null && rPointer != null &&
-                    lPointer != Pointer.voidPointer && rPointer != Pointer.voidPointer) {
-
-                if ((lPointer == Pointer.nullPointer && rPointer == Pointer.nullPointer) ||
-                        (lPointer.isOpen() && rPointer.isOpen()) ||
-                        (lPointer == Pointer.nullPointer && rPointer.type != null && rPointer.type.isPointer()) ||
-                        (rPointer == Pointer.nullPointer && lPointer.type != null && lPointer.type.isPointer()) ||
-                        (lPointer.type != null && lPointer.type.isPointer() &&
-                                rPointer.type != null && rPointer.type.isPointer())) {
+            Pointer lptr = left.getNaturalPtr(null);
+            Pointer rptr = right.getNaturalPtr(null);
+            if (lptr != null && rptr != null && lptr != Pointer.voidPointer && rptr != Pointer.voidPointer) {
+                if ((lptr == Pointer.nullPointer && rptr == Pointer.nullPointer) ||
+                        (lptr.isOpen() && rptr.isOpen()) ||
+                        (lptr.isOpen() && rptr != Pointer.nullPointer) ||
+                        (lptr != Pointer.nullPointer && rptr.isOpen()) ||
+                        (lptr.isPointer() && rptr.isPointer()) ||
+                        (lptr.isPointer() && rptr == Pointer.nullPointer) ||
+                        (lptr == Pointer.nullPointer && rptr.isPointer())) {
                     left.requestGet(null);
                     right.requestGet(null);
 
@@ -357,10 +416,12 @@ public class Context {
                 ArrayList<OperatorView> found = null;
                 final int[] closer = new int[2];
                 final int[] result = new int[2];
+                int markArgs = 0;
 
                 ArrayList<OperatorView> operators = ptr.type.getOperator(opToken);
                 for (OperatorView ov : operators) {
                     if (ov.getParams().getArgsCount() == 2) {
+                        markArgs ++;
                         if (ptr.pointers != null) ov = new OperatorView(ptr, ov);
 
                         int ret = ov.getParams().verifyArguments(closer, result, left, right, found != null);
@@ -379,6 +440,10 @@ public class Context {
                 if (found != null) {
                     left.requestOwn(found.get(0).getParams().getArgTypePtr(0));
                     right.requestOwn(found.get(0).getParams().getArgTypePtr(1));
+                    if (markArgs > 1 && !found.get(0).operator.type.isLangBase()) {
+                        left.markArgument();
+                        right.markArgument();
+                    }
 
                     if (isComposite) {
                         Pointer returnType = found.get(0).getTypePtr();
@@ -400,9 +465,5 @@ public class Context {
 
         right.requestOwn(null);
         return null;
-    }
-
-    public boolean isBegin() {
-        return isBegin;
     }
 }

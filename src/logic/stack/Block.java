@@ -126,6 +126,10 @@ public abstract class Block extends Line {
         }
     }
 
+    public int getLabelID() {
+        return 0;
+    }
+
     @Override
     public void load() {
         for (Line line : lines) {

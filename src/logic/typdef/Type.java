@@ -51,6 +51,7 @@ public abstract class Type implements GenericOwner {
     private Constructor staticConstructor;
     private Constructor emptyConstructor;
     private Constructor parentEmptyConstructor;
+    private Operator equal, different;
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
     private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
@@ -607,7 +608,6 @@ public abstract class Type implements GenericOwner {
 
         if (isClass()) cBuilder.idt(1).add("virtual lang_Object* self() { return this; }").ln();
 
-
         if (hasInstanceInit()) {
             cBuilder.idt(1).add("void init();").ln();
 
@@ -716,8 +716,10 @@ public abstract class Type implements GenericOwner {
         }
 
         // Operators
-        for (Operator operator : operators) {
-            if (!operator.isCasting()) {
+        if (isValue()) {
+            Operator.buildAutomatic(cBuilder, this, equal, different);
+
+            for (Operator operator : operators) {
                 operator.build(cBuilder);
             }
         }
@@ -726,9 +728,11 @@ public abstract class Type implements GenericOwner {
         cBuilder.add("};").ln()
                 .ln();
 
-        for (Operator operator : operators) {
-            if (operator.isCasting()) {
-                operator.build(cBuilder);
+        if (isValue()) {
+            Operator.buildAutomaticOperator(cBuilder, this, equal, different);
+
+            for (Operator operator : operators) {
+                operator.buildOperator(cBuilder);
             }
         }
 
@@ -760,6 +764,7 @@ public abstract class Type implements GenericOwner {
             if (staticConstructor != null) {
                 staticConstructor.build(cBuilder);
             }
+            cBuilder.toSource();
             cBuilder.idt(1).add("return true;").ln()
                     .out().ln()
                     .ln();
@@ -884,7 +889,7 @@ public abstract class Type implements GenericOwner {
     }
 
     public boolean hasGenericFile() {
-        return !isInterface() && (hasGeneric || autoCast.size() > 0  || casts.size() > 0);
+        return hasGeneric;
     }
 
     @Override
@@ -1103,6 +1108,22 @@ public abstract class Type implements GenericOwner {
                     }
                 }
                 operators.add(operator);
+
+                if (operator.getOp() == Key.EQUAL) {
+                    if (operator.getParams().getCount() == 2 &&
+                            operator.getParams().getTypePtr(0).equals(self) &&
+                            operator.getParams().getTypePtr(1).equals(self)) {
+                        equal = operator;
+                    }
+                }
+
+                if (operator.getOp() == Key.DIF) {
+                    if (operator.getParams().getCount() == 2 &&
+                            operator.getParams().getTypePtr(0).equals(self) &&
+                            operator.getParams().getTypePtr(1).equals(self)) {
+                        different = operator;
+                    }
+                }
 
                 if (operator.getOp() == Key.AUTO) {
                     autoCast.add(operator.getTypePtr());

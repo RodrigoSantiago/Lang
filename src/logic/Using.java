@@ -48,12 +48,12 @@ public class Using {
                 isDirect = true;
                 memberToken = token;
                 state = 4;
-            }else if (state == 4 && (token.key == Key.SEMICOLON || next == end)) {
-                state = (next == end ? 5 : 6);
+            }else if (state == 4 && token.key == Key.SEMICOLON) {
+                state = 5;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
-            if (next == end && state != 6) {
+            if (next == end && state != 5) {
                 cFile.erro(token, "Unexpected end of tokens", this);
             }
             token = next;

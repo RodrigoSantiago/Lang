@@ -249,7 +249,7 @@ public class FieldCall extends Call {
         } else if (fieldView != null) {
             if (clearAcess) {
                 if (fieldView.isStatic()) {
-                    cBuilder.path(getStack().getSourcePtr(), true).add("::");
+                    cBuilder.path(fieldView.getGetType().self, true).add("::");
                 } else {
                     cBuilder.add("this->");
                 }
@@ -282,7 +282,7 @@ public class FieldCall extends Call {
         if (fieldView != null) {
             if (clearAcess) {
                 if (fieldView.isStatic()) {
-                    cBuilder.path(getStack().getSourcePtr(), true).add("::");
+                    cBuilder.path(fieldView.getGetType().self, true).add("::");
                 } else {
                     thisField.build(cBuilder, true);
                 }

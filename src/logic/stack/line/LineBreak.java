@@ -5,10 +5,11 @@ import content.Token;
 import builder.CppBuilder;
 import logic.stack.Block;
 import logic.stack.Line;
+import logic.stack.block.BlockSwitch;
 
 public class LineBreak extends Line {
 
-    Line breakSource;
+    Block breakSource;
     Token label;
 
     public LineBreak(Block block, Token start, Token end) {
@@ -40,7 +41,7 @@ public class LineBreak extends Line {
             token = next;
         }
 
-        breakSource = parent == null ? null : parent.isBreakble(label);
+        breakSource = parent == null ? null : (Block) parent.isBreakble(label);
         if (breakSource == null) {
             if (label == null) {
                 cFile.erro(start, "A Break Statment should be inside a Loop or Switch Statment", this);
@@ -52,7 +53,14 @@ public class LineBreak extends Line {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
-        cBuilder.idt(off).add("break").add(";");
+        boolean useLabel = label != null ||
+                (breakSource instanceof BlockSwitch && !((BlockSwitch) breakSource).isSimple());
+
+        if (useLabel) {
+            cBuilder.idt(off).add("goto break_").add(breakSource.getLabelID()).add(";");
+        } else {
+            cBuilder.idt(off).add("break").add(";");
+        }
         if (off > 0) cBuilder.ln();
     }
 }

@@ -8,11 +8,11 @@ public class Wrapper<T> {
     }
 
     public string toString() {
-        return "Wrapper[" + hash() + "]";
+        return (string) value;
     }
 
     public int hash() {
-        return 0;
+        return (int) value;
     }
 
     public bool equals(let Object other) {

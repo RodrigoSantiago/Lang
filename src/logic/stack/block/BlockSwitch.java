@@ -1,5 +1,7 @@
 package logic.stack.block;
 
+import builder.CppBuilder;
+import builder.Temp;
 import content.Key;
 import content.Parser;
 import content.Token;
@@ -17,16 +19,23 @@ import java.util.ArrayList;
 public class BlockSwitch extends Block {
 
     Token label;
+    Token token;
 
     Token paramToken;
     TokenGroup contentToken;
     Expression expression;
+
+    Pointer typePtr;
+    boolean simple;
+    private int labelID;
+    private boolean bk;
 
     public ArrayList<LineCase> caseLines = new ArrayList<>();
     LineCase defaultCase;
 
     public BlockSwitch(Block block, Token start, Token end) {
         super(block, start, end);
+        this.token = start;
 
         Token token = start;
         Token next;
@@ -34,6 +43,7 @@ public class BlockSwitch extends Block {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.SWITCH) {
+                this.token = token;
                 state = 1;
             }else if (state == 1 && token.key == Key.PARAM && token.getChild() != null) {
                 paramToken = token;
@@ -84,13 +94,65 @@ public class BlockSwitch extends Block {
         if (expression != null) {
             expression.load(new Context(stack));
             expression.requestGet(null);
+
+            typePtr = expression.getNaturalPtr();
+            if (typePtr != null && typePtr != Pointer.voidPointer) {
+                if (typePtr.hasGeneric() || typePtr.isPointer()) {
+                    cFile.erro(token, "A Switch statment should have only Structs or Enums", this);
+                } else if (typePtr.equals(cFile.langFloatPtr()) || typePtr.equals(cFile.langDoublePtr())) {
+                    cFile.erro(token, "A Switch statment cannot have Floating values", this);
+                } else if (typePtr.equals(cFile.langBoolPtr())) {
+                    cFile.erro(token, "A Switch statment cannot have Bool values", this);
+                } else if (typePtr.type == cFile.langFunction()) {
+                    cFile.erro(token, "A Switch statment cannot have Functions values", this);
+                } else if (typePtr.isLangBase()) {
+                    simple = true;
+                }
+            } else {
+                typePtr = cFile.langObjectPtr(true);
+            }
         }
         super.load();
     }
 
     @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        labelID = cBuilder.temp();
+
+        if (simple) {
+            cBuilder.idt(idt).add("switch (").add(expression, idt).add(") {").ln(); // DO NOT IN
+            for (Line line : lines) {
+                line.build(cBuilder, idt + 1, idt + 1);
+            }
+            cBuilder.idt(idt).add("}").ln(); // DO NOT OUT
+        } else {
+            cBuilder.idt(idt).add("/* switch */ ").in(idt + 1);
+            int tempID = cBuilder.temp();
+            cBuilder.idt(idt + 1).add(typePtr).add(" t").add(tempID).add(" = ").add(expression, idt).add(";").ln();
+            for (int i = 0; i < caseLines.size(); i++) {
+                LineCase lineCase = caseLines.get(i);
+                lineCase.setLabelID(cBuilder.temp());
+                cBuilder.idt(idt + 1).add(i > 0, "else ")
+                        .add("if (t").add(tempID).add(" == ").add(lineCase.getExpression(), idt).add(") goto case_")
+                        .add(lineCase.getLabelID()).add(";").ln();
+            }
+            if (defaultCase != null) {
+                defaultCase.setLabelID(cBuilder.temp());
+                cBuilder.idt(idt + 1).add(caseLines.size() > 0, "else ").add("goto default_")
+                        .add(defaultCase.getLabelID()).add(";").ln();
+            }
+
+            for (Line line : lines) {
+                line.build(cBuilder, idt + 1, idt + 1);
+            }
+            cBuilder.out().add(bk, " break_").add(bk, labelID).add(":;").ln();
+        }
+    }
+
+    @Override
     public Line isBreakble(Token label) {
         if (label == null || label.equals(this.label)) {
+            bk = true;
             return this;
         } else {
             return super.isBreakble(label);
@@ -110,6 +172,7 @@ public class BlockSwitch extends Block {
             if (defaultCase != null) {
                 cFile.erro(line.start, "Repeated Default Statment", this);
             }
+            line.setSwitch(this);
             defaultCase = line;
         } else {
             line.setSwitch(this);
@@ -149,13 +212,37 @@ public class BlockSwitch extends Block {
         super.add(line);
     }
 
+    @Override
     public void end() {
         if (caseLines.size() == 0) {
             cFile.erro(start, "A Switch Statment must have a case or default", this);
         }
     }
 
+    @Override
+    public int getLabelID() {
+        return labelID;
+    }
+
     public Pointer getTypePtr() {
-        return expression == null ? null : expression.getRequestPtr();
+        return typePtr;
+    }
+
+    public boolean isSimple() {
+        return simple;
+    }
+
+    public boolean compareCase(LineCase caseTest) {
+        for (LineCase lineCase : caseLines) {
+            if (lineCase == caseTest) continue;
+
+            Expression exp = lineCase.getExpression();
+            if (exp != null && exp.isLiteral()) {
+                if (exp.getLiteral().compareTo(caseTest.getExpression().getLiteral())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

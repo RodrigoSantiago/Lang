@@ -215,6 +215,10 @@ public class Variable extends Member {
         return typePtr;
     }
 
+    public Token getName(int pos) {
+        return nameTokens.get(pos);
+    }
+
     public TokenGroup getTypeToken() {
         return typeToken;
     }

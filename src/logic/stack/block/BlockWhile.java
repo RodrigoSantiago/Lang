@@ -16,6 +16,8 @@ public class BlockWhile extends Block {
     Token conditionToken;
     Expression conditionExp;
     TokenGroup contentToken;
+    private int labelID;
+    private boolean bk, ct;
 
     public BlockWhile(Block block, Token start, Token end) {
         super(block, start, end);
@@ -96,6 +98,8 @@ public class BlockWhile extends Block {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
+        labelID = cBuilder.temp();
+
         cBuilder.idt(idt).add("while (").add(conditionExp, idt).add(") ").in(idt + 1);
         for (Line line : lines) {
             line.build(cBuilder, idt + 1, idt + 1);
@@ -111,6 +115,7 @@ public class BlockWhile extends Block {
     @Override
     public Line isBreakble(Token label) {
         if (label == null || label.equals(this.label)) {
+            bk = true;
             return this;
         } else {
             return super.isBreakble(label);
@@ -120,9 +125,15 @@ public class BlockWhile extends Block {
     @Override
     public Line isContinuable(Token label) {
         if (label == null || label.equals(this.label)) {
+            ct = true;
             return this;
         } else {
             return super.isBreakble(label);
         }
+    }
+
+    @Override
+    public int getLabelID() {
+        return labelID;
     }
 }

@@ -57,7 +57,7 @@ public class Compiler {
         if (i > -1) {
             Namespace namespace = findNamespace(library, name.substring(0, i));
             if (namespace != null) {
-                return namespace.findType(new Token(name, i + 1, name.length(), Key.WORD, false));
+                return namespace.findType(new Token(name, i + 2, name.length(), Key.WORD, false));
             }
         }
         return null;

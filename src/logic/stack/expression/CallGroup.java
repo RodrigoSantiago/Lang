@@ -26,10 +26,8 @@ public class CallGroup {
     private Token operatorToken;
     private OperatorView operatorView;
     private Pointer castPtr;
-    private boolean setOperator;
     private boolean rightOperator;
     private boolean directRequest;
-    private boolean argument;
 
     private Pointer naturalPtr;
     private Pointer requestPtr;
@@ -91,10 +89,6 @@ public class CallGroup {
         } else {
             return parent.getTokenGroup();
         }
-    }
-
-    public void markArgument() {
-        //argument = true;
     }
 
     public Token getOperatorToken() {
@@ -174,6 +168,20 @@ public class CallGroup {
         }
     }
 
+    private void setCastGet(Pointer pointer) {
+        if (castPtr != null) castPtr = castPtr.toLet(true);
+    }
+
+    private boolean setCastOwn(Pointer pointer) {
+        if (pointer == null || castPtr == null) return true;
+        if (Pointer.OwnTable(pointer, castPtr) == 0) {
+            return true;
+        } else {
+            castPtr = castPtr.toLet(true);
+            return false;
+        }
+    }
+
     public boolean isOperator() {
         return operatorToken != null;
     }
@@ -199,6 +207,17 @@ public class CallGroup {
         return operatorToken.key.priority;
     }
 
+    public void markArgument() {
+        if (operatorView != OperatorView.CAST) {
+            if (left != null) left.markArgument();
+            if (center != null) center.markArgument();
+            if (right != null) right.markArgument();
+            if (option != null) option.markArgument();
+        } else if (calls.size() > 0) {
+            calls.get(calls.size() - 1).markArgument();
+        }
+    }
+
     public void add(Call call) {
         calls.add(call);
     }
@@ -215,7 +234,6 @@ public class CallGroup {
             }
         } else if (left != null && center != null && right != null) {
             ArrayList<OperatorView> operatos = context.findOperator(left, center, right);
-            setOperator = center.getOperatorToken() != null && center.getOperatorToken().key.priority == 11;
 
             if (operatos == null || operatos.size() == 0) {
                 cFile.erro(center.operatorToken, "Operator Not Found", this);
@@ -272,7 +290,7 @@ public class CallGroup {
                         }
                     } else {
                         call.requestGet(null);
-                        context.jumpTo(call.getNaturalPtr(null));
+                        context.jumpTo(call.getNaturalPtr());
                     }
                 }
             }
@@ -287,7 +305,7 @@ public class CallGroup {
                     }
                 }
             }
-            if (calls.size() > 0 && calls.get(calls.size() -1).isTypeCall()) {
+            if (calls.size() > 0 && calls.get(calls.size() - 1).isTypeCall()) {
                 // erro ? [alredy done by requestGET/OWN/SET]
             }
         }
@@ -308,7 +326,7 @@ public class CallGroup {
             } else if (operatorView == OperatorView.CAST) {
                 return left.getCastPtr() == null ? 0 : pointer.canReceive(left.getCastPtr());
             } else if (operatorView == OperatorView.SET) {
-                return right.getRequestPtr() == null ? 0 : pointer.canReceive(right.getRequestPtr());
+                return right.getNaturalPtr() == null ? 0 : pointer.canReceive(right.getNaturalPtr());
             } else {
                 return pointer.canReceive(operatorView.getTypePtr());
             }
@@ -350,8 +368,8 @@ public class CallGroup {
                 naturalPtr = cFile.langBoolPtr();
             } else if (operatorView == OperatorView.CAST) {
                 naturalPtr = left.getCastPtr();
-            } else if (operatorView == OperatorView.SET || setOperator) {
-                naturalPtr = right.getNaturalPtr(convertFlag);
+            } else if (operatorView == OperatorView.SET) {
+                naturalPtr = right.getNaturalPtr();
             } else {
                 naturalPtr = operatorView.getTypePtr();
             }
@@ -359,20 +377,6 @@ public class CallGroup {
             naturalPtr = calls.get(calls.size() - 1).getNaturalPtr(convertFlag);
         }
         return naturalPtr;
-    }
-
-    private void setCastGet(Pointer pointer) {
-        if (castPtr != null) castPtr = castPtr.toLet(true);
-    }
-
-    private boolean setCastOwn(Pointer pointer) {
-        if (pointer == null || castPtr == null) return true;
-        if (Pointer.OwnTable(pointer, castPtr) == 0) {
-            return true;
-        } else {
-            castPtr = castPtr.toLet(true);
-            return false;
-        }
     }
 
     public void request() {
@@ -383,40 +387,34 @@ public class CallGroup {
     public void requestGet(Pointer pointer) {
         getNaturalPtr(pointer);
         if (pointer == null) pointer = getNaturalPtr(pointer);
+        pointer = pointer.toLet();
+
+        requestPtr = pointer;
 
         if (option != null) {
             left.requestGet(cFile.langBoolPtr());
             if (pointer != null) {
-                pointer = pointer.toLet(); // [GET CONVERSION]
-
                 right.requestGet(pointer);
                 option.requestGet(pointer);
             } else {
                 cFile.erro(getTokenGroup(), "Incompatible Ternary Members values", this);
             }
-
-            requestPtr = pointer;
-        } else if (calls.size() > 0) {
-            calls.get(calls.size() - 1).requestGet(pointer);
-            requestPtr = calls.get(calls.size() - 1).requestPtr;
         } else if (operatorView == OperatorView.CAST) {
             left.setCastGet(pointer);
-            center.requestGet(null);
+            center.requestGet(center.getNaturalPtr(left.getCastPtr()));
             naturalPtr = left.getCastPtr();
-            requestPtr = left.getCastPtr();
+        } else if (calls.size() > 0) {
+            calls.get(calls.size() - 1).requestGet(pointer);
         } else {
-            requestPtr = pointer;
             if (naturalPtr != null && naturalPtr != pointer && pointer.canReceive(naturalPtr) <= 0) {
                 cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
             }
         }
-
     }
 
     public void requestOwn(Pointer pointer) {
         getNaturalPtr(pointer);
         if (pointer == null) pointer = naturalPtr;
-
         requestPtr = pointer;
 
         if (option != null) {
@@ -429,9 +427,9 @@ public class CallGroup {
             }
         } else if (operatorView == OperatorView.CAST) {
             if (left.setCastOwn(pointer)) {
-                center.requestOwn(null);
+                center.requestOwn(center.getNaturalPtr(left.getCastPtr()));
             } else {
-                center.requestGet(null);
+                center.requestGet(center.getNaturalPtr(left.getCastPtr()));
             }
             if (naturalPtr != null && pointer.canReceive(naturalPtr) <= 0) {
                 cFile.erro(getTokenGroup(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
@@ -458,22 +456,22 @@ public class CallGroup {
                 naturalPtr != Pointer.nullPointer && (!requestPtr.isLangBase() || !naturalPtr.isLangBase());
         if (autocast) {
             if (naturalPtr.type != null && naturalPtr.isDerivedFrom(requestPtr) > 0) {
-                cBuilder.add("impl<").add(naturalPtr).add(", ").add(requestPtr).add(">::val(");
+                cBuilder.add(requestPtr).add("(");
             } else {
-                cBuilder.add("cast<").add(naturalPtr).add(", ").add(requestPtr).add(">::val(");
+                cBuilder.add("cast<").add(naturalPtr).add(", ").add(requestPtr).add(">::as(");
             }
         }
 
         if (left != null && center != null && right != null && colon != null && option != null) {
-            right.markArgument();
-            option.markArgument();
             cBuilder.add(left, idt).add(" ? ").add(right, idt).add(" : ").add(option, idt);
         } else if (left != null && center != null && right != null) {
             if (operatorView == OperatorView.EQUAL || operatorView == OperatorView.DIF ||
                     operatorView == OperatorView.AND || operatorView == OperatorView.OR) {
                 cBuilder.add(left, idt).add(" ").add(center.operatorToken).add(" ").add(right, idt);
             } else if (operatorView == OperatorView.IS || operatorView == OperatorView.ISNOT) {
-
+                cBuilder.add("cast<").add(left.getNaturalPtr()).add(", ");
+                right.getLastCall().build(cBuilder, idt, false);
+                cBuilder.add(">::is(").add(left, idt).add(")");
             } else if (center.operatorToken.key.isSet()) {
                 if (center.operatorToken.key == Key.SETVAL) {
                     buildSet(cBuilder, idt);
@@ -483,9 +481,7 @@ public class CallGroup {
             } else if (operatorView.operator != null && operatorView.operator.type.isLangBase()) {
                 cBuilder.add(left, idt).add(" ").add(center.operatorToken).add(" ").add(right, idt);
             } else {
-                left.markArgument();
-                right.markArgument();
-                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp())
+                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp(), null)
                         .add("(").add(left, idt).add(", ").add(right, idt).add(")");
             }
         } else if (left != null && left.isCastingOperator() && center != null) {
@@ -553,7 +549,6 @@ public class CallGroup {
         if (directRequest) {
             if (left.isMethodSetter()) {
                 left.build(cBuilder, idt);
-                right.markArgument();
                 right.build(cBuilder, idt);
                 cBuilder.add(")");
             } else {
@@ -567,7 +562,6 @@ public class CallGroup {
             left.build(cBuilder, idt);
             if (!left.isMethodSetter()) {
                 cBuilder.add(" = ");
-                right.markArgument();
             }
             cBuilder.add(t1).add(" = ").add(right, idt);
             if (left.isMethodSetter()) {
@@ -619,13 +613,12 @@ public class CallGroup {
             left.buildCall(cBuilder, idt, false);
             cBuilder.add(" ").add(op).add(" ").add(right, idt);
         } else {
-            cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp());
+            cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp(), null);
             cBuilder.add("(");
             if (tl != null) {
                 cBuilder.add(tl);
             }
             left.buildCall(cBuilder, idt, false);
-            right.markArgument();
             cBuilder.add(", ").add(right, idt).add(")");
         }
         if (tr != null) {

@@ -58,7 +58,7 @@ public class Array<T> : List<T> {
 
     public this(int length) {
         native (source) {
-            this->data = sCast(g_T*, lang::memory::array(sizeof(GPtr<g_T>), v_length));
+            this->data = sCast(GPtr<g_T>*, lang::memory::array(sizeof(GPtr<g_T>), v_length));
 
             if (this->data == nullptr) {
                 this->f_length = 0;

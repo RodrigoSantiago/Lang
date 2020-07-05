@@ -48,7 +48,7 @@ public static struct string : String {
     }
 
     native (header) {
-        lang::string * data;
+        lang::string * data = nullptr;
 
         lang_string(const lang_string& str);
         lang_string(lang::string* data);
@@ -99,7 +99,7 @@ public static struct string : String {
     }
 
     public this(let byte[] chars, int start, int length) {
-        this(chars, 0, chars.Length, 8);
+        this(chars, start, length, 8);
     }
 
     public this(let byte[] chars, int start, int length, int charSet) {

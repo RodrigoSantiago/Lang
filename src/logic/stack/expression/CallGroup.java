@@ -218,6 +218,16 @@ public class CallGroup {
         }
     }
 
+    public void markLine() {
+        if (left != null) left.markLine();
+        if (center != null) center.markLine();
+        if (right != null) right.markLine();
+        if (option != null) option.markLine();
+        if (calls.size() > 0) {
+            calls.get(calls.size() - 1).markLine();
+        }
+    }
+
     public void add(Call call) {
         calls.add(call);
     }
@@ -290,6 +300,7 @@ public class CallGroup {
                         }
                     } else {
                         call.requestGet(null);
+                        call.markLine();
                         context.jumpTo(call.getNaturalPtr());
                     }
                 }
@@ -387,7 +398,7 @@ public class CallGroup {
     public void requestGet(Pointer pointer) {
         getNaturalPtr(pointer);
         if (pointer == null) pointer = getNaturalPtr(pointer);
-        pointer = pointer.toLet();
+        if (pointer != null) pointer = pointer.toLet();
 
         requestPtr = pointer;
 

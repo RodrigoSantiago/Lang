@@ -69,11 +69,6 @@ public class ConstructorCall extends Call {
         }
     }
 
-    public ArrayList<Expression> consume() {
-        consumed = true;
-        return arguments;
-    }
-
     public ConstructorView getConstructorView() {
         return constructorView;
     }
@@ -100,6 +95,8 @@ public class ConstructorCall extends Call {
             } else if (constructors.size() > 1) {
                 cFile.erro(token, "Ambigous Constructor Call", this);
                 constructorView = constructors.get(0);
+            } else if (constructorView == ConstructorView.structInit) {
+                cFile.erro(token, "Constructor Not Found", this);
             } else {
                 constructorView = constructors.get(0);
             }
@@ -170,6 +167,22 @@ public class ConstructorCall extends Call {
         }
         if (next) {
             cBuilder.add(requestPtr.isPointer() ? "->" : ".");
+        }
+    }
+
+    public void buildDirect(CppBuilder cBuilder, int idt) {
+        consumed = true;
+
+        cBuilder.add(typePtr.type.pathToken).add("(");
+
+        if (constructorView == ConstructorView.structInit) {
+            cBuilder.add(")");
+        } else if (constructorView.isEmpty()) {
+            cBuilder.add("empty()").add(")");
+        } else if (constructorView.isCopy()) {
+            cBuilder.add("empty(), ").add(arguments, idt).add(")");
+        } else {
+            cBuilder.add(arguments, idt).add(")");
         }
     }
 }

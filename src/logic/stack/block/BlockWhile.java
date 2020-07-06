@@ -104,7 +104,13 @@ public class BlockWhile extends Block {
         for (Line line : lines) {
             line.build(cBuilder, idt + 1, idt + 1);
         }
+        if (ct && label != null) {
+            cBuilder.idt(idt + 1).add("continue_").add(labelID).add(":;").ln();
+        }
         cBuilder.out().ln();
+        if (bk && label != null) {
+            cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
+        }
     }
 
     @Override

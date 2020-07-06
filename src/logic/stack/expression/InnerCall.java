@@ -89,6 +89,12 @@ public class InnerCall extends Call {
     }
 
     @Override
+    public void markLine() {
+        super.markLine();
+        if (innerExpression != null) innerExpression.markLine();
+    }
+
+    @Override
     public void markArgument() {
         super.markArgument();
         if (innerExpression != null) innerExpression.markArgument();

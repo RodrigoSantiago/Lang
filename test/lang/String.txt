@@ -81,6 +81,44 @@ public static struct string : String {
         }
     }
 
+    native (extra) {
+        template<typename F>
+        struct cast<Ptr<F>, lang_string> {
+            inline static bool is(const Ptr<F>& from) {
+                return from != nullptr;
+            }
+            inline static bool is(const Ptr<F>& from, lang_string& result) {
+                if (from != nullptr) {
+                    result = from->m_toString();
+                    return true;
+                }
+                return false;
+            }
+            inline static lang_string as(const Ptr<F>& from) {
+                if (from != nullptr) return from->m_toString();
+                return "";
+            }
+        };
+
+        template<typename F>
+        struct cast<Let<F>, lang_string> {
+            inline static bool is(const Let<F>& from) {
+                return from != nullptr;
+            }
+            inline static bool is(const Let<F>& from, lang_string& result) {
+                if (from != nullptr) {
+                    result = from->m_toString();
+                    return true;
+                }
+                return false;
+            }
+            inline static lang_string as(const Let<F>& from) {
+                if (from != nullptr) return from->m_toString();
+                return "";
+            }
+        };
+    }
+
     public this() {
         native (source) {
             this->data = nullptr;

@@ -475,4 +475,8 @@ public class Expression {
     public void markArgument() {
         if (groups.size() > 0) groups.get(0).markArgument();
     }
+
+    public void markLine() {
+        if (groups.size() > 0) groups.get(0).markLine();
+    }
 }

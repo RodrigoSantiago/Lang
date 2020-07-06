@@ -175,7 +175,7 @@ public class Operator extends Member {
     public void buildOperator(CppBuilder cBuilder) {
         if (op == Key.EQUAL || op == Key.DIF) {
             cBuilder.toHeader();
-            cBuilder.add("bool operator ").add(op.string).add("(const ").path(params.getTypePtr(0), false).add("& left, const ")
+            cBuilder.add("inline bool operator ").add(op.string).add("(const ").path(params.getTypePtr(0), false).add("& left, const ")
                     .path(params.getTypePtr(1), false).add("& right) ").in(1);
             cBuilder.idt(1).add("return ").path(type.self, false).add("::").nameOp(op, typePtr).add("(left, right);").ln();
             cBuilder.out().ln()
@@ -238,7 +238,7 @@ public class Operator extends Member {
     public static void buildAutomaticOperator(CppBuilder cBuilder, Type type, Operator equal, Operator dif) {
         if (equal == null) {
             cBuilder.toHeader();
-            cBuilder.add("bool operator ==(const ").path(type.self, false).add("& left, const ")
+            cBuilder.add("inline bool operator ==(const ").path(type.self, false).add("& left, const ")
                     .path(type.self, false).add("& right) ").in(1);
             if (dif != null) {
                 cBuilder.idt(1).add("return !").path(type.self, false).add("::dif(left, right);").ln();
@@ -251,7 +251,7 @@ public class Operator extends Member {
 
         if (dif == null) {
             cBuilder.toHeader();
-            cBuilder.add("bool operator !=(const ").path(type.self, false).add("& left, const ")
+            cBuilder.add("inline bool operator !=(const ").path(type.self, false).add("& left, const ")
                     .path(type.self, false).add("& right) ").in(1);
             cBuilder.idt(1).add("return !").path(type.self, false).add("::equal(left, right);").ln();
             cBuilder.out().ln()

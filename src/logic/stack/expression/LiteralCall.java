@@ -48,6 +48,7 @@ public class LiteralCall extends Call {
                 typePtr = cFile.langBoolPtr();
                 this.token = token;
                 literalType = BOOL;
+                resultBool = token.key == Key.TRUE;
                 resultStr = token.toString();
                 state = 1;
             } else if (state == 0 && token.key == Key.NULL) {
@@ -309,11 +310,15 @@ public class LiteralCall extends Call {
         } else if (literalType == BOOL) {
             cBuilder.add(resultBool ? "true" : "false");
         } else if (literalType == STRING) {
-            // if not acessesed does not need the constructor
-            cBuilder.path(cFile.langStringPtr(), false).add("(\"").add(resultStr).add("\")");
+            if (isPathLine) {
+                cBuilder.path(cFile.langStringPtr(), false).add("(");
+            }
+            cBuilder.add("\"").add(resultStr).add("\"");
+            if (isPathLine) cBuilder.add(")");
+
         } else if (literalType == LONG) {
             if (naturalPtr.equals(cFile.langLongPtr())) {
-                cBuilder.add(resultNum).add("L");
+                cBuilder.add(resultNum).add("l");
             } else if (naturalPtr.equals(cFile.langIntPtr())) {
                 if (isArg) cBuilder.add("(").add(cFile.langIntPtr()).add(")");
                 cBuilder.add(resultNum);
@@ -324,17 +329,17 @@ public class LiteralCall extends Call {
                 if (isArg) cBuilder.add("(").add(cFile.langShortPtr()).add(")");
                 cBuilder.add(resultNum);
             } else if (naturalPtr.equals(cFile.langFloatPtr())) {
-                cBuilder.add(resultNum).add(".0F");
+                cBuilder.add(resultNum).add(".0f");
             } else if (naturalPtr.equals(cFile.langDoublePtr())) {
-                cBuilder.add(resultNum).add(".0D");
+                cBuilder.add(resultNum).add(".0");
             } else {
                 cBuilder.add(resultNum);
             }
         } else if (literalType == DOUBLE) {
             if (naturalPtr.equals(cFile.langFloatPtr())) {
-                cBuilder.add(resultDouble).add("F");
+                cBuilder.add(resultDouble).add("f");
             } else if (naturalPtr.equals(cFile.langDoublePtr())) {
-                cBuilder.add(resultDouble).add("D");
+                cBuilder.add(resultDouble);
             } else {
                 cBuilder.add(resultDouble);
             }

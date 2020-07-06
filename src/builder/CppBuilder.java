@@ -566,8 +566,14 @@ public class CppBuilder {
         return temp(typePtr, false);
     }
 
+    public Temp temp(Pointer typePtr, int array) {
+        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (tempID++), true, array);
+        tempVars.add(temp);
+        return temp;
+    }
+
     public Temp temp(Pointer typePtr, boolean pure) {
-        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (tempID++), pure);
+        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (tempID++), pure, 0);
         tempVars.add(temp);
         return temp;
     }
@@ -582,13 +588,13 @@ public class CppBuilder {
             if (tempVar.blockID == tempBlocks.size()) {
                 has = true;
                 idt(tblock.idt);
-                if (tempVar.ptr) {
-                    path(tempVar.typePtr, false);
-                    add("*");
+                if (tempVar.array > 0) {
+                    path(tempVar.typePtr, false).add(" ").add(tempVar.name).add(" [").add(tempVar.array).add("]").add(";").ln();
+                } else if (tempVar.ptr) {
+                    path(tempVar.typePtr, false).add("* ").add(tempVar.name).add(";").ln();
                 } else {
-                    add(tempVar.typePtr);
+                    add(tempVar.typePtr).add(" ").add(tempVar.name).add(";").ln();
                 }
-                add(" ").add(tempVar.name).add(";").ln();
                 tempVars.remove(i);
                 i--;
             }

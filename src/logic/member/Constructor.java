@@ -159,13 +159,28 @@ public class Constructor extends Member {
                         cBuilder.idt(1).add("init();").ln();
                     }
                 } else {
-                    cBuilder.add(type.pathToken).add("(").add(stack.getConstructorCall().consume(), 0).add(") ").in(1);
+                    stack.getConstructorCall().buildDirect(cBuilder, 0);
+                    cBuilder.in(1);
                 }
                 cBuilder.add(stack, 1)
                         .out().ln()
                         .ln();
             }
         }
+    }
+
+    public void buildEmpty(Type type, CppBuilder cBuilder) {
+        cBuilder.toHeader();
+        cBuilder.idt(1).path(type.self, false).add("*").add(" create();").ln();
+
+        cBuilder.toSource(type.template != null);
+        cBuilder.add(type.template)
+                .path(type.self, false).add("*")
+                .add(" ").path(type.self, false).add("::create() ").in(1)
+                .idt(1).path(type.parent, false).add("::create();").ln()
+                .idt(1).add("return this;").ln()
+                .out().ln()
+                .ln();
     }
 
     public void toDefault() {

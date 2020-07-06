@@ -159,7 +159,7 @@ public class BlockFor extends Block {
                     }
                 }
             } else {
-                conditionExp.requestGet(null);
+                loopExp.requestGet(null);
             }
         }
         super.load();
@@ -192,16 +192,49 @@ public class BlockFor extends Block {
             for (Line line : lines) {
                 line.build(cBuilder, idt + 2, idt + 2);
             }
+            if (ct && label != null) {
+                cBuilder.idt(idt + 2).add("continue_").add(labelID).add(":;").ln();
+            }
             cBuilder.out().ln()
                     .out().ln();
+            if (bk && label != null) {
+                cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
+            }
         } else {
-            cBuilder.idt(idt).add(" for (");
-            if (firstLine != null) firstLine.build(cBuilder, idt, 0);
-            cBuilder.add(firstLine == null, "; ").add(conditionExp, idt).add("; ").add(loopExp, idt).add(") ").in(idt + 1);
+            LineVar lVar = (firstLine != null && firstLine instanceof LineVar ? (LineVar) firstLine : null);
+            if (lVar != null && lVar.isMultiline()) {
+                cBuilder.idt(idt).add("/* for */ ").in(++idt);
+                firstLine.build(cBuilder, idt, idt);
+            }
+            cBuilder.idt(idt).add("for (");
+            if (firstLine != null && (lVar == null || !lVar.isMultiline())) {
+                firstLine.build(cBuilder, idt, 0);
+                cBuilder.add(" ");
+            } else {
+                cBuilder.add("; ");
+            }
+            if (conditionExp != null) {
+                cBuilder.add(conditionExp, idt);
+            }
+            cBuilder.add("; ");
+            if (loopExp != null) {
+                cBuilder.add(loopExp, idt);
+            }
+            cBuilder.add(") ").in(idt + 1);
             for (Line line : lines) {
                 line.build(cBuilder, idt + 1, idt + 1);
             }
+            if (ct && label != null) {
+                cBuilder.idt(idt + 1).add("continue_").add(labelID).add(":;").ln();
+            }
             cBuilder.out().ln();
+            if (lVar != null && lVar.isMultiline()) {
+                cBuilder.out().ln();
+                idt --;
+            }
+            if (bk && label != null) {
+                cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
+            }
         }
     }
 
@@ -311,7 +344,7 @@ public class BlockFor extends Block {
 
     private Line readFirstForLine(Token start, Token end) {
         if (start.key == Key.LET || start.key == Key.VAR || start.key == Key.FINAL) {
-            return new LineVar(this, start, end);
+            return new LineVar(this, start, end, true, false);
         } else {
             // Var/Expression
             Token token = start;
@@ -320,11 +353,11 @@ public class BlockFor extends Block {
                 if (state == 0 && token.key == Key.WORD) {
                     state = 1;
                 } else if (state == 1 && (token.key == Key.WORD || token.key == Key.GENERIC)) {
-                    return new LineVar(this, start, end);
+                    return new LineVar(this, start, end, true, false);
                 } else if (state == 1 && token.key == Key.INDEX) {
                     state = 2;
                 } else if (state == 2 && token.key == Key.WORD) {
-                    return new LineVar(this, start, end);
+                    return new LineVar(this, start, end, true, false);
                 } else {
                     return new LineExpression(this, start, end);
                 }
@@ -335,7 +368,7 @@ public class BlockFor extends Block {
     }
 
     private void readForeach(Token start, Token end, Token colon) {
-        foreachVar = new LineVar(this, start, colon, true);
+        foreachVar = new LineVar(this, start, colon, false, true);
         if (colon.getNext() != end) {
             loopToken = new TokenGroup(colon.getNext(), end);
             loopExp = new Expression(this, colon.getNext(), end);

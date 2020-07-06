@@ -286,7 +286,10 @@ public class Context {
                     }
                 }
             }
-            if (found == null && arguments.size() == 0 && typePtr.type.getParentEmptyConstructor() != null) {
+            if (found == null && arguments.size() == 0 && typePtr.type.isStruct()) {
+                found = new ArrayList<>();
+                found.add(ConstructorView.structInit);
+            } else if (found == null && arguments.size() == 0 && typePtr.type.getParentEmptyConstructor() != null) {
                 ConstructorView cv = new ConstructorView(typePtr, typePtr.type.getParentEmptyConstructor());
 
                 int ret = cv.getParams().verifyArguments(closer, result, arguments, false);

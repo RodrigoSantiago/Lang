@@ -12,7 +12,7 @@ public abstract class Call {
     public final ContentFile cFile;
     public final CallGroup group;
     public Token token;
-    public boolean isArg;
+    public boolean isArg, isPathLine;
 
     Pointer naturalPtr;
     Pointer requestPtr;
@@ -91,6 +91,10 @@ public abstract class Call {
 
     public boolean isDirectCall() {
         return false;
+    }
+
+    public void markLine() {
+        isPathLine = true;
     }
 
     public void markArgument() {

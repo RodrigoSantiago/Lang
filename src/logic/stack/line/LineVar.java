@@ -19,15 +19,17 @@ public class LineVar extends Line {
     ArrayList<Expression> expresions = new ArrayList<>();
     ArrayList<Pointer> typePtrs = new ArrayList<>();
 
-    public boolean isFinal, isLet;
+    public boolean isFinal, isLet, isMultiline, isFor, isForeach;
     public Pointer typePtr;
 
     public LineVar(Block block, Token start, Token end) {
-        this(block, start, end, false);
+        this(block, start, end, false, false);
     }
 
-    public LineVar(Block block, Token start, Token end, boolean foreachVar) {
+    public LineVar(Block block, Token start, Token end, boolean forVar, boolean foreachVar) {
         super(block, start, end);
+        this.isFor = forVar;
+        this.isForeach = foreachVar;
 
         Token init = null;
         Token nameToken = null;
@@ -105,6 +107,8 @@ public class LineVar extends Line {
 
     @Override
     public void load() {
+        Pointer singleType = null;
+
         if (typeToken != null) {
             typePtr = stack.getPointer(typeToken, isLet);
             if (typePtr == null) {
@@ -120,19 +124,55 @@ public class LineVar extends Line {
                 Pointer naturalPtr = typePtr;
                 if (typePtr == null) {
                     naturalPtr = expresion.getNaturalPtr(null);
-                    if (naturalPtr == null) naturalPtr = cFile.langObjectPtr(isLet);
-                    else if (isLet) naturalPtr = naturalPtr.toLet();
+                    if (naturalPtr == null) {
+                        naturalPtr = cFile.langObjectPtr(isLet);
+                    } else if (isLet) {
+                        naturalPtr = naturalPtr.toLet();
+                    }
+                    if (singleType != null && !naturalPtr.equals(singleType)) {
+                        isMultiline = true;
+                    }
+                    singleType = naturalPtr;
                     typePtrs.add(naturalPtr);
                 }
                 expresion.requestOwn(naturalPtr);
             } else if (typePtr == null) {
                 typePtrs.add(cFile.langObjectPtr());
-                if (typeToken == null) {
-                    cFile.erro(nameTokens.get(i), "Cannot determine a Type without an initialization", this);
-                }
+                cFile.erro(nameTokens.get(i), "Cannot determine a Type without an initialization", this);
             }
         }
 
+        addFields();
+        if (!isFor && !isForeach) {
+        }
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        if (isMultiline) {
+            for (int i = 0; i < nameTokens.size(); i++) {
+                cBuilder.idt(idt).add(typePtrs.get(i)).add(" ").nameParam(nameTokens.get(i));
+                if (expresions.get(i) != null) {
+                    cBuilder.add(" = ").add(expresions.get(i), idt);
+                }
+                cBuilder.add(";").ln();
+            }
+        } else {
+            cBuilder.idt(off).add(typePtr == null ? typePtrs.get(0) : typePtr).add(" ");
+            for (int i = 0; i < nameTokens.size(); i++) {
+                if (i > 0) cBuilder.add(", ");
+
+                cBuilder.nameParam(nameTokens.get(i));
+                if (expresions.get(i) != null) {
+                    cBuilder.add(" = ").add(expresions.get(i), idt);
+                }
+            }
+            cBuilder.add(";");
+            if (off > 0) cBuilder.ln();
+        }
+    }
+
+    public void addFields() {
         for (int i = 0; i < nameTokens.size(); i++) {
             Token nameToken = nameTokens.get(i);
             if (!stack.addField(nameToken, typePtr == null ? typePtrs.get(i) : typePtr, isFinal, parent)) {
@@ -140,18 +180,7 @@ public class LineVar extends Line {
             }
         }
     }
-
-    @Override
-    public void build(CppBuilder cBuilder, int idt, int off) {
-        cBuilder.idt(off).add(typePtr == null ? typePtrs.get(0) : typePtr);
-        for (int i = 0; i < nameTokens.size(); i++) {
-            if (i > 0) cBuilder.add(",");
-            cBuilder.add(" ").nameParam(nameTokens.get(i));
-            if (expresions.get(i) != null) {
-                cBuilder.add(" = ").add(expresions, idt);
-            }
-        }
-        cBuilder.add(";");
-        if (off > 0) cBuilder.ln();
+    public boolean isMultiline() {
+        return isMultiline;
     }
 }

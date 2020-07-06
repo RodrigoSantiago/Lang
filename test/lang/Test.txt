@@ -2,15 +2,15 @@ namespace lang;
 using lang::Locale.GlobalLocale;
 
 void main () {
-    GlobalLocale = default;
+    Object[] a = new Object[];
+    Object[][] b = new Object[][];
+    Object[][] c = new Object[10][];
+    Object[][] d = new Object[10][20];
+    Object[][][] e = new Object[10][20][];
 }
 
-public struct Test {
-    int a;
-    int b;
-    int c;
+public class Test {
 
-    int operator cast(Test test) {
-        return 0;
+    public this() {
     }
 }

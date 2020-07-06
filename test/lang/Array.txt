@@ -48,6 +48,35 @@ public class Array<T> : List<T> {
         }
     }
 
+    native (extra) {
+        template <typename A>
+        struct array {
+        };
+
+        template <typename A>
+        struct array<lang_Array<A>> {
+            static lang_Array<A>* fill(lang_Array<A> * array, const lang_int* count, lang_int pos) {
+                lang_int len = count[pos];
+                array->create(len);
+                return array;
+            }
+        };
+
+        template <typename A>
+        struct array<lang_Array<lang_Array<A>>> {
+            static lang_Array<lang_Array<A>>* fill(lang_Array<lang_Array<A>> * array, const lang_int* count, lang_int pos) {
+                lang_int len = count[pos];
+                array->create(len, false);
+
+                for (lang_int i = 0; i < len; ++i) {
+                    new (&array->data[i]) GPtr<lang_Array<A>>(Fill<lang_Array<A>>::fill(new lang_Array<A>(), count, pos + 1));
+                }
+
+                return array;
+            }
+        };
+    }
+
     public this() {
         this.length = 0;
 
@@ -65,7 +94,7 @@ public class Array<T> : List<T> {
             } else {
                 this->f_length = v_length;
                 for (long i = 0; i < v_length; i++) {
-                    this->data[i] = lang::value<GPtr<g_T>>::def();
+                    new (&this->data[i]) GPtr<g_T>(lang::value<GPtr<g_T>>::def());
                 }
             }
         }

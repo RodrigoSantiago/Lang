@@ -510,6 +510,25 @@ public abstract class Type implements GenericOwner {
                 cFile.erro(parentTokens.get(0), "The Wrapper Must have a public constructor as this Struct as unic parameter", this);
             }
         }
+
+        for (Operator operator : operators) {
+            if (operator.getParams().getCount() == 2) {
+                Pointer ptrA = operator.getParams().getTypePtr(0);
+                Pointer ptrB = operator.getParams().getTypePtr(1);
+                Pointer find = ptrA.type != this ? ptrA : ptrB.type != this ? ptrB : null;
+                if (find != null) {
+                    for (OperatorView other : find.type.getOperator(operator.token)) {
+                        if (other.getParams().getArgsCount() == 2) {
+                            ParamView pv = new ParamView(find, other.getParams());
+                            if (pv.getArgTypePtr(0).equalsIgnoreLet(operator.getParams().getTypePtr(0)) &&
+                                    pv.getArgTypePtr(1).equalsIgnoreLet(operator.getParams().getTypePtr(1))) {
+                                cFile.erro(operator.token, "Ambigous operator between Structs [" + find.type + "]", this);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void make() {
@@ -573,6 +592,10 @@ public abstract class Type implements GenericOwner {
         cBuilder.markSource();
         cBuilder.ln();
 
+        for (Native nat : natives) {
+            if (nat.isMacro()) nat.build(cBuilder);
+        }
+
         if (hasGenericFile()) {
             cBuilder.toGeneric();
             cBuilder.add("// ").add(fileName).add(".hpp").ln()
@@ -632,7 +655,7 @@ public abstract class Type implements GenericOwner {
 
         // Natives
         for (Native nat : natives) {
-            if (!nat.isStatic()) {
+            if (nat.isSource() || nat.isHeader()) {
                 nat.build(cBuilder);
             }
         }
@@ -696,6 +719,9 @@ public abstract class Type implements GenericOwner {
         for (Constructor constructor : constructors) {
             constructor.build(cBuilder);
         }
+        if (constructors.size() == 0 && parentEmptyConstructor != null) {
+            parentEmptyConstructor.buildEmpty(this, cBuilder);
+        }
 
         // Destructor
         if (destructor != null) {
@@ -727,14 +753,6 @@ public abstract class Type implements GenericOwner {
         cBuilder.toHeader();
         cBuilder.add("};").ln()
                 .ln();
-
-        if (isValue()) {
-            Operator.buildAutomaticOperator(cBuilder, this, equal, different);
-
-            for (Operator operator : operators) {
-                operator.buildOperator(cBuilder);
-            }
-        }
 
         // Static Members
         cBuilder.toHeader();
@@ -792,7 +810,20 @@ public abstract class Type implements GenericOwner {
         }
 
         cBuilder.toHeader();
-        cBuilder.add("};").ln();
+        cBuilder.add("};").ln()
+                .ln();
+
+        if (isValue()) {
+            Operator.buildAutomaticOperator(cBuilder, this, equal, different);
+
+            for (Operator operator : operators) {
+                operator.buildOperator(cBuilder);
+            }
+        }
+
+        for (Native nat : natives) {
+            if (nat.isExtra()) nat.build(cBuilder);
+        }
 
         cBuilder.headerDependence();
         cBuilder.sourceDependence();

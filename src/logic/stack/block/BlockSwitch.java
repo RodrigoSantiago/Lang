@@ -124,7 +124,10 @@ public class BlockSwitch extends Block {
             for (Line line : lines) {
                 line.build(cBuilder, idt + 1, idt + 1);
             }
-            cBuilder.idt(idt).add("}").ln(); // DO NOT OUT
+            cBuilder.idt(idt).add("}").ln();
+            if (bk && label != null) {
+                cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
+            }
         } else {
             cBuilder.idt(idt).add("/* switch */ ").in(idt + 1);
             int tempID = cBuilder.temp();
@@ -145,7 +148,10 @@ public class BlockSwitch extends Block {
             for (Line line : lines) {
                 line.build(cBuilder, idt + 1, idt + 1);
             }
-            cBuilder.out().add(bk, " break_").add(bk, labelID).add(":;").ln();
+            cBuilder.out().ln();
+            if (bk && label != null) {
+                cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
+            }
         }
     }
 

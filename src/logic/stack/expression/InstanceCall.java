@@ -29,6 +29,7 @@ public class InstanceCall extends Call {
     ArrayList<Expression> initArguments = new ArrayList<>();
 
     Pointer typePtr;
+    private int indexArgs;
 
     public InstanceCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -183,6 +184,7 @@ public class InstanceCall extends Call {
             boolean foundEmpty = false;
             for (Expression indexArgument : indexArguments) {
                 if (indexArgument != null) {
+                    indexArgs++;
                     indexArgument.load(new Context(context));
                     indexArgument.requestOwn(cFile.langIntPtr());
                     if (foundEmpty) {
@@ -206,8 +208,11 @@ public class InstanceCall extends Call {
                         arg.requestOwn(typePtr.pointers[0]);
                         arrayInitArgs.add(arg);
                     }
+
+                    if (indexArgs > 0) {
+                        cFile.erro(initToken, "Indexed parameters not allowed with Array Init", this);
+                    }
                 }
-                // TODO - ARRAY PARAM AND ARRAY INIT PROBLEM
 
                 if (paramToken != null) {
                     for (Expression argument : arguments) {
@@ -242,7 +247,7 @@ public class InstanceCall extends Call {
                                 if (!getStack().cFile.equals(fieldView.getSetFile())) {
                                     cFile.erro(token, "Cannot acess a Private member from other file", this);
                                 }
-                            } else if (fieldView.isReadOnly(getStack())) {
+                            } else if (fieldView.isVariable() && fieldView.srcVar.isFinal()) {
                                 cFile.erro(token, "Cannot SET a final variable", this);
                             }
                         }  else {
@@ -265,7 +270,7 @@ public class InstanceCall extends Call {
                     } else {
                         constructorView = constructors.get(0);
                         if (typePtr.typeSource != null) {
-                            if (!constructorView.isDefault()) {
+                            if (constructorView == ConstructorView.structInit || !constructorView.isDefault()) {
                                 cFile.erro(token, "A Generic Constructor should be Default", this);
                             }
                         } else if (typePtr.type.isAbstract()) {
@@ -303,7 +308,7 @@ public class InstanceCall extends Call {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
         }
 
-        if (constructorView != null) {
+        if (constructorView != null && constructorView != ConstructorView.structInit) {
             Constructor constructor = constructorView.constructor;
             if (!constructorView.isPublic() && !constructorView.isPrivate() &&
                     !getStack().cFile.library.equals(constructor.cFile.library)) {
@@ -326,7 +331,7 @@ public class InstanceCall extends Call {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
         }
 
-        if (constructorView != null) {
+        if (constructorView != null && constructorView != ConstructorView.structInit) {
             Constructor constructor = constructorView.constructor;
             if (!constructorView.isPublic() && !constructorView.isPrivate() &&
                     !getStack().cFile.library.equals(constructor.cFile.library)) {
@@ -346,7 +351,22 @@ public class InstanceCall extends Call {
     @Override
     public void build(CppBuilder cBuilder, int idt, boolean next) {
         if (typePtr.isPointer()) {
-            if (arrayInitArgs.size() > 0) {
+            if (indexArgs > 0) {
+                if (indexArgs == 1) {
+                    cBuilder.add("(new ").path(typePtr, false).add("())->create(").add(indexArguments.get(0), idt).add(")");
+                } else {
+                    Temp t = cBuilder.temp(cFile.langIntPtr(), indexArguments.size());
+                    cBuilder.add("array<").path(typePtr, false).add(">::fill(").add("new ").path(typePtr, false).add("(), (");
+                    for (int i = 0; i < indexArgs; i++) {
+                        if (i > 0) cBuilder.add(", ");
+                        cBuilder.add(t).add("[").add(i).add("] = ").add(indexArguments.get(i), idt);
+                    }
+                    if (indexArgs < indexArguments.size()) {
+                        cBuilder.add(", ").add(t).add("[").add(indexArgs).add("] = 0");
+                    }
+                    cBuilder.add(", ").add(t).add("), 0)");
+                }
+            } else if (arrayInitArgs.size() > 0) {
                 Temp t = cBuilder.temp(typePtr, true);
                 Temp t2 = cBuilder.temp(typePtr.pointers[0], true);
                 cBuilder.add("(").add(t).add(" = ")
@@ -357,11 +377,61 @@ public class InstanceCall extends Call {
                     cBuilder.add(", ").add(t2).add("[").add(i).add("] = ").add(arg, idt);
                 }
                 cBuilder.add(", ").add(t).add(")");
+            } else if (initFields.size() > 0) {
+                Temp t = cBuilder.temp(typePtr, true);
+                cBuilder.add("(").add(t).add(" = ")
+                        .add("(new ").path(typePtr, false).add("())->create(").add(arguments, idt).add(")");
+                for (int i = 0; i < initFields.size(); i++) {
+                    FieldView field = initFields.get(i);
+                    cBuilder.add(", ").add(t).add("->");
+                    if (field.isProperty()) {
+                        cBuilder.nameSet(field.getName()).add("(").add(initArguments.get(i), idt).add(")");
+                    } else {
+                        cBuilder.nameField(field.getName()).add(" = ").add(initArguments.get(i), idt);
+                    }
+                }
+                cBuilder.add(", ").add(t).add(")");
             } else {
                 cBuilder.add("(new ").path(typePtr, false).add("())->create(").add(arguments, idt).add(")");
             }
         } else {
-            cBuilder.path(typePtr, false).add("(").add(arguments, idt).add(")");
+            if (initFields.size() > 0) {
+                Temp t = cBuilder.temp(typePtr);
+                cBuilder.add("(").add(t).add(" = ")
+                        .path(typePtr, false).add("(");
+
+                if (constructorView == ConstructorView.structInit) {
+                    cBuilder.add(")");
+                } else if (constructorView.isEmpty()) {
+                    cBuilder.add("empty()").add(")");
+                } else if (constructorView.isCopy()) {
+                    cBuilder.add("empty(), ").add(arguments, idt).add(")");
+                } else {
+                    cBuilder.add(arguments, idt).add(")");
+                }
+
+                for (int i = 0; i < initFields.size(); i++) {
+                    FieldView field = initFields.get(i);
+                    cBuilder.add(", ").add(t).add(".");
+                    if (field.isProperty()) {
+                        cBuilder.nameSet(field.getName()).add("(").add(initArguments.get(i), idt).add(")");
+                    } else {
+                        cBuilder.nameField(field.getName()).add(" = ").add(initArguments.get(i), idt);
+                    }
+                }
+                cBuilder.add(", ").add(t).add(")");
+            } else {
+                cBuilder.path(typePtr, false).add("(");
+                if (constructorView == ConstructorView.structInit) {
+                    cBuilder.add(")");
+                } else if (constructorView.isEmpty()) {
+                    cBuilder.add("empty()").add(")");
+                } else if (constructorView.isCopy()) {
+                    cBuilder.add("empty(), ").add(arguments, idt).add(")");
+                } else {
+                    cBuilder.add(arguments, idt).add(")");
+                }
+            }
         }
         if (next) {
             cBuilder.add(requestPtr.isPointer() ? "->" : ".");

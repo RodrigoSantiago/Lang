@@ -89,6 +89,10 @@ public class FieldCall extends Call {
                         thisField = getStack().findField(new Token("this", 0 , 4, Key.THIS, false));
                     }
                 }
+            } else {
+                if (!getExpression().parent.isChildOf(field.getSource())) {
+                    cFile.erro(token, "Unassesible Field", this);
+                }
             }
         }
     }

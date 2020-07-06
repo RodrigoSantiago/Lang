@@ -314,6 +314,9 @@ public class LambdaCall extends Call {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, boolean next) {
+        if (isPathLine) {
+            cBuilder.add(naturalPtr).add("(");
+        }
         if (innerStack.shadowFields.size() > 0) {
             cBuilder.add("(");
             for (Field shadow : innerStack.shadowFields.values()) {
@@ -332,8 +335,16 @@ public class LambdaCall extends Call {
         if (innerStack.shadowFields.size() > 0) {
             cBuilder.add(")");
         }
+        if (isPathLine) {
+            cBuilder.add(")");
+        }
         if (next) {
             cBuilder.add(requestPtr.isPointer() ? "->" : ".");
         }
+    }
+
+    @Override
+    public void markLine() {
+        super.markLine();
     }
 }

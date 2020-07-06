@@ -106,8 +106,9 @@ public abstract class Block extends Line {
         if (lastBlockDo != null) {
             lastBlockDo.setWhile(blockWhile);
             lastBlockDo = null;
+        } else {
+            _add(blockWhile);
         }
-        _add(blockWhile);
     }
 
     public void add(BlockDo blockDo) {

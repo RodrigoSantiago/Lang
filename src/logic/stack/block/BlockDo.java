@@ -77,6 +77,9 @@ public class BlockDo extends Block {
     @Override
     public void load() {
         super.load();
+        if (blockWhile != null) {
+            blockWhile.load();
+        }
     }
 
     @Override
@@ -87,7 +90,13 @@ public class BlockDo extends Block {
         for (Line line : lines) {
             line.build(cBuilder, idt + 1, idt + 1);
         }
+        if (ct && label != null) {
+            cBuilder.idt(idt + 1).add("continue_").add(labelID).add(":;").ln();
+        }
         cBuilder.out().add(" while (").add(blockWhile.conditionExp, idt).add(");").ln();
+        if (bk && label != null) {
+            cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
+        }
     }
 
     @Override

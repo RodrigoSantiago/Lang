@@ -8,6 +8,8 @@ import logic.typdef.Type;
 
 public class Native extends Member {
 
+    private boolean isMacro;    // in Header Implementation [Before Macros]
+    private boolean isExtra;    // in Header Implementation [After Class]
     private boolean isHeader;   // in Header Implementation
     private boolean isSource;   // in Source Implementation OR internal non returning block
     private boolean isReturn;   // in Source internal with returning block
@@ -75,6 +77,14 @@ public class Native extends Member {
                 sourceToken = token;
                 isReturn = true;
                 state = 1;
+            } else if (state == 0 && token.equals("macro")) {
+                sourceToken = token;
+                isMacro = true;
+                state = 1;
+            } else if (state == 0 && token.equals("extra")) {
+                sourceToken = token;
+                isExtra = true;
+                state = 1;
             } else {
                 cFile.erro(token, "Unexpected token", this);
             }
@@ -105,7 +115,7 @@ public class Native extends Member {
     @Override
     public void build(CppBuilder cBuilder) {
 
-        if (isHeader()) {
+        if (isHeader() || isMacro() || isExtra()) {
             cBuilder.toHeader();
         } else if (isSource()) {
             cBuilder.toSource(type.template != null);
@@ -170,5 +180,13 @@ public class Native extends Member {
 
     public boolean isReturn() {
         return isReturn;
+    }
+
+    public boolean isMacro() {
+        return isMacro;
+    }
+
+    public boolean isExtra() {
+        return isExtra;
     }
 }

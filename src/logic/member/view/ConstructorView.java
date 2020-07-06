@@ -5,11 +5,18 @@ import logic.Pointer;
 import logic.member.Constructor;
 
 public class ConstructorView {
+    public static final ConstructorView structInit = new ConstructorView();
 
     public final Pointer caller;
     public final Constructor constructor;
 
     private final ParamView paramView;
+
+    ConstructorView() {
+        caller = null;
+        constructor = null;
+        paramView = null;
+    }
 
     public ConstructorView(Pointer caller, Constructor constructor) {
         this.caller = caller;
@@ -45,5 +52,14 @@ public class ConstructorView {
 
     public boolean isStatic() {
         return constructor.isStatic();
+    }
+
+    public boolean isEmpty() {
+        return constructor.getParams().isEmpty();
+    }
+
+    public boolean isCopy() {
+        return constructor.getParams().getCount() == 1 &&
+                constructor.getParams().getTypePtr(0).equals(constructor.type.self);
     }
 }

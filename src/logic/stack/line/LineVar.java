@@ -118,57 +118,82 @@ public class LineVar extends Line {
 
         for (int i = 0; i < expresions.size(); i++) {
             Expression expresion = expresions.get(i);
+            Pointer varType = typePtr;
             if (expresion != null) {
                 expresion.load(new Context(stack));
 
-                Pointer naturalPtr = typePtr;
                 if (typePtr == null) {
-                    naturalPtr = expresion.getNaturalPtr(null);
-                    if (naturalPtr == null) {
-                        naturalPtr = cFile.langObjectPtr(isLet);
+                    varType = expresion.getNaturalPtr(null);
+                    if (varType == null) {
+                        varType = cFile.langObjectPtr(isLet);
                     } else if (isLet) {
-                        naturalPtr = naturalPtr.toLet();
+                        varType = varType.toLet();
                     }
-                    if (singleType != null && !naturalPtr.equals(singleType)) {
+                    if (singleType != null && !varType.equals(singleType)) {
                         isMultiline = true;
                     }
-                    singleType = naturalPtr;
-                    typePtrs.add(naturalPtr);
+                    singleType = varType;
                 }
-                expresion.requestOwn(naturalPtr);
+                expresion.requestOwn(varType);
             } else if (typePtr == null) {
-                typePtrs.add(cFile.langObjectPtr());
+                varType = cFile.langObjectPtr();
                 cFile.erro(nameTokens.get(i), "Cannot determine a Type without an initialization", this);
             }
+            typePtrs.add(varType);
+        }
+
+        if (stack.isYieldMode() && nameTokens.size() > 1) {
+            isMultiline = true;
         }
 
         addFields();
-        if (!isFor && !isForeach) {
-        }
     }
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
         if (isMultiline) {
-            for (int i = 0; i < nameTokens.size(); i++) {
-                cBuilder.idt(idt).add(typePtrs.get(i)).add(" ").nameParam(nameTokens.get(i));
-                if (expresions.get(i) != null) {
-                    cBuilder.add(" = ").add(expresions.get(i), idt);
+            if (stack.isYieldMode()) {
+                for (int i = 0; i < nameTokens.size(); i++) {
+                    cBuilder.idt(idt).add("new (&").nameParam(nameTokens.get(i)).add(") ").add(typePtrs.get(i));
+                    if (expresions.get(i) != null) {
+                        cBuilder.add("(").add(expresions.get(i), idt).add(")");
+                    } else {
+                        cBuilder.add("()");
+                    }
+                    cBuilder.add(";").ln();
                 }
-                cBuilder.add(";").ln();
+            } else {
+                for (int i = 0; i < nameTokens.size(); i++) {
+                    cBuilder.idt(idt).add(typePtrs.get(i)).add(" ").nameParam(nameTokens.get(i));
+                    if (expresions.get(i) != null) {
+                        cBuilder.add(" = ").add(expresions.get(i), idt);
+                    }
+                    cBuilder.add(";").ln();
+                }
             }
         } else {
-            cBuilder.idt(off).add(typePtr == null ? typePtrs.get(0) : typePtr).add(" ");
-            for (int i = 0; i < nameTokens.size(); i++) {
-                if (i > 0) cBuilder.add(", ");
-
-                cBuilder.nameParam(nameTokens.get(i));
-                if (expresions.get(i) != null) {
-                    cBuilder.add(" = ").add(expresions.get(i), idt);
+            if (stack.isYieldMode()) {
+                cBuilder.idt(off).add("new (&").nameParam(nameTokens.get(0)).add(") ").add(typePtrs.get(0));
+                if (expresions.get(0) != null) {
+                    cBuilder.add("(").add(expresions.get(0), idt).add(")");
+                } else {
+                    cBuilder.add("()");
                 }
+                cBuilder.add(";");
+                if (off > 0) cBuilder.ln();
+            } else {
+                cBuilder.idt(off).add(typePtr == null ? typePtrs.get(0) : typePtr).add(" ");
+                for (int i = 0; i < nameTokens.size(); i++) {
+                    if (i > 0) cBuilder.add(", ");
+
+                    cBuilder.nameParam(nameTokens.get(i));
+                    if (expresions.get(i) != null) {
+                        cBuilder.add(" = ").add(expresions.get(i), idt);
+                    }
+                }
+                cBuilder.add(";");
+                if (off > 0) cBuilder.ln();
             }
-            cBuilder.add(";");
-            if (off > 0) cBuilder.ln();
         }
     }
 

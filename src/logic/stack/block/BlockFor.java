@@ -8,10 +8,13 @@ import builder.CppBuilder;
 import logic.Pointer;
 import logic.stack.Block;
 import logic.stack.Context;
+import logic.stack.Field;
 import logic.stack.Line;
 import logic.stack.expression.Expression;
 import logic.stack.line.LineExpression;
 import logic.stack.line.LineVar;
+
+import java.util.ArrayList;
 
 public class BlockFor extends Block {
 
@@ -25,6 +28,8 @@ public class BlockFor extends Block {
     LineVar foreachVar;
     private int labelID;
     private boolean bk, ct;
+
+    ArrayList<Field> startFields = new ArrayList<>();
 
     Pointer foreachItPtr;
     private boolean strInt, strShort, strByte;
@@ -186,15 +191,16 @@ public class BlockFor extends Block {
                         .add(loopExp.getRequestPtr().isPointer() ? "->" : ".")
                         .nameMethod("iterate").add("();").ln();
             }
-            cBuilder.idt(idt + 1).add("while (it_").add(idt).add("->").nameMethod("hasNext").add("()) ").in(idt + 2)
+            cBuilder.idt(idt + 1).add("while (it_").add(idt).add("->").nameMethod("move").add("()) ").in(idt + 2)
                     .idt(idt + 2).add(foreachVar.typePtr).add(" ").nameParam(foreachVar.nameTokens.get(0))
-                    .add(" = it_").add(idt).add("->").nameMethod("next").add("();").ln();
+                    .add(" = it_").add(idt).add("->").nameGet("current").add("();").ln();
             for (Line line : lines) {
                 line.build(cBuilder, idt + 2, idt + 2);
             }
             if (ct && label != null) {
                 cBuilder.idt(idt + 2).add("continue_").add(labelID).add(":;").ln();
             }
+            buildDestroyer(cBuilder, idt);
             cBuilder.out().ln()
                     .out().ln();
             if (bk && label != null) {
@@ -227,13 +233,48 @@ public class BlockFor extends Block {
             if (ct && label != null) {
                 cBuilder.idt(idt + 1).add("continue_").add(labelID).add(":;").ln();
             }
+            buildDestroyer(cBuilder, idt + 1);
             cBuilder.out().ln();
+            buildInitDestroyer(cBuilder, idt);
             if (lVar != null && lVar.isMultiline()) {
                 cBuilder.out().ln();
                 idt --;
             }
             if (bk && label != null) {
                 cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
+            }
+        }
+    }
+
+    @Override
+    public void addField(Field field) {
+        super.addField(field);
+        startFields.add(field);
+    }
+
+    @Override
+    public void buildDestroyer(CppBuilder cBuilder, int idt) {
+        if (!stack.isYieldMode()) return;
+
+        for (int i = localFields.size() - 1; i >= 0; i--) {
+            Field field = localFields.get(i);
+            if (!startFields.contains(field)) {
+                if (!field.getTypePtr().isLangBase()) {
+                    cBuilder.idt(idt).add("(&").nameParam(field.getName())
+                            .add(")->~").path(field.getTypePtr(), false).add("();").ln();
+                }
+            }
+        }
+    }
+
+    public void buildInitDestroyer(CppBuilder cBuilder, int idt) {
+        if (!stack.isYieldMode()) return;
+
+        for (int i = startFields.size() - 1; i >= 0; i--) {
+            Field field = startFields.get(i);
+            if (!field.getTypePtr().isLangBase()) {
+                cBuilder.idt(idt).add("(&").nameParam(field.getName())
+                        .add(")->~").path(field.getTypePtr(), false).add("();").ln();
             }
         }
     }

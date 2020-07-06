@@ -12,6 +12,7 @@ import logic.stack.expression.Expression;
 
 public class LineReturn extends Line {
 
+    Token token;
     TokenGroup returnToken;
     Expression returnExp;
 
@@ -25,6 +26,7 @@ public class LineReturn extends Line {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key == Key.RETURN) {
+                this.token = token;
                 init = next;
                 state = 1;
             } else if (state == 1 && (token.key == Key.SEMICOLON || next == end)) {
@@ -48,6 +50,9 @@ public class LineReturn extends Line {
 
     @Override
     public void load() {
+        if (stack.isYieldMode()) {
+            cFile.erro(token, "A Yield block cannot return", this);
+        }
         if (returnExp != null) {
             returnExp.load(new Context(stack));
             if (stack.getReturnPtr() == Pointer.voidPointer) {

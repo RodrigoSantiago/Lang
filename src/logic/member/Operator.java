@@ -149,9 +149,8 @@ public class Operator extends Member {
 
     public void make() {
         if (hasImplementation) {
-            stack = new Stack(cFile, token, type.self, typePtr, type, false, true, false);
+            stack = new Stack(cFile, token, type.self, typePtr, type, false, true, false, getParams(), null);
             stack.read(contentToken.start, contentToken.end, true);
-            stack.addParam(getParams());
             stack.load();
         }
     }

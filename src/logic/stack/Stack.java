@@ -11,6 +11,7 @@ import logic.params.Parameters;
 import logic.stack.block.*;
 import logic.stack.expression.ConstructorCall;
 import logic.stack.expression.Expression;
+import logic.stack.line.LineYield;
 
 import java.util.HashMap;
 
@@ -19,7 +20,9 @@ public class Stack {
     public final ContentFile cFile;
     private final Pointer sourcePtr;
     private Pointer returnPtr;
+    private Pointer yieldPtr;
     public Token referenceToken;
+    private int yieldID;
 
     public Line line;
     public Block block;
@@ -28,11 +31,15 @@ public class Stack {
     private boolean isExpression;
     private boolean isStatic;
     private boolean isConstructor;
+    private boolean isYield;
     private boolean hasConstructorCall;
+    public Parameters param;
+    private Pointer valuePtr;
+    public HashMap<Token, Field> shadowFields = new HashMap<>();
 
     private ConstructorCall constructorCall;
 
-    HashMap<Token, Field> fields = new HashMap<>();
+    public HashMap<Token, Field> fields = new HashMap<>();
 
     private GenericOwner generics;
 
@@ -47,7 +54,7 @@ public class Stack {
     }
 
     public Stack(ContentFile cFile, Token referenceToken, Pointer sourcePtr, Pointer returnPtr, GenericOwner generics,
-                 boolean isExpression, boolean isStatic, boolean isConstructor) {
+                 boolean isExpression, boolean isStatic, boolean isConstructor, Parameters param, Pointer valuePtr) {
         this.cFile = cFile;
         this.sourcePtr = sourcePtr;
         this.returnPtr = returnPtr;
@@ -56,6 +63,8 @@ public class Stack {
         this.isStatic = isStatic;
         this.isConstructor = isConstructor;
         this.referenceToken = referenceToken;
+        this.param = param;
+        this.valuePtr = valuePtr;
     }
 
     public void read(Token start, Token end, boolean read) {
@@ -68,6 +77,12 @@ public class Stack {
     }
 
     public void load() {
+        if (param != null) {
+            addParam(param);
+        }
+        if (valuePtr != null) {
+            value(valuePtr);
+        }
         if (isExpression) {
             expression.load(new Context(this));
             expression.requestOwn(returnPtr);
@@ -84,8 +99,13 @@ public class Stack {
         if (isExpression) {
             expression.build(cBuilder, idt);
         } else {
-            for (Line line : block.lines) {
-                line.build(cBuilder, idt, idt);
+            if (isYieldMode()) {
+                YieldResolve.build(cBuilder, idt, this, yieldID, param, valuePtr);
+            } else {
+                for (Line line : block.lines) {
+                    line.build(cBuilder, idt, idt);
+                }
+                block.buildDestroyer(cBuilder, idt);
             }
         }
     }
@@ -122,7 +142,9 @@ public class Stack {
         if (fields.containsKey(nameToken)) {
             return false;
         }
-        fields.put(nameToken, new Field(this, nameToken, typePtr, isFinal, block));
+        Field field = new Field(this, nameToken, typePtr, isFinal, block);
+        fields.put(nameToken, field);
+        block.addField(field);
         return true;
     }
 
@@ -158,7 +180,7 @@ public class Stack {
         fields.put(nameValue, new Field(this, referenceToken, nameValue, valuePtr, false, block));
     }
 
-    void thisBase() {
+    public void thisBase() {
         Token nameThis = new Token("this", 0, 4, Key.THIS, false);
         fields.put(nameThis, new Field(this, referenceToken, nameThis, sourcePtr.toLet(), true, block));
 
@@ -180,5 +202,38 @@ public class Stack {
         return isExpression && expression.isLiteral();
     }
 
+    public Pointer getYiledPtr() {
+        return yieldPtr;
+    }
 
+    public int requestYieldID() {
+        return yieldID++;
+    }
+
+    public void setYieldMode(LineYield lineYield) {
+        if (!isYield) {
+            if (isConstructor) {
+                cFile.erro(lineYield.token, "A constructor cannot have a yield", this);
+            } else {
+                isYield = true;
+                if (returnPtr.type != cFile.langIterator()) {
+                    yieldPtr = cFile.langObjectPtr();
+                    cFile.erro(lineYield.token, "A yield block should return a Iterator", this);
+                } else {
+                    if (returnPtr.let) {
+                        cFile.erro(lineYield.token, "A yield block should not return a Weak Pointer", this);
+                    }
+                    yieldPtr = returnPtr.pointers[0];
+                }
+            }
+        }
+    }
+
+    public boolean isYieldMode() {
+        return isYield;
+    }
+
+    public boolean isChildOf(Block source) {
+        return false;
+    }
 }

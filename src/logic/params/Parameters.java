@@ -62,6 +62,15 @@ public class Parameters {
         }
     }
 
+    public Parameters(ContentFile cFile, Token token,  ArrayList<Token> names, ArrayList<Pointer> typePtrs) {
+        this.cFile = cFile;
+        this.token = token;
+        for (int i = 0; i < names.size(); i++) {
+            Arg arg = new Arg(names.get(i), null, typePtrs.get(i).let);
+            arg.typePtr = typePtrs.get(i);
+            args.add(arg);
+        }
+    }
     public boolean load(GenericOwner owner) {
         for (Arg arg : args) {
             arg.typePtr = cFile.getPointer(arg.typeToken.start, arg.typeToken.end, null, owner, arg.isLet);

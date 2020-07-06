@@ -91,7 +91,7 @@ public class Variable extends Member {
     public void make() {
         for (TokenGroup initToken : initTokens) {
             if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
-                Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true);
+                Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true, null, null);
                 stack.read(initToken.start, initToken.end, true);
                 stack.load();
                 initStacks.add(stack);

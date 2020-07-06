@@ -231,27 +231,23 @@ public class Indexer extends Member {
     public void make() {
         if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
             stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
-                    isStatic() ? null : type, false, isStatic(), true);
+                    isStatic() ? null : type, false, isStatic(), true, getParams(), null);
 
             stackGet.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
-            stackGet.addParam(getParams());
             stackGet.load();
         }
         if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
             stackOwn = new Stack(cFile, token, type.self, typePtr,
-                    isStatic() ? null : type, false, isStatic(), true);
+                    isStatic() ? null : type, false, isStatic(), true, getParams(), null);
 
             stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
-            stackOwn.addParam(getParams());
             stackOwn.load();
         }
         if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
             stackSet = new Stack(cFile, token, type.self, Pointer.voidPointer,
-                    isStatic() ? null : type, false, isStatic(), true);
+                    isStatic() ? null : type, false, isStatic(), true, getParams(), typePtr);
 
             stackSet.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
-            stackSet.addParam(getParams());
-            stackSet.value(typePtr);
             stackSet.load();
         }
     }

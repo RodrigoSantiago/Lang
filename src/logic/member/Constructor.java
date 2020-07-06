@@ -84,9 +84,9 @@ public class Constructor extends Member {
     @Override
     public void make() {
         if (hasImplementation) {
-            stack = new Stack(cFile, token, type.self, Pointer.voidPointer, isStatic() ? null : type, false, isStatic(), true);
+            stack = new Stack(cFile, token, type.self, Pointer.voidPointer, isStatic() ? null : type,
+                    false, isStatic(), true, getParams(), null);
             stack.read(contentToken.start, contentToken.end, true);
-            stack.addParam(getParams());
             stack.load();
 
             if (!isStatic()) {

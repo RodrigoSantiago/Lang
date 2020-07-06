@@ -2,7 +2,6 @@ namespace lang;
 
 public class Array<T> : List<T> {
 
-    // TODO - STACK, IF FINAL LOCAL, INITIATED WITH BRACES
     private final int length;
     public int Length {
         get {
@@ -40,7 +39,7 @@ public class Array<T> : List<T> {
                 this->f_length = size;
                 if (init) {
                     for (long i = 0; i < size; i++) {
-                        this->data[i] = lang::value<GPtr<g_T>>::def();
+                        new (&this->data[i]) GPtr<g_T>(lang::value<GPtr<g_T>>::def());
                     }
                 }
             }
@@ -55,24 +54,24 @@ public class Array<T> : List<T> {
 
         template <typename A>
         struct array<lang_Array<A>> {
-            static lang_Array<A>* fill(lang_Array<A> * array, const lang_int* count, lang_int pos) {
+            static lang_Array<A>* fill(lang_Array<A> * arr, const lang_int* count, lang_int pos) {
                 lang_int len = count[pos];
-                array->create(len);
-                return array;
+                arr->create(len);
+                return arr;
             }
         };
 
         template <typename A>
         struct array<lang_Array<lang_Array<A>>> {
-            static lang_Array<lang_Array<A>>* fill(lang_Array<lang_Array<A>> * array, const lang_int* count, lang_int pos) {
+            static lang_Array<lang_Array<A>>* fill(lang_Array<lang_Array<A>> * arr, const lang_int* count, lang_int pos) {
                 lang_int len = count[pos];
-                array->create(len, false);
+                arr->create(len, false);
 
                 for (lang_int i = 0; i < len; ++i) {
-                    new (&array->data[i]) GPtr<lang_Array<A>>(Fill<lang_Array<A>>::fill(new lang_Array<A>(), count, pos + 1));
+                    new (&arr->data[i]) GPtr<lang_Array<A>>(array<lang_Array<A>>::fill(new lang_Array<A>(), count, pos + 1));
                 }
 
-                return array;
+                return arr;
             }
         };
     }

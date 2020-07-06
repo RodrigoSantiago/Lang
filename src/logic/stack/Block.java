@@ -1,5 +1,6 @@
 package logic.stack;
 
+import builder.CppBuilder;
 import content.Key;
 import content.Token;
 import logic.stack.block.*;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 public abstract class Block extends Line {
 
     private BlockDo lastBlockDo;
+    public ArrayList<Field> localFields = new ArrayList<>();
 
     public ArrayList<Line> lines = new ArrayList<>();
 
@@ -49,6 +51,8 @@ public abstract class Block extends Line {
                 add(new LineContinue(this, start, end));
             } else if (start.key == Key.BREAK) {
                 add(new LineBreak(this, start, end));
+            } else if (start.key == Key.YIELD) {
+                add(new LineYield(this, start, end));
             } else if (start.key == Key.CASE || start.key == Key.DEFAULT) {
                 add(new LineCase(this, start, end));
             } else if (start.key == Key.LET || start.key == Key.VAR || start.key == Key.FINAL) {
@@ -135,6 +139,27 @@ public abstract class Block extends Line {
     public void load() {
         for (Line line : lines) {
             line.load();
+        }
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, int off) {
+        super.build(cBuilder, idt, off);
+    }
+
+    public void addField(Field field) {
+        localFields.add(field);
+    }
+
+    public void buildDestroyer(CppBuilder cBuilder, int idt) {
+        if (!stack.isYieldMode()) return;
+
+        for (int i = localFields.size() - 1; i >= 0; i--) {
+            Field field = localFields.get(i);
+            if (!field.getTypePtr().isLangBase()) {
+                cBuilder.idt(idt).add("(&").nameParam(field.nameToken)
+                        .add(")->~").path(field.typePtr, false).add("();").ln();
+            }
         }
     }
 }

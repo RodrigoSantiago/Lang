@@ -90,7 +90,8 @@ public class FieldCall extends Call {
                     }
                 }
             } else {
-                if (!getExpression().parent.isChildOf(field.getSource())) {
+                if (!getExpression().parent.isChildOf(field.getSource()) &&
+                        !getStack().isChildOf(field.getSource())) {
                     cFile.erro(token, "Unassesible Field", this);
                 }
             }

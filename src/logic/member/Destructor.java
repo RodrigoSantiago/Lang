@@ -75,7 +75,7 @@ public class Destructor extends Member {
     @Override
     public void make() {
         if (hasImplementation) {
-            stack = new Stack(cFile, token, type.self, Pointer.voidPointer, type, false, false, false);
+            stack = new Stack(cFile, token, type.self, Pointer.voidPointer, type, false, false, false, null, null);
             stack.read(contentToken.start, contentToken.end, true);
             stack.load();
         }

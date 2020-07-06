@@ -93,6 +93,7 @@ public class BlockDo extends Block {
         if (ct && label != null) {
             cBuilder.idt(idt + 1).add("continue_").add(labelID).add(":;").ln();
         }
+        buildDestroyer(cBuilder, idt + 1);
         cBuilder.out().add(" while (").add(blockWhile.conditionExp, idt).add(");").ln();
         if (bk && label != null) {
             cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();

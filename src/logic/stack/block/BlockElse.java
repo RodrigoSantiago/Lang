@@ -104,6 +104,7 @@ public class BlockElse extends Block {
         for (Line line : lines) {
             line.build(cBuilder, idt + 1, idt + 1);
         }
+        buildDestroyer(cBuilder, idt + 1);
         cBuilder.out().ln();
     }
 

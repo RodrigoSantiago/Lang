@@ -322,6 +322,22 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder args(Parameters params) {
+        return args(params, false);
+    }
+
+    public CppBuilder args(Parameters params, boolean extraValue) {
+        for (int i = 0; i < params.getCount(); i++) {
+            if (i > 0) add(", ");
+            add("v_").add(params.getNameToken(i));
+        }
+        if (extraValue) {
+            if (params.getCount() > 0) add(", ");
+            add("v_value");
+        }
+        return this;
+    }
+
     public CppBuilder args(ParamView params) {
         return args(params, false);
     }

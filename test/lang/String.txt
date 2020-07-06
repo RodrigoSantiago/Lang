@@ -190,8 +190,8 @@ public static struct string : String {
         var itOther = other.iterateUTF32();
         var l = Locale.GlobalLocale;
 
-        while (it.hasNext()) {
-            if (l.toUpperCase(it.next()) != l.toUpperCase(itOther.next())) {
+        while (it.move() && itOther.move()) {
+            if (l.toUpperCase(it.current) != l.toUpperCase(itOther.current)) {
                 return false;
             }
         }
@@ -302,24 +302,26 @@ public static struct string : String {
 final class StringUTF8Iterator : Iterator<byte> {
 
     private string content;
-    private int index;
+    private int index = -1;
 
     public this(string content) {
         this.content = content;
     }
 
-    public byte next() {
-        if (index < content.Length) {
-            native (source) {
-                return f_content.data->chars[f_index ++];
+    public byte current {
+        get {
+            if (index >= 0 && index < content.Length) {
+                native (source) {
+                    return f_content.data->chars[ f_index ];
+                }
+            } else {
+                return 0;
             }
-        } else {
-            return 0;
         }
     }
 
-    public bool hasNext() {
-        return index < content.Length;
+    public bool move() {
+        return ++ index < content.Length;
     }
 
     public bool remove() {
@@ -337,11 +339,13 @@ final class StringUTF16Iterator : Iterator<short> {
         this.content = content;
     }
 
-    public short next() {
-        return 0;
+    public short current {
+        get {
+            return 0;
+        }
     }
 
-    public bool hasNext() {
+    public bool move() {
         return false;
     }
 
@@ -359,11 +363,13 @@ final class StringUTF32Iterator : Iterator<int> {
         this.content = content;
     }
 
-    public int next() {
-        return 0;
+    public int current {
+        get {
+            return 0;
+        }
     }
 
-    public bool hasNext() {
+    public bool move() {
         return false;
     }
 

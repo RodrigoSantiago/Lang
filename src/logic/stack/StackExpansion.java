@@ -3,16 +3,19 @@ package logic.stack;
 import content.Key;
 import content.Token;
 import logic.Pointer;
+import logic.params.Parameters;
 
 import java.util.HashMap;
 
 public class StackExpansion extends Stack {
 
-    public HashMap<Token, Field> shadowFields = new HashMap<>();
     Stack source;
+    Line parent;
 
-    public StackExpansion(Stack source, Token referenceToken, Pointer returnPtr) {
+    public StackExpansion(Line parent, Stack source, Token referenceToken, Pointer returnPtr, Parameters param) {
         super(source, referenceToken, returnPtr);
+        this.parent = parent;
+        this.param = param;
         this.source = source;
     }
 
@@ -21,7 +24,7 @@ public class StackExpansion extends Stack {
     }
 
     @Override
-    void thisBase() {
+    public void thisBase() {
 
     }
 
@@ -38,7 +41,7 @@ public class StackExpansion extends Stack {
                 Field outside = source.findField(nameToken);
                 if (outside != null) {
                     if ((outside.getTypePtr().isPointer() && !outside.getTypePtr().let) ||
-                            outside.getName().key == Key.THIS) {
+                            outside.getName().key == Key.THIS || isYieldMode()) {
                         shadow = new Field(this, outside);
                         shadowFields.put(outside.getName(), shadow);
                     } else {
@@ -48,5 +51,10 @@ public class StackExpansion extends Stack {
             }
             return shadow;
         }
+    }
+
+    @Override
+    public boolean isChildOf(Block block) {
+        return parent != null && parent.isChildOf(block);
     }
 }

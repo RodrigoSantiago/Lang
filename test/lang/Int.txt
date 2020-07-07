@@ -1,6 +1,6 @@
 namespace lang;
 
-public class Int : Object {
+public sync class Int : Object {
     public final int value;
 
     public this(int value) {
@@ -37,7 +37,7 @@ public class Int : Object {
     }
 }
 
-public static struct int : Int {
+public sync struct int : Int {
 
     private this() {
     }

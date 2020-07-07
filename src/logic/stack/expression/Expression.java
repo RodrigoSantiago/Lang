@@ -400,7 +400,7 @@ public class Expression {
             i += 1;
             if (state == 2 && i == end) {
                 cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
-                groups.remove(i);
+                groups.remove(i - 1);
             }
         }
     }
@@ -439,7 +439,7 @@ public class Expression {
             i --;
             if (state == 2 && i < start) {
                 cFile.erro(group.getTokenGroup(), "Unexpected Operator", this);
-                groups.remove(i);
+                groups.remove(i); // TODO [WTF?]
             }
         }
     }

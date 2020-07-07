@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Double {
+public sync class Double {
     public final double value;
 
     public this(double value) {
@@ -49,7 +49,7 @@ public final class Double {
     }
 }
 
-public static struct double : Double {
+public sync struct double : Double {
 
     private this() {
     }

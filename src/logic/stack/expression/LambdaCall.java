@@ -279,7 +279,7 @@ public class LambdaCall extends Call {
             for (int i = 0; i < nameTokens.size(); i++) {
                 types.add(naturalPtr.pointers[i + 1]);
             }
-            innerStack = new StackExpansion(getExpression().parent, getStack(), token, typePtr,
+            innerStack = new StackExpansion(getExpression().parent, getStack(), token, naturalPtr.pointers[0],
                     new Parameters(cFile, token, nameTokens, types));
             innerStack.read(contentToken.start, contentToken.end, true);
             for (int i = 0; i < nameTokens.size(); i++) {
@@ -325,7 +325,7 @@ public class LambdaCall extends Call {
         if (isPathLine) {
             cBuilder.add(naturalPtr).add("(");
         }
-        if (!innerStack.isYieldMode() && innerStack.shadowFields.size() > 0) {
+        if (innerStack.shadowFields.size() > 0) {
             cBuilder.add("(");
             for (Field shadow : innerStack.shadowFields.values()) {
                 shadow.buildParam(cBuilder);
@@ -340,7 +340,7 @@ public class LambdaCall extends Call {
         cBuilder.add(") mutable -> ").add(naturalPtr.pointers[0]).add(" ").in(idt + 1);
         innerStack.build(cBuilder, idt + 1);
         cBuilder.out();
-        if (!innerStack.isYieldMode() && innerStack.shadowFields.size() > 0) {
+        if (innerStack.shadowFields.size() > 0) {
             cBuilder.add(")");
         }
         if (isPathLine) {

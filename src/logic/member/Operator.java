@@ -23,7 +23,7 @@ public class Operator extends Member {
     private Stack stack;
 
     public Operator(Type type, Token start, Token end) {
-        super(type, type.cFile);
+        super(type, type.cFile, start);
 
         int state = 0;
         Token next;

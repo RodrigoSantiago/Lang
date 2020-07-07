@@ -15,7 +15,7 @@ public class Num extends Member {
     private ArrayList<FieldView> fields;
 
     public Num(Type type, Token start, Token end) {
-        super(type, type.cFile);
+        super(type, type.cFile, start);
 
         int state = 0;
         Token next;

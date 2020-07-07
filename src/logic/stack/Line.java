@@ -54,6 +54,6 @@ public abstract class Line {
     public boolean isChildOf(Block source) {
         if (this == source) return true;
         if (parent != null) return parent.isChildOf(source);
-        return false;
+        return stack.isChildOf(source);
     }
 }

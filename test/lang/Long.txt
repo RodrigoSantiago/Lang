@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Long {
+public sync class Long {
     public final long value;
 
     public this(long value) {
@@ -37,7 +37,7 @@ public final class Long {
     }
 }
 
-public static struct long : Long {
+public sync struct long : Long {
 
     private this() {
     }

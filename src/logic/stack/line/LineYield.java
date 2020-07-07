@@ -16,7 +16,7 @@ public class LineYield extends Line {
     TokenGroup returnToken;
     Expression returnExp;
     private int yieldID;
-    private boolean isReturn, isBreak;
+    private boolean isReturn, isReturnInner, isBreak;
 
     public LineYield(Block block, Token start, Token end) {
         super(block, start, end);
@@ -65,10 +65,6 @@ public class LineYield extends Line {
 
     @Override
     public void load() {
-        if (isReturn) {
-            yieldID = stack.requestYieldID();
-        }
-
         if (returnExp != null) {
             returnExp.load(new Context(stack));
             if (stack.getYiledPtr() == null) {
@@ -77,6 +73,7 @@ public class LineYield extends Line {
             } else {
                 Pointer naturalPtr = returnExp.getNaturalPtr(stack.getYiledPtr());
                 if (naturalPtr != null && naturalPtr.type == cFile.langIterator()) {
+                    isReturnInner = true;
                     returnExp.requestOwn(stack.getReturnPtr());
                 } else {
                     returnExp.requestOwn(stack.getYiledPtr());
@@ -88,7 +85,14 @@ public class LineYield extends Line {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
-        if (isReturn) {
+        if (isReturnInner) {
+            cBuilder.idt(off).add("yieldInner = ").add(returnExp, idt).add(";").ln();
+            cBuilder.idt(off).add("if (yieldInner == nullptr || !yieldInner->m_move()) yieldValue = lang::value<GPtr<").add(stack.getYiledPtr()).add(">>::def();").ln();
+            cBuilder.idt(off).add("else yieldValue = yieldInner->get_current();").ln();
+            cBuilder.idt(off).add("yieldID = ").add(yieldID).add(";").ln();
+            cBuilder.idt(off).add("return true;").ln();
+            cBuilder.idt(off).add("yield_").add(yieldID).add(":;").ln();
+        } else if (isReturn) {
             cBuilder.idt(off).add("yieldValue = ").add(returnExp, idt).add(";").ln();
             cBuilder.idt(off).add("yieldID = ").add(yieldID).add(";").ln();
             cBuilder.idt(off).add("return true;").ln();
@@ -105,5 +109,13 @@ public class LineYield extends Line {
 
     public boolean isBreak() {
         return isBreak;
+    }
+
+    public void setYieldID(int id) {
+        yieldID = id;
+    }
+
+    public int getYieldID() {
+        return yieldID;
     }
 }

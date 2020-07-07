@@ -31,6 +31,7 @@ public class CppBuilder {
     private final ArrayList<Type> dDependences;
 
     private int tempID;
+    private TempBlock capture;
     private final ArrayList<Temp> tempVars;
     private final ArrayList<TempBlock> tempBlocks;
 
@@ -97,6 +98,7 @@ public class CppBuilder {
         toHeader();
 
         tempID = 0;
+        capture = null;
         tempBlocks.clear();
         tempVars.clear();
 
@@ -137,11 +139,8 @@ public class CppBuilder {
         }
     }
 
-    private void dependence(Pointer pointer) {
+    public void dependence(Pointer pointer) {
         if (!tDependences.contains(pointer.type)) {
-            if (pointer.type == null) {
-                System.out.println("");
-            }
             if (!pointer.type.isLangBase()) {
                 if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
                     tDependences.add(pointer.type);
@@ -569,8 +568,16 @@ public class CppBuilder {
     }
 
     public CppBuilder in(int idt) {
+        return in(false, idt);
+    }
+
+    public CppBuilder in(boolean yield, int idt) {
         add("{").ln();
-        tempBlocks.add(new TempBlock(tBuilder.length(), idt));
+        TempBlock tBlock = new TempBlock(capture, tBuilder.length(), idt, yield);
+        if (yield || capture == null || !capture.yield) {
+            capture = tBlock;
+        }
+        tempBlocks.add(tBlock);
         return this;
     }
 
@@ -583,13 +590,13 @@ public class CppBuilder {
     }
 
     public Temp temp(Pointer typePtr, int array) {
-        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (tempID++), true, array);
+        Temp temp = new Temp(capture, typePtr, "t" + (tempID++), true, array);
         tempVars.add(temp);
         return temp;
     }
 
     public Temp temp(Pointer typePtr, boolean pure) {
-        Temp temp = new Temp(tempBlocks.size() - 1, typePtr, "t" + (tempID++), pure, 0);
+        Temp temp = new Temp(capture, typePtr, "t" + (tempID++), pure, 0);
         tempVars.add(temp);
         return temp;
     }
@@ -601,7 +608,7 @@ public class CppBuilder {
         tBuilder = dBuilder;
         for (int i = 0; i < tempVars.size(); i++) {
             Temp tempVar = tempVars.get(i);
-            if (tempVar.blockID == tempBlocks.size()) {
+            if (tempVar.block == tblock) {
                 has = true;
                 idt(tblock.idt);
                 if (tempVar.array > 0) {
@@ -624,6 +631,7 @@ public class CppBuilder {
         if (tempBlocks.size() == 0) {
             tempID = 0;
         }
+        capture = tblock.capture;
         return idt(tblock.idt - 1).add("}");
     }
 

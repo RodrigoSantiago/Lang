@@ -32,6 +32,7 @@ public enum Key {
     PUBLIC("public",          false, true),
     PRIVATE("private",        false, true),
     STATIC("static",          false, true),
+    SYNC("sync",              false, true),
     FINAL("final",            false, true),
     ABSTRACT("abstract",      false, true),
 
@@ -210,7 +211,7 @@ public enum Key {
                     CASE.isEqual(str, start, end) ? CASE : LOCK.isEqual(str, start, end) ? LOCK :
                     THIS.isEqual(str, start, end) ? THIS : VOID.isEqual(str, start, end) ? VOID :
                     TRUE.isEqual(str, start, end) ? TRUE : NULL.isEqual(str, start, end) ? NULL :
-                    BASE.isEqual(str, start, end) ? BASE :NOONE;
+                    BASE.isEqual(str, start, end) ? BASE : SYNC.isEqual(str, start, end) ? SYNC : NOONE;
         } else if (len == 5) {
             return  USING.isEqual(str, start, end) ? USING : CLASS.isEqual(str, start, end) ? CLASS :
                     FINAL.isEqual(str, start, end) ? FINAL : WHILE.isEqual(str, start, end) ? WHILE :

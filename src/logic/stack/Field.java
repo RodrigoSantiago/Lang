@@ -78,7 +78,13 @@ public class Field {
                 cBuilder.add(typePtr.isPointer() ? "->" : ".");
             }
         } else if (nameToken.key == Key.THIS) {
-            if (next) {
+            if (stack.isYieldMode()) {
+                if (typePtr.isPointer()) {
+                    cBuilder.nameParam("this").add(next, "->");
+                } else {
+                    cBuilder.nameParam("this").add(next, ".");
+                }
+            } else if (next) {
                 cBuilder.add("this->");
             } else if (typePtr.isPointer()) {
                 cBuilder.add("this");

@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Float {
+public sync class Float {
     public final float value;
 
     public this(float value) {
@@ -57,7 +57,7 @@ public final class Float {
     }
 }
 
-public static struct float : Float {
+public sync struct float : Float {
 
     private this() {
     }

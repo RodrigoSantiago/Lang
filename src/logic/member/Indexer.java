@@ -26,7 +26,7 @@ public class Indexer extends Member {
     private Stack stackGet, stackSet, stackOwn;
 
     public Indexer(Type type, Token start, Token end) {
-        super(type, type.cFile);
+        super(type, type.cFile, start);
 
         int state = 0;
         Token next;
@@ -231,21 +231,21 @@ public class Indexer extends Member {
     public void make() {
         if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
             stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
-                    isStatic() ? null : type, false, isStatic(), true, getParams(), null);
+                    isStatic() ? null : type, false, isStatic(), false, getParams(), null);
 
             stackGet.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
             stackGet.load();
         }
         if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
             stackOwn = new Stack(cFile, token, type.self, typePtr,
-                    isStatic() ? null : type, false, isStatic(), true, getParams(), null);
+                    isStatic() ? null : type, false, isStatic(), false, getParams(), null);
 
             stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
             stackOwn.load();
         }
         if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
             stackSet = new Stack(cFile, token, type.self, Pointer.voidPointer,
-                    isStatic() ? null : type, false, isStatic(), true, getParams(), typePtr);
+                    isStatic() ? null : type, false, isStatic(), false, getParams(), typePtr);
 
             stackSet.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
             stackSet.load();

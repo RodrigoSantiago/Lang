@@ -23,7 +23,7 @@ public class Variable extends Member {
     private ArrayList<Stack> initStacks = new ArrayList<>();
 
     public Variable(Type type, Token start, Token end) {
-        super(type, type.cFile);
+        super(type, type.cFile, start);
 
         int state = 0;
         Token next;
@@ -81,6 +81,11 @@ public class Variable extends Member {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type, isLet());
             if (typePtr == null) {
                 typePtr = cFile.langObjectPtr(isLet());
+                return false;
+            }
+            if (isStatic() && !typePtr.type.isSync()) {
+                cFile.erro(typeToken, "A Static variable must be a Sync Type", this);
+                return false;
             }
 
             return nameTokens.size() > 0 ;
@@ -91,7 +96,8 @@ public class Variable extends Member {
     public void make() {
         for (TokenGroup initToken : initTokens) {
             if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
-                Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true, null, null);
+                Stack stack = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type,
+                        true, isStatic(), false, null, null);
                 stack.read(initToken.start, initToken.end, true);
                 stack.load();
                 initStacks.add(stack);

@@ -13,6 +13,7 @@ import logic.stack.expression.ConstructorCall;
 import logic.stack.expression.Expression;
 import logic.stack.line.LineYield;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Stack {
@@ -36,6 +37,7 @@ public class Stack {
     public Parameters param;
     private Pointer valuePtr;
     public HashMap<Token, Field> shadowFields = new HashMap<>();
+    public ArrayList<LineYield> yields = new ArrayList<>();
 
     private ConstructorCall constructorCall;
 
@@ -100,7 +102,7 @@ public class Stack {
             expression.build(cBuilder, idt);
         } else {
             if (isYieldMode()) {
-                YieldResolve.build(cBuilder, idt, this, yieldID, param, valuePtr);
+                YieldResolve.build(cBuilder, idt, this, param, valuePtr);
             } else {
                 for (Line line : block.lines) {
                     line.build(cBuilder, idt, idt);
@@ -184,7 +186,7 @@ public class Stack {
         Token nameThis = new Token("this", 0, 4, Key.THIS, false);
         fields.put(nameThis, new Field(this, referenceToken, nameThis, sourcePtr.toLet(), true, block));
 
-        if (sourcePtr.type.parent != null) {
+        if (sourcePtr.type.parent != null && !isYieldMode()) {
             Token nameBase =  new Token("base", 0, 4, Key.BASE, false);
             fields.put(nameBase, new Field(this, referenceToken, nameBase, sourcePtr.type.parent.toLet(), true, block));
         }
@@ -206,10 +208,6 @@ public class Stack {
         return yieldPtr;
     }
 
-    public int requestYieldID() {
-        return yieldID++;
-    }
-
     public void setYieldMode(LineYield lineYield) {
         if (!isYield) {
             if (isConstructor) {
@@ -227,6 +225,7 @@ public class Stack {
                 }
             }
         }
+        yields.add(lineYield);
     }
 
     public boolean isYieldMode() {

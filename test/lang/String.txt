@@ -21,7 +21,7 @@ public final class String {
     }
 }
 
-public static struct string : String {
+public sync struct string : String {
 
     public int Length {
         get {
@@ -71,6 +71,7 @@ public static struct string : String {
         }
         lang_string::~lang_string() {
             lang::text::dsg(data);
+            data = nullptr;
         }
         lang_string& lang_string::operator=(const lang_string& other) {
             if (this->data != other.data) {

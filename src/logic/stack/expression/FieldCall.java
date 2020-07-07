@@ -90,8 +90,7 @@ public class FieldCall extends Call {
                     }
                 }
             } else {
-                if (!getExpression().parent.isChildOf(field.getSource()) &&
-                        !getStack().isChildOf(field.getSource())) {
+                if (!getExpression().parent.isChildOf(field.getSource())) {
                     cFile.erro(token, "Unassesible Field", this);
                 }
             }
@@ -256,7 +255,7 @@ public class FieldCall extends Call {
                 if (fieldView.isStatic()) {
                     cBuilder.path(fieldView.getGetType().self, true).add("::");
                 } else {
-                    cBuilder.add("this->");
+                    thisField.build(cBuilder, true);
                 }
             }
             if (fieldView.isNum()) {

@@ -31,7 +31,7 @@ public class BlockSwitch extends Block {
     private boolean bk;
 
     public ArrayList<LineCase> caseLines = new ArrayList<>();
-    LineCase defaultCase;
+    public LineCase defaultCase;
 
     public BlockSwitch(Block block, Token start, Token end) {
         super(block, start, end);
@@ -124,6 +124,7 @@ public class BlockSwitch extends Block {
             for (Line line : lines) {
                 line.build(cBuilder, idt + 1, idt + 1);
             }
+            cBuilder.idt(1).out().ln(); // [last case]
             cBuilder.idt(idt).add("}").ln();
             if (bk && label != null) {
                 cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
@@ -148,8 +149,9 @@ public class BlockSwitch extends Block {
             for (Line line : lines) {
                 line.build(cBuilder, idt + 1, idt + 1);
             }
+            cBuilder.idt(1).out().ln(); // [last case]
             cBuilder.out().ln();
-            if (bk && label != null) {
+            if (bk) {
                 cBuilder.idt(idt).add("break_").add(labelID).add(":;").ln();
             }
         }
@@ -188,7 +190,7 @@ public class BlockSwitch extends Block {
 
     @Override
     public void add(BlockElse blockElse) {
-        if (caseLines.size() == 0) {
+        if (defaultCase == null && caseLines.size() == 0) {
             cFile.erro(blockElse.start, "The first Switch Statment must be a case or default", this);
         }
         super.add(blockElse);
@@ -196,7 +198,7 @@ public class BlockSwitch extends Block {
 
     @Override
     public void add(BlockWhile blockWhile) {
-        if (caseLines.size() == 0) {
+        if (defaultCase == null && caseLines.size() == 0) {
             cFile.erro(blockWhile.start, "The first Switch Statment must be a case or default", this);
         }
         super.add(blockWhile);
@@ -204,7 +206,7 @@ public class BlockSwitch extends Block {
 
     @Override
     public void add(BlockDo blockDo) {
-        if (caseLines.size() == 0) {
+        if (defaultCase == null && caseLines.size() == 0) {
             cFile.erro(blockDo.start, "The first Switch Statment must be a case or default", this);
         }
         super.add(blockDo);
@@ -212,7 +214,7 @@ public class BlockSwitch extends Block {
 
     @Override
     public void add(Line line) {
-        if (caseLines.size() == 0) {
+        if (defaultCase == null && caseLines.size() == 0) {
             cFile.erro(line.start, "The first Switch Statment must be a case or default", this);
         }
         super.add(line);
@@ -220,7 +222,7 @@ public class BlockSwitch extends Block {
 
     @Override
     public void end() {
-        if (caseLines.size() == 0) {
+        if (defaultCase == null && caseLines.size() == 0) {
             cFile.erro(start, "A Switch Statment must have a case or default", this);
         }
     }

@@ -1,6 +1,6 @@
 namespace lang;
 
-public final class Locale {
+public class Locale {
 
     private static locale globalLocale;
 

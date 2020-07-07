@@ -21,7 +21,7 @@ public class Constructor extends Member {
     private Constructor constructorTarget;
 
     public Constructor(Type type, Token start, Token end) {
-        super(type, type.cFile);
+        super(type, type.cFile, start);
 
         int state = 0;
         Token next;

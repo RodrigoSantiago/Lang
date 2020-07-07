@@ -1,6 +1,6 @@
 namespace lang;
 
-public class Object {
+public sync class Object {
     native (header) {
         lang::weakptr* weak;
 

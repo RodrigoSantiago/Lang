@@ -18,7 +18,7 @@ public class Native extends Member {
     private TokenGroup contentToken;
 
     public Native(Type type, Token start, Token end) {
-        super(type, type.cFile);
+        super(type, type.cFile, start);
 
         int state = 0;
         Token next;

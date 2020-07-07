@@ -73,6 +73,10 @@ public class LineCase extends Line {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, int off) {
+        if ((switchOwner.caseLines.size() == 0 && switchOwner.defaultCase != this) ||
+                (switchOwner.caseLines.size() > 0 && switchOwner.caseLines.get(0) != this)) {
+            cBuilder.idt(1).out().ln();
+        }
         if (switchOwner.isSimple()) {
             if (isDefault) {
                 cBuilder.idt(off).add("default : ");
@@ -80,9 +84,9 @@ public class LineCase extends Line {
                 cBuilder.idt(off).add("case ").add(caseExp, idt).add(" : ");
             }
         } else {
-            cBuilder.idt(off).add(isDefault ? "default_" : "case_").add(labelID).add(" :;");
+            cBuilder.idt(off).add(isDefault ? "default_" : "case_").add(labelID).add(" :; ");
         }
-        if (off > 0) cBuilder.ln();
+        cBuilder.in(idt);
     }
 
     public void setLabelID(int id) {

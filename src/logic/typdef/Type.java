@@ -54,7 +54,7 @@ public abstract class Type implements GenericOwner {
     private Operator equal, different;
 
     private ArrayList<Type> inheritanceTypes = new ArrayList<>();
-    private boolean isPrivate, isPublic, isAbstract, isFinal, isStatic;
+    private boolean isPrivate, isPublic, isAbstract, isFinal, isSync;
     boolean isLoaded, isCrossed, isBase, isFunction, hasGeneric, hasInstanceVars, hasInstanceInit, hasStaticInit;
 
     private HashMap<Token, FieldView> fields = new HashMap<>();
@@ -98,13 +98,11 @@ public abstract class Type implements GenericOwner {
                         isAbstract = (token.key == Key.ABSTRACT);
                         isFinal = (token.key == Key.FINAL);
                     }
-                } else if (token.key == Key.STATIC) {
-                    if (!isStruct()) {
-                        cFile.erro(token, "Unexpected modifier", this);
-                    } else if (isStatic) {
+                } else if (token.key == Key.SYNC) {
+                    if (isSync) {
                         cFile.erro(token, "Repeated modifier", this);
                     } else {
-                        isStatic = true;
+                        isSync = true;
                     }
                 } else {
                     cFile.erro(token, "Unexpected modifier", this);
@@ -153,8 +151,8 @@ public abstract class Type implements GenericOwner {
             token = next;
         }
 
-        if (isEnum()) {
-            isStatic = true;
+        if (isEnum() || isInterface()) {
+            isSync = true;
         }
 
         if (isEnum() || isStruct()) {
@@ -871,8 +869,8 @@ public abstract class Type implements GenericOwner {
         return isAbstract;
     }
 
-    public boolean isStatic() {
-        return isStatic;
+    public boolean isSync() {
+        return isSync;
     }
 
     public boolean isClass() {
@@ -1016,8 +1014,8 @@ public abstract class Type implements GenericOwner {
                     && variable.getTypePtr().type.isStruct()
                     && variable.getTypePtr().type.cyclicVariableVerify(this)) {
                 cFile.erro(variable.getTypeToken().start, "Cyclic variable type", this);
-            } else if (!variable.isStatic() && isValue() && isStatic() && !variable.getTypePtr().type.isStatic()) {
-                cFile.erro(variable.getTypeToken().start, "A Static Type can only have Static Types as it's field", this);
+            } else if (!variable.isStatic() && isSync() && !variable.getTypePtr().type.isSync()) {
+                cFile.erro(variable.getTypeToken().start, "A Sync Type can only have Sync Types as local variables", this);
             } else {
                 for (FieldView field : variable.getFields()) {
                     if (fields.containsKey(field.getName())) {

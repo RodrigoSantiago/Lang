@@ -41,7 +41,7 @@ public class StackExpansion extends Stack {
                 Field outside = source.findField(nameToken);
                 if (outside != null) {
                     if ((outside.getTypePtr().isPointer() && !outside.getTypePtr().let) ||
-                            outside.getName().key == Key.THIS || isYieldMode()) {
+                            outside.getName().key == Key.THIS) {
                         shadow = new Field(this, outside);
                         shadowFields.put(outside.getName(), shadow);
                     } else {

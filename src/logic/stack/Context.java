@@ -326,9 +326,8 @@ public class Context {
             if (castPtr.type != null && ptr.type != null && castPtr.type.isValue() && ptr.type.isValue()) {
                 if (ptr.type != null && ptr.type.casts.contains(castPtr)) return OperatorView.CAST;
                 if (ptr.type != null && ptr.type.autoCast.contains(castPtr)) return OperatorView.CAST;
-            } else {
-                if (castPtr.canReceive(ptr) > 0 || ptr.canReceive(castPtr) > 0) return OperatorView.CAST;
             }
+            if (center.verify(castPtr) > 0) return OperatorView.CAST;
             return null;
         } else {
 

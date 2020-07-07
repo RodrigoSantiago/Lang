@@ -27,7 +27,7 @@ public class Property extends Member {
     private Stack stackGet, stackSet, stackOwn, stackInit;
 
     public Property(Type type, Token start, Token end) {
-        super(type, type.cFile);
+        super(type, type.cFile, start);
 
         int state = 0;
         Token next;
@@ -251,27 +251,28 @@ public class Property extends Member {
     public void make() {
         if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
             stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
-                    isStatic() ? null : type, false, isStatic(), true, null, null);
+                    isStatic() ? null : type, false, isStatic(), false, null, null);
 
             stackGet.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
             stackGet.load();
         }
         if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
             stackOwn = new Stack(cFile, token, type.self, typePtr,
-                    isStatic() ? null : type, false, isStatic(), true, null, null);
+                    isStatic() ? null : type, false, isStatic(), false, null, null);
 
             stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
             stackOwn.load();
         }
         if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
             stackSet = new Stack(cFile, token, type.self, Pointer.voidPointer,
-                    isStatic() ? null : type, false, isStatic(), true, null, typePtr);
+                    isStatic() ? null : type, false, isStatic(), false, null, typePtr);
 
             stackSet.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
             stackSet.load();
         }
         if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
-            stackInit = new Stack(cFile, token, type.self, typePtr, isStatic() ? null : type, true, isStatic(), true, null, null);
+            stackInit = new Stack(cFile, token, type.self, typePtr,
+                    isStatic() ? null : type, true, isStatic(), false, null, null);
             stackInit.read(initToken.start, initToken.end, true);
             stackInit.load();
         }

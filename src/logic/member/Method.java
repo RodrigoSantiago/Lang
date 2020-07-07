@@ -33,7 +33,7 @@ public class Method extends Member implements GenericOwner {
     }
 
     public Method(Type type, ContentFile cFile, Token start, Token end) {
-        super(type, cFile);
+        super(type, cFile, start);
         mainMethod = (cFile != type.cFile);
 
         int state = 0;

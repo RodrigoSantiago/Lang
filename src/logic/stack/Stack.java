@@ -7,6 +7,7 @@ import data.ContentFile;
 import builder.CppBuilder;
 import logic.GenericOwner;
 import logic.Pointer;
+import logic.member.view.ConstructorView;
 import logic.params.Parameters;
 import logic.stack.block.*;
 import logic.stack.expression.ConstructorCall;
@@ -27,6 +28,8 @@ public class Stack {
 
     public Block block;
     public Expression expression;
+    public ArrayList<Expression> expressions;
+    public ConstructorView enumConstructor;
 
     private boolean isExpression;
     private boolean isStatic;
@@ -75,12 +78,39 @@ public class Stack {
         this.valuePtr = valuePtr;
     }
 
-    public void read(Token start, Token end, boolean read) {
+    public void read(Token start, Token end) {
         if (isExpression) {
             block = new BlockEmpty(this, start, end, false);
             expression = new Expression(block, start, end);
         } else {
-            block = new BlockEmpty(this, start, end, read);
+            block = new BlockEmpty(this, start, end, true);
+        }
+    }
+
+    public void readEnum(Token start, Token end) {
+        block = new BlockEmpty(this, start, end, false);
+        expressions = new ArrayList<>();
+        Token next;
+        Token init = start;
+        Token token = start;
+        while (token != null && token != end) {
+            next = token.getNext();
+            if (token.key == Key.COMMA) {
+                if (init == token) {
+                    cFile.erro(token, "Expression expected", this);
+                } else {
+                    expressions.add(new Expression(block, init, token));
+                }
+                init = next;
+            }
+            if (next == end) {
+                if (init != next) {
+                    expressions.add(new Expression(block, init, next));
+                } else {
+                    cFile.erro(token, "Unexpected end of tokens", this);
+                }
+            }
+            token = next;
         }
     }
 
@@ -92,8 +122,20 @@ public class Stack {
             value(valuePtr);
         }
         if (isExpression) {
-            expression.load(new Context(this));
-            expression.requestOwn(returnPtr);
+            if (expressions != null) {
+                ArrayList<ConstructorView> cvs = new Context(this).findConstructor(sourcePtr, expressions);
+                if (cvs == null || cvs.size() == 0) {
+                    cFile.erro(referenceToken, "Constructor Not Found", this);
+                } else if (cvs.size() > 1) {
+                    cFile.erro(referenceToken, "Ambigous Constructor Call", this);
+                    enumConstructor = cvs.get(0);
+                } else {
+                    enumConstructor = cvs.get(0);
+                }
+            } else {
+                expression.load(new Context(this));
+                expression.requestOwn(returnPtr);
+            }
         } else {
             if (!hasConstructorCall && !isStatic) {
                 thisBase();
@@ -105,7 +147,11 @@ public class Stack {
 
     public void build(CppBuilder cBuilder, int idt) {
         if (isExpression) {
-            expression.build(cBuilder, idt);
+            if (enumConstructor != null) {
+                cBuilder.idt(idt).path(sourcePtr).add("(").add(expressions, idt).add(")");
+            } else {
+                expression.build(cBuilder, idt);
+            }
         } else {
             for (LambdaCall lambda : lambdas) {
                 lambda.setLambdaID(LambdaResolve.build(cBuilder, idt, lambda));
@@ -149,7 +195,7 @@ public class Stack {
         if (params == null) return;
 
         for (int i = 0; i < params.getCount(); i++) {
-            addParam(params.getNameToken(i), params.getTypePtr(i), false);
+            addParam(params.getName(i), params.getTypePtr(i), false);
         }
     }
 

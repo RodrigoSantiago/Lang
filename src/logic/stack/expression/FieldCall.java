@@ -264,7 +264,11 @@ public class FieldCall extends Call {
                 }
             }
             if (fieldView.isNum()) {
-                cBuilder.nameField(token);
+                if (fieldView.srcNum.isInitialized(fieldView.srcID)) {
+                    cBuilder.nameStaticField(token).add("()");
+                } else {
+                    cBuilder.nameField(token);
+                }
             } else if (fieldView.isVariable()) {
                 if (!fieldView.isStatic() || fieldView.srcVar.isLiteral(fieldView.srcID)) {
                     cBuilder.nameField(token);

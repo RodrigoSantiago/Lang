@@ -67,18 +67,17 @@ public class Parser {
         Token prev = null;
         Token token = init;
         Token start = token;
+        boolean fNum = type.isEnum();
 
-        // todo - Verificar se todos os loops se protejem de nulo
         while (token != null && token != end) {
             Token next = token.getNext();
 
-            if (type.isEnum() && state == 0) {
-                if (token.key == Key.WORD && (next == end || next.key == Key.COMMA || next.key == Key.SEMICOLON)) {
+            if (fNum) {
+                if (token.key == Key.WORD && (next == end || next.key == Key.COMMA ||
+                        next.key == Key.SEMICOLON || next.key == Key.PARAM)) {
                     state = 6;  // enum
-                } else if (prev != null && prev.key == Key.WORD && token.key == Key.PARAM &&
-                        (next == end || next.key == Key.COMMA || next.key == Key.SEMICOLON)) {
-                    state = 6;  // enum + constructor
                 }
+                fNum = false;
             }
 
             if (state == 0 && (token.key == Key.SETVAL || token.key == Key.COMMA)) {

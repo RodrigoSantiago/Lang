@@ -42,6 +42,10 @@ public class Pointer {
         return this == nullPointer || this == voidPointer || this == openPointer;
     }
 
+    public boolean isSync() {
+        return type != null && type.isSync();
+    }
+
     public Pointer toLet() {
         return toLet(true);
     }

@@ -96,7 +96,7 @@ public class Parameters {
         return args.get(pos).typePtr;
     }
 
-    public Token getNameToken(int pos) {
+    public Token getName(int pos) {
         return args.get(pos).nameToken;
     }
 

@@ -213,6 +213,11 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder up(String str) {
+        tBuilder.append(str.toUpperCase());
+        return this;
+    }
+
     public CppBuilder add(String str) {
         tBuilder.append(str);
         return this;
@@ -308,7 +313,19 @@ public class CppBuilder {
     public CppBuilder add(Parameters params) {
         for (int i = 0; i < params.getCount(); i++) {
             if (i > 0) add(", ");
-            add(params.getTypePtr(i)).add(" ").nameParam(params.getNameToken(i));
+            add(params.getTypePtr(i)).add(" ").nameParam(params.getName(i));
+        }
+        return this;
+    }
+
+    public CppBuilder add(Parameters params, Pointer valuePtr) {
+        for (int i = 0; i < params.getCount(); i++) {
+            if (i > 0) add(", ");
+            add(params.getTypePtr(i)).add(" ").nameParam(params.getName(i));
+        }
+        if (valuePtr != null) {
+            if (params.getCount() > 0) add(", ");
+            add(valuePtr).add(" ").nameParam("value");
         }
         return this;
     }
@@ -328,7 +345,7 @@ public class CppBuilder {
     public CppBuilder args(Parameters params, boolean extraValue) {
         for (int i = 0; i < params.getCount(); i++) {
             if (i > 0) add(", ");
-            nameParam(params.getNameToken(i));
+            nameParam(params.getName(i));
         }
         if (extraValue) {
             if (params.getCount() > 0) add(", ");

@@ -247,21 +247,21 @@ public class Indexer extends Member {
             stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
                     isStatic() ? null : type, false, isStatic(), false, getParams(), null);
 
-            stackGet.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
+            stackGet.read(getContentToken.getChild(), getContentToken.getLastChild());
             stackGet.load();
         }
         if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
             stackOwn = new Stack(cFile, token, type.self, typePtr,
                     isStatic() ? null : type, false, isStatic(), false, getParams(), null);
 
-            stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
+            stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild());
             stackOwn.load();
         }
         if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
             stackSet = new Stack(cFile, token, type.self, Pointer.voidPointer,
                     isStatic() ? null : type, false, isStatic(), false, getParams(), typePtr);
 
-            stackSet.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
+            stackSet.read(setContentToken.getChild(), setContentToken.getLastChild());
             stackSet.load();
         }
     }
@@ -276,15 +276,12 @@ public class Indexer extends Member {
                 cBuilder.add("virtual ");
             }
             Pointer getPtr = typePtr.toLet();
-            cBuilder.add(getPtr)
-                    .add(" get").add("(").add(params).add(")")
-                    .add(isGetAbstract() ? " = 0;" : ";").ln();
+            cBuilder.add(getPtr).add(" get(").add(params).add(")").add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isGetAbstract()) {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
-                        .add(getPtr)
-                        .add(" ").path(type.self).add("::get").add("(").add(params).add(") ").in(1)
+                        .add(getPtr).add(" ").path(type.self).add("::get(").add(params).add(") ").in(1)
                         .add(stackGet == null ? stackOwn : stackGet, 1)
                         .out().ln()
                         .ln();
@@ -297,15 +294,12 @@ public class Indexer extends Member {
             if (!isOwnFinal() && type.isPointer()) {
                 cBuilder.add("virtual ");
             }
-            cBuilder.add(typePtr)
-                    .add(" own").add("(").add(params).add(")")
-                    .add(isGetAbstract() ? " = 0;" : ";").ln();
+            cBuilder.add(typePtr).add(" own(").add(params).add(")").add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isOwnAbstract()) {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
-                        .add(typePtr)
-                        .add(" ").path(type.self).add("::own").add("(").add(params).add(") ").in(1)
+                        .add(typePtr).add(" ").path(type.self).add("::own(").add(params).add(") ").in(1)
                         .add(stackOwn == null ? stackGet : stackOwn, 1)
                         .out().ln()
                         .ln();
@@ -318,14 +312,12 @@ public class Indexer extends Member {
             if (!isSetFinal() && type.isPointer()) {
                 cBuilder.add("virtual ");
             }
-            cBuilder.add("void set").add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value)")
-                    .add(isSetAbstract() ? " = 0;" : ";").ln();
+            cBuilder.add("void set(").add(params, typePtr).add(")").add(isSetAbstract() ? " = 0;" : ";").ln();
 
             if (!isSetAbstract()) {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
-                        .add("void ").path(type.self).add("::set")
-                        .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) ").in(1)
+                        .add("void ").path(type.self).add("::set(").add(params, typePtr).add(") ").in(1)
                         .add(stackSet, 1)
                         .out().ln()
                         .ln();
@@ -339,13 +331,11 @@ public class Indexer extends Member {
         cBuilder.toHeader();
         cBuilder.idt(1);
         cBuilder.add("virtual ");
-        cBuilder.add(getPtr)
-                .add(" get").add("(").add(params).add(");").ln();
+        cBuilder.add(getPtr).add(" get(").add(params).add(");").ln();
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add(getPtr)
-                .add(" ").path(self).add("::get").add("(").add(params).add(") {").ln()
+                .add(getPtr).add(" ").path(self).add("::get(").add(params).add(") {").ln()
                 .idt(1).add("return ").path(self.type.parent).add("::get(").args(iw.getParams()).add(");").ln()
                 .add("}").ln()
                 .ln();
@@ -355,13 +345,11 @@ public class Indexer extends Member {
         cBuilder.toHeader();
         cBuilder.idt(1);
         cBuilder.add("virtual ");
-        cBuilder.add(typePtr)
-                .add(" own").add("(").add(params).add(");").ln();
+        cBuilder.add(typePtr).add(" own(").add(params).add(");").ln();
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add(typePtr)
-                .add(" ").path(self).add("::own").add("(").add(params).add(") {").ln()
+                .add(typePtr).add(" ").path(self).add("::own(").add(params).add(") {").ln()
                 .idt(1).add("return ").path(self.type.parent).add("::own(").args(iw.getParams()).add(");").ln()
                 .add("}").ln()
                 .ln();
@@ -374,8 +362,7 @@ public class Indexer extends Member {
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add("void ").path(self).add("::set")
-                .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) {").ln()
+                .add("void ").path(self).add("::set(").add(params, typePtr).add(") {").ln()
                 .idt(1).path(self.type.parent).add("::set(").args(iw.getParams(), true).add(");").ln()
                 .add("}").ln()
                 .ln();

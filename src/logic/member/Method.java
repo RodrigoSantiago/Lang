@@ -174,7 +174,7 @@ public class Method extends Member implements GenericOwner {
     public void make() {
         if (hasImplementation) {
             stack = new Stack(cFile, token, type.self, typePtr, this, false, isStatic(), false, getParams(), null);
-            stack.read(contentToken.start, contentToken.end, true);
+            stack.read(contentToken.start, contentToken.end);
             stack.load();
         }
     }
@@ -189,7 +189,7 @@ public class Method extends Member implements GenericOwner {
             cBuilder.add("static ");
         }
         cBuilder.add(typePtr)
-                .add(" m_").add(nameToken).add("(").add(params).add(")").add(isAbstract() ? " = 0;" : ";").ln();
+                .add(" ").nameMethod(nameToken).add("(").add(params).add(")").add(isAbstract() ? " = 0;" : ";").ln();
 
         if (!isAbstract()) {
             cBuilder.toSource((!isStatic() && type.template != null) || template != null);
@@ -198,7 +198,7 @@ public class Method extends Member implements GenericOwner {
             }
             cBuilder.add(template)
                     .add(typePtr)
-                    .add(" ").path(type.self, isStatic()).add("::m_").add(nameToken)
+                    .add(" ").path(type.self, isStatic()).add("::").nameMethod(nameToken)
                     .add("(").add(params).add(") ").in(1)
                     .add(stack, 1)
                     .out().ln()
@@ -213,17 +213,16 @@ public class Method extends Member implements GenericOwner {
         cBuilder.idt(1).add(template, 1);
         cBuilder.add("virtual ")
                 .add(typePtr)
-                .add(" m_").add(nameToken).add("(").add(params).add(")").add(";").ln();
+                .add(" ").nameMethod(nameToken).add("(").add(params).add(")").add(";").ln();
 
         cBuilder.toSource(self.type.template != null || template != null);
         cBuilder.add(self.type.template)
                 .add(template)
                 .add(typePtr)
-                .add(" ").path(self).add("::m_").add(nameToken)
+                .add(" ").path(self).add("::").nameMethod(nameToken)
                 .add("(").add(params).add(") {").ln()
                 .idt(1).add(typePtr != Pointer.voidPointer, "return ")
-                .path(self.type.parent).add("::m_").add(nameToken)
-                .add("(").args(mw.getParams()).add(");").ln()
+                .path(self.type.parent).add("::").nameMethod(nameToken).add("(").args(mw.getParams()).add(");").ln()
                 .add("}").ln()
                 .ln();
     }

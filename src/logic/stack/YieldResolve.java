@@ -5,13 +5,7 @@ import content.Key;
 import content.Token;
 import data.ContentFile;
 import logic.Pointer;
-import logic.member.*;
-import logic.member.view.FieldView;
-import logic.member.view.IndexerView;
-import logic.member.view.MethodView;
 import logic.params.Parameters;
-
-import java.util.ArrayList;
 
 public class YieldResolve {
 
@@ -90,8 +84,8 @@ public class YieldResolve {
         cBuilder.idt(idt + 2).add("yieldValue = lang::value<GPtr<").add(yieldPtr).add(">>::def();").ln();
         if (param != null) {
             for (int i = 0; i < param.getCount(); i++) {
-                cBuilder.idt(idt + 2).add("this->").nameParam(param.getNameToken(i))
-                        .add(" = ").nameParam(param.getNameToken(i)).add(";").ln();
+                cBuilder.idt(idt + 2).add("this->").nameParam(param.getName(i))
+                        .add(" = ").nameParam(param.getName(i)).add(";").ln();
             }
         }
         if (valuePtr != null) {

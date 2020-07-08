@@ -412,16 +412,7 @@ public class  Lexer {
         if (level > 1) return false;
 
         Token back = parentPrev.getPrev();
-        while (back != null) {
-            if (back.key == Key.SETVAL) {
-                return false;
-            } else if (back.key == Key.SEMICOLON || back.key == Key.BRACE || back.key == Key.CBRACE) {
-                return true;
-            }
-            back = back.getPrev();
-        }
-
-        return true;
+        return back != null && (back.key == Key.INDEX || back.key == Key.GENERIC || back.key == Key.WORD);
     }
 
     private static boolean isIndexerStatment(int level, Token parent) {
@@ -433,16 +424,7 @@ public class  Lexer {
         if (parentPrev == null || parentPrev.key != Key.THIS) return false;
 
         Token back = parentPrev.getPrev();
-        while (back != null) {
-            if (back.key == Key.SETVAL) {
-                return false;
-            } else if (back.key == Key.SEMICOLON || back.key == Key.BRACE || back.key == Key.CBRACE) {
-                return true;
-            }
-            back = back.getPrev();
-        }
-
-        return true;
+        return back != null && (back.key == Key.INDEX || back.key == Key.GENERIC || back.key == Key.WORD);
     }
 
     private static boolean isArray(Token parent) {

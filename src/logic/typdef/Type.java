@@ -223,7 +223,7 @@ public abstract class Type implements GenericOwner {
             if (staticConstructor != null) {
                 hasStaticInit = true;
             }
-            if (syncConstructor != null) {
+            if (syncConstructor != null || nums.size() > 0) {
                 hasSyncInit = true;
             }
             for (Property property : properties) {
@@ -560,6 +560,9 @@ public abstract class Type implements GenericOwner {
                 method.make();
             }
         }
+        for (Num num : nums) {
+            num.make();
+        }
         for (Variable variable : variables) {
             variable.make();
         }
@@ -579,14 +582,14 @@ public abstract class Type implements GenericOwner {
         cBuilder.toHeader();
         cBuilder.add("// ").add(fileName).add(".h").ln()
                 .ln()
-                .add("#ifndef H_").add(fileName.toUpperCase()).ln()
-                .add("#define H_").add(fileName.toUpperCase()).ln()
+                .add("#ifndef H_").up(fileName).ln()
+                .add("#define H_").up(fileName).ln()
                 .ln()
                 .add("#include \"langCore.h\"").ln();
         cBuilder.markHeader();
         cBuilder.ln();
 
-        cBuilder.add("#define T_").add(fileName.toUpperCase()).add(" ");
+        cBuilder.add("#define T_").up(fileName).add(" ");
         ArrayList<Pointer> allParents = new ArrayList<>(parents.size() * 2);
         cBuilder.path(self);
         if (!isInterface()) {
@@ -612,12 +615,13 @@ public abstract class Type implements GenericOwner {
             cBuilder.toGeneric();
             cBuilder.add("// ").add(fileName).add(".hpp").ln()
                     .ln()
-                    .add("#ifndef HPP_").add(fileName.toUpperCase()).ln()
-                    .add("#define HPP_").add(fileName.toUpperCase()).ln();
+                    .add("#ifndef HPP_").up(fileName).ln()
+                    .add("#define HPP_").up(fileName).ln();
             cBuilder.markGeneric();
             cBuilder.ln();
         }
 
+        // Class Statment
         cBuilder.toHeader();
         cBuilder.add(template)
                 .add("class ").add(pathToken).add(isClass() || isInterface(), " :");
@@ -632,63 +636,73 @@ public abstract class Type implements GenericOwner {
         cBuilder.add(" {").ln()
                 .add("public :").ln();
 
+        // Type Definitions
         cBuilder.idt(1).add("// Type").ln()
                 .idt(1).add("using P = ").add(isPointer(), "Ptr<").path(self).add(isPointer() ? ">;" : ";").ln()
                 .idt(1).add("using L = ").add(isPointer(), "Let<").path(self).add(isPointer() ? ">;" : ";").ln();
         if (isValue()) {
             cBuilder.idt(1).add("using W = ").path(parent).add(";").ln();
         }
-        cBuilder.idt(1).add("static lang::type* typeOf() { return getType<T_").add(fileName.toUpperCase()).add(">(); }").ln()
-                .idt(1).add(isPointer(), "virtual lang::type* getTypeOf() { return typeOf(); }").ln();
-
+        cBuilder.idt(1).add("static lang::type* typeOf() { return getType<T_").up(fileName).add(">(); }").ln()
+                .idt(1).add(isPointer(), "virtual "). add("lang::type* getTypeOf() { return typeOf(); }").ln();
         if (isClass()) cBuilder.idt(1).add("virtual lang_Object* self() { return this; }").ln();
 
+        // Pointer Transference
         if (!isInterface()) {
+            cBuilder.toHeader();
             cBuilder.idt(1).add(isPointer(), "virtual ").add("void transferOut();").ln()
                     .idt(1).add(isPointer(), "virtual ").add("void transferIn();").ln()
                     .idt(1).add(isPointer(), "virtual ").add("void clear();").ln();
 
             cBuilder.toSource(template != null);
+
+            // Transfer OUT [Strong[+Open], Non-Sync Struct]
             cBuilder.add(template)
                     .add("void ").path(self).add("::transferOut() {").ln();
-            if (parent != null) cBuilder.idt(1).path(parent).add("::transferOut();").ln();
-            for (FieldView fieldView : fields.values()) {
-                if (!fieldView.isVariable() && !fieldView.isAutoProperty()) continue;
-                if (fieldView.getTypePtr().isOpen()) {
-                    cBuilder.idt(1).add("transfer<").add(fieldView.getTypePtr()).add(">::out(").nameField(fieldView.getName()).add(");").ln();
-                } else if (!fieldView.isStatic() && !fieldView.getTypePtr().type.isSync()) {
-                    cBuilder.idt(1).add("this->").nameField(fieldView.getName()).add(".transferOut();").ln();
+            for (FieldView field : fields.values()) {
+                Pointer ptr = field.getTypePtr();
+                if (!field.isStatic() && (field.isVariable() || !field.isAutoProperty()) && !ptr.let && !ptr.isSync()) {
+                    if (ptr.isOpen()) {
+                        cBuilder.idt(1).add("transfer<").add(ptr).add(">::out(").nameField(field.getName()).add(");").ln();
+                    } else {
+                        cBuilder.idt(1).add("this->").nameField(field.getName()).add(".transferOut();").ln();
+                    }
                 }
             }
             cBuilder.add("}").ln();
+
+            // Transfer In [Strong[+Open], Non-Sync Struct]
             cBuilder.add(template)
                     .add("void ").path(self).add("::transferIn() {").ln();
-            if (parent != null) cBuilder.idt(1).path(parent).add("::transferIn();").ln();
-            for (FieldView fieldView : fields.values()) {
-                if (!fieldView.isVariable() && !fieldView.isAutoProperty()) continue;
-
-                if (fieldView.getTypePtr().isOpen()) {
-                    cBuilder.idt(1).add("transfer<").add(fieldView.getTypePtr()).add(">::in(").nameField(fieldView.getName()).add(");").ln();
-                } else if (!fieldView.isStatic() && !fieldView.getTypePtr().type.isSync()) {
-                    cBuilder.idt(1).add("this->").nameField(fieldView.getName()).add(".transferIn();").ln();
+            for (FieldView field : fields.values()) {
+                Pointer ptr = field.getTypePtr();
+                if (!field.isStatic() && (field.isVariable() || !field.isAutoProperty()) && !ptr.let && !ptr.isSync()) {
+                    if (ptr.isOpen()) {
+                        cBuilder.idt(1).add("transfer<").add(ptr).add(">::in(").nameField(field.getName()).add(");").ln();
+                    } else {
+                        cBuilder.idt(1).add("this->").nameField(field.getName()).add(".transferIn();").ln();
+                    }
                 }
             }
             cBuilder.add("}").ln();
+
+            // Transfer Clear [Strong/Weak[+Open], Non-Sync Struct]
             cBuilder.add(template)
                     .add("void ").path(self).add("::clear() {").ln();
-            if (parent != null) cBuilder.idt(1).path(parent).add("::clear();").ln();
-            for (FieldView fieldView : fields.values()) {
-                if (!fieldView.isVariable() && !fieldView.isAutoProperty()) continue;
-
-                if (fieldView.getTypePtr().isOpen()) {
-                    cBuilder.idt(1).add("transfer<").add(fieldView.getTypePtr()).add(">::clear(").nameField(fieldView.getName()).add(");").ln();
-                } else if (!fieldView.isStatic() && !fieldView.getTypePtr().type.isSync()) {
-                    cBuilder.idt(1).add("this->").nameField(fieldView.getName()).add(".clear();").ln();
+            for (FieldView field : fields.values()) {
+                Pointer ptr = field.getTypePtr();
+                if (!field.isStatic() && (field.isVariable() || !field.isAutoProperty()) && !ptr.isSync()) {
+                    if (ptr.isOpen()) {
+                        cBuilder.idt(1).add("transfer<").add(ptr).add(">::clear(").nameField(field.getName()).add(");").ln();
+                    } else {
+                        cBuilder.idt(1).add("this->").nameField(field.getName()).add(".clear();").ln();
+                    }
                 }
             }
             cBuilder.add("}").ln();
         }
 
+        // Instance Init
         if (hasInstanceInit()) {
             cBuilder.toHeader();
             cBuilder.idt(1).add("void init();").ln();
@@ -698,12 +712,12 @@ public abstract class Type implements GenericOwner {
                     .add("void ").path(self).add("::init() ").in(1);
             for (Variable variable : variables) {
                 if (!variable.isStatic()) {
-                    variable.buildLambdas(cBuilder);
+                    variable.buildLambdas(cBuilder);    // lambda Fix
                 }
             }
             for (Property property : properties) {
                 if (!property.isStatic()) {
-                    property.buildLambdas(cBuilder);
+                    property.buildLambdas(cBuilder);    // lambda Fix
                 }
             }
             for (Variable variable : variables) {
@@ -719,14 +733,6 @@ public abstract class Type implements GenericOwner {
             cBuilder.out().ln()
                     .ln();
         }
-
-        cBuilder.toHeader();
-        for (Token token : overloadMethods) {
-            cBuilder.idt(1).add("using ").path(parent).add("::").nameMethod(token).add(";").ln();
-        }
-        if (overloadGet) cBuilder.idt(1).add("using ").path(parent).add("::").nameGet().add(";").ln();
-        if (overloadSet) cBuilder.idt(1).add("using ").path(parent).add("::").nameSet().add(";").ln();
-        if (overloadOwn) cBuilder.idt(1).add("using ").path(parent).add("::").nameOwn().add(";").ln();
 
         // Natives
         for (Native nat : natives) {
@@ -798,6 +804,13 @@ public abstract class Type implements GenericOwner {
             cBuilder.add(" {\n}").ln()
                     .ln();
         }
+
+        if (isEnum()) {
+            cBuilder.toHeader();
+            cBuilder.idt(1).add(cFile.langIntPtr()).add(" value;").ln();
+            cBuilder.idt(1).path(self).add("(empty e, ").add(cFile.langIntPtr()).add(" v) : value(v) {}").ln();
+        }
+
         for (Constructor constructor : constructors) {
             constructor.build(cBuilder);
         }
@@ -832,6 +845,17 @@ public abstract class Type implements GenericOwner {
             }
         }
 
+        // Overload Name Hide Fix [Method]
+        cBuilder.toHeader();
+        for (Token token : overloadMethods) {
+            cBuilder.idt(1).add("using ").path(parent).add("::").nameMethod(token).add(";").ln();
+        }
+
+        // Overload Name Hide Fix [Indexer]
+        if (overloadGet) cBuilder.idt(1).add("using ").path(parent).add("::").nameGet().add(";").ln();
+        if (overloadSet) cBuilder.idt(1).add("using ").path(parent).add("::").nameSet().add(";").ln();
+        if (overloadOwn) cBuilder.idt(1).add("using ").path(parent).add("::").nameOwn().add(";").ln();
+
         cBuilder.toHeader();
         cBuilder.add("};").ln()
                 .ln();
@@ -842,7 +866,9 @@ public abstract class Type implements GenericOwner {
             cBuilder.add("class ").add(staticPathToken).add(" {").ln()
                     .add("public :").ln();
 
+            // Static Constructors
             if (hasStaticInit()) {
+                cBuilder.toHeader();
                 cBuilder.idt(1).add("static void init();").ln()
                         .idt(1).add("static bool initBlock();").ln();
 
@@ -855,12 +881,12 @@ public abstract class Type implements GenericOwner {
                 cBuilder.add("bool ").path(self, true).add("::initBlock() ").in(1);
                 for (Variable variable : variables) {
                     if (variable.isStatic() && !variable.isSync()) {
-                        variable.buildLambdas(cBuilder);
+                        variable.buildLambdas(cBuilder);    // lambda Fix
                     }
                 }
                 for (Property property : properties) {
                     if (property.isStatic()) {
-                        property.buildLambdas(cBuilder);
+                        property.buildLambdas(cBuilder);    // lambda Fix
                     }
                 }
                 for (Variable variable : variables) {
@@ -882,7 +908,9 @@ public abstract class Type implements GenericOwner {
                         .ln();
             }
 
+            // Static Sync Constructors
             if (hasSyncInit) {
+                cBuilder.toHeader();
                 cBuilder.idt(1).add("static void syncInit();").ln()
                         .idt(1).add("static bool syncInitBlock();").ln();
 
@@ -893,10 +921,16 @@ public abstract class Type implements GenericOwner {
                         .ln();
 
                 cBuilder.add("bool ").path(self, true).add("::syncInitBlock() ").in(1);
+                for (Num num : nums) {
+                    num.buildLambdas(cBuilder);
+                }
                 for (Variable variable : variables) {
                     if (variable.isSync()) {
-                        variable.buildLambdas(cBuilder);
+                        variable.buildLambdas(cBuilder);    // lambda Fix
                     }
+                }
+                for (Num num : nums) {
+                    num.buildInit(cBuilder);
                 }
                 for (Variable variable : variables) {
                     if (variable.isSync()) {
@@ -906,6 +940,7 @@ public abstract class Type implements GenericOwner {
                 if (syncConstructor != null) {
                     syncConstructor.build(cBuilder);
                 }
+
                 cBuilder.toSource();
                 cBuilder.idt(1).add("return true;").ln()
                         .out().ln()
@@ -916,6 +951,9 @@ public abstract class Type implements GenericOwner {
                 if (nat.isStatic()) {
                     nat.build(cBuilder);
                 }
+            }
+            for (Num num : nums) {
+                num.build(cBuilder);
             }
             for (Variable variable : variables) {
                 if (variable.isStatic()) {
@@ -938,6 +976,7 @@ public abstract class Type implements GenericOwner {
                     .ln();
         }
 
+        // External Operators [Casting, Equal, Different]
         if (isValue()) {
             Operator.buildAutomaticOperator(cBuilder, this, equal, different);
 
@@ -1329,9 +1368,18 @@ public abstract class Type implements GenericOwner {
                     staticConstructor = constructor;
                 }
             } else {
-                if (constructor.isDefault() && !constructor.isPublic()) {
+                if (constructor.isDefault() && isValue()) {
+                    cFile.erro(constructor.token, "A Value Type should not have default constructors", this);
+                } else if (constructor.isDefault() && !constructor.isPublic()) {
                     cFile.erro(constructor.token, "A Default constructor must be public", this);
                 }
+                if (isEnum()) {
+                    if (constructor.isPublic()) {
+                        cFile.erro(constructor.token, "A Enum constructor are always private", this);
+                    }
+                    constructor.toPrivate();
+                }
+
                 for (Constructor constructorB : constructors) {
                     if (!constructor.getParams().canOverload(constructorB.getParams())) {
                         cFile.erro(constructor.token, "Invalid overloading", this);

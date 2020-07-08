@@ -76,7 +76,7 @@ public class Destructor extends Member {
     public void make() {
         if (hasImplementation) {
             stack = new Stack(cFile, token, type.self, Pointer.voidPointer, type, false, false, false, null, null);
-            stack.read(contentToken.start, contentToken.end, true);
+            stack.read(contentToken.start, contentToken.end);
             stack.load();
         }
     }
@@ -90,11 +90,9 @@ public class Destructor extends Member {
         cBuilder.add(type.template)
                 .add("void ").path(type.self).add("::destroy() ").in(1)
                 .add(stack, 1);
-
         if (type.parent != null) {
             cBuilder.idt(1).path(type.parent).add("::destroy();").ln();
         }
-
         cBuilder.out().ln()
                 .ln();
     }

@@ -284,7 +284,7 @@ public class LambdaCall extends Call {
             }
             innerStack = new Stack(getExpression().parent, getStack(), token, naturalPtr.pointers[0],
                     new Parameters(cFile, token, nameTokens, types));
-            innerStack.read(contentToken.start, contentToken.end, true);
+            innerStack.read(contentToken.start, contentToken.end);
             for (int i = 0; i < nameTokens.size(); i++) {
                 innerStack.addParam(nameTokens.get(i), naturalPtr.pointers[i + 1], false);
             }
@@ -313,7 +313,7 @@ public class LambdaCall extends Call {
             }
             innerStack = new Stack(getExpression().parent, getStack(), token, naturalPtr.pointers[0],
                     new Parameters(cFile, token, nameTokens, types));
-            innerStack.read(contentToken.start, contentToken.end, true);
+            innerStack.read(contentToken.start, contentToken.end);
             innerStack.load();
         }
     }

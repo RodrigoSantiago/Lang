@@ -150,7 +150,7 @@ public class Operator extends Member {
     public void make() {
         if (hasImplementation) {
             stack = new Stack(cFile, token, type.self, typePtr, type, false, true, false, getParams(), null);
-            stack.read(contentToken.start, contentToken.end, true);
+            stack.read(contentToken.start, contentToken.end);
             stack.load();
         }
     }
@@ -161,6 +161,7 @@ public class Operator extends Member {
         cBuilder.add("static ")
                 .add(typePtr)
                 .add(" ").nameOp(getOp(), typePtr).add("(").add(params).add(");").ln();
+
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(typePtr)
@@ -174,11 +175,13 @@ public class Operator extends Member {
     public void buildOperator(CppBuilder cBuilder) {
         if (op == Key.EQUAL || op == Key.DIF) {
             cBuilder.toHeader();
-            cBuilder.add("inline bool operator ").add(op.string).add("(const ").path(params.getTypePtr(0)).add("& left, const ")
-                    .path(params.getTypePtr(1)).add("& right) ").in(1);
+            cBuilder.add("inline bool operator ").add(op.string)
+                    .add("(const ")
+                    .path(params.getTypePtr(0)).add("& left, const ").path(params.getTypePtr(1)).add("& right) ").in(1);
             cBuilder.idt(1).add("return ").path(type.self).add("::").nameOp(op, typePtr).add("(left, right);").ln();
             cBuilder.out().ln()
                     .ln();
+
         } else if (isCasting()) {
             cBuilder.toHeader();
             Pointer in = getParams().getTypePtr(0);
@@ -211,8 +214,9 @@ public class Operator extends Member {
                     .add(type.cFile.langBoolPtr())
                     .add(" ").path(type.self).add("::equal(")
                     .add(type.self).add(" left,").add(type.self).add(" right) ").in(1);
-            boolean val = false;
             cBuilder.idt(1).add("return ");
+
+            boolean val = false;
             for (Variable variable : type.variables) {
                 if (!variable.isStatic()) {
                     for (int i = 0; i < variable.getCount(); i++) {

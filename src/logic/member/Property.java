@@ -11,8 +11,6 @@ import logic.stack.Stack;
 import logic.stack.expression.LambdaCall;
 import logic.typdef.Type;
 
-import java.util.ArrayList;
-
 public class Property extends Member {
 
     private Token nameToken;
@@ -282,7 +280,7 @@ public class Property extends Member {
         if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
             stackInit = new Stack(cFile, token, type.self, typePtr,
                     isStatic() ? null : type, true, isStatic(), false, null, null);
-            stackInit.read(initToken.start, initToken.end, true);
+            stackInit.read(initToken.start, initToken.end);
             stackInit.load();
         }
 
@@ -292,21 +290,21 @@ public class Property extends Member {
             stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
                     isStatic() ? null : type, false, isStatic(), false, null, null);
 
-            stackGet.read(getContentToken.getChild(), getContentToken.getLastChild(), true);
+            stackGet.read(getContentToken.getChild(), getContentToken.getLastChild());
             stackGet.load();
         }
         if (hasOwn && ownContentToken != null && ownContentToken.key == Key.BRACE && ownContentToken.getChild() != null) {
             stackOwn = new Stack(cFile, token, type.self, typePtr,
                     isStatic() ? null : type, false, isStatic(), false, null, null);
 
-            stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild(), true);
+            stackOwn.read(ownContentToken.getChild(), ownContentToken.getLastChild());
             stackOwn.load();
         }
         if (hasSet && setContentToken != null && setContentToken.key == Key.BRACE && setContentToken.getChild() != null) {
             stackSet = new Stack(cFile, token, type.self, Pointer.voidPointer,
                     isStatic() ? null : type, false, isStatic(), false, null, typePtr);
 
-            stackSet.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
+            stackSet.read(setContentToken.getChild(), setContentToken.getLastChild());
             stackSet.load();
         }
     }
@@ -314,7 +312,8 @@ public class Property extends Member {
     public void build(CppBuilder cBuilder) {
         if (isAuto) {
             cBuilder.toHeader();
-            cBuilder.idt(1).add(isStatic(), "static thread_local ").add(typePtr).add(" ").nameField(nameToken).add(";").ln();
+            cBuilder.idt(1).add(isStatic(), "static thread_local ")
+                    .add(typePtr).add(" ").nameField(nameToken).add(";").ln();
 
             if (isStatic()) {
                 cBuilder.toSource(false);
@@ -341,17 +340,14 @@ public class Property extends Member {
                 cBuilder.add("static ");
             }
             Pointer getPtr = typePtr.toLet();
-            cBuilder.add(getPtr)
-                    .add(" get_").add(nameToken).add("()")
-                    .add(isGetAbstract() ? " = 0;" : ";").ln();
+            cBuilder.add(getPtr).add(" ").nameGet(nameToken).add("()").add(isGetAbstract() ? " = 0;" : ";").ln();
 
             if (!isGetAbstract()) {
                 cBuilder.toSource(!isStatic() && type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
-                cBuilder.add(getPtr)
-                        .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() ").in(1);
+                cBuilder.add(getPtr).add(" ").path(type.self, isStatic()).add("::").nameGet(nameToken).add("() ").in(1);
                 if (isAuto) {
                     cBuilder.idt(1).add("return ").nameField(nameToken).add(";").ln();
                 } else {
@@ -370,19 +366,16 @@ public class Property extends Member {
             } else if (isStatic()) {
                 cBuilder.add("static ");
             }
-            cBuilder.add(typePtr)
-                    .add(" own_").add(nameToken).add("()")
-                    .add(isOwnAbstract() ? " = 0;" : ";").ln();
+            cBuilder.add(typePtr).add(" ").nameOwn(nameToken).add("()").add(isOwnAbstract() ? " = 0;" : ";").ln();
 
             if (!isOwnAbstract()) {
                 cBuilder.toSource(!isStatic() && type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
-                cBuilder.add(typePtr)
-                        .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() ").in(1);
+                cBuilder.add(typePtr).add(" ").path(type.self, isStatic()).add("::").nameOwn(nameToken).add("() ").in(1);
                 if (isAuto) {
-                    cBuilder.idt(1).add("return ").nameField(nameToken).add(";").ln();
+                    cBuilder.idt(1).add("return ").add(!isStatic(), "this->").nameField(nameToken).add(";").ln();
                 } else {
                     cBuilder.add(stackOwn == null ? stackGet : stackOwn, 1);
                 }
@@ -399,18 +392,18 @@ public class Property extends Member {
             } else if (isStatic()) {
                 cBuilder.add("static ");
             }
-            cBuilder.add("void set_").add(nameToken).add("(").add(typePtr).add(" v_value)")
-                    .add(isSetAbstract() ? " = 0;" : ";").ln();
+            cBuilder.add("void ").nameSet(nameToken)
+                    .add("(").add(typePtr).add(" v_value)").add(isSetAbstract() ? " = 0;" : ";").ln();
 
             if (!isSetAbstract()) {
                 cBuilder.toSource(!isStatic() && type.template != null);
                 if (!isStatic()) {
                     cBuilder.add(type.template);
                 }
-                cBuilder.add("void ").path(type.self, isStatic()).add("::set_").add(nameToken)
+                cBuilder.add("void ").path(type.self, isStatic()).add("::").nameSet(nameToken)
                         .add("(").add(typePtr).add(" v_value) ").in(1);
                 if (isAuto) {
-                    cBuilder.idt(1).nameField(nameToken).add(" = v_value;").ln();
+                    cBuilder.idt(1).add(!isStatic(), "this->").nameField(nameToken).add(" = v_value;").ln();
                 } else {
                     cBuilder.add(stackSet, 1);
                 }
@@ -419,7 +412,9 @@ public class Property extends Member {
             }
         }
     }
+
     public void buildDefault(CppBuilder cBuilder) {
+        // [NON-STATIC AUTO - ONLY]
         cBuilder.idt(1).nameField(nameToken).add("(");
         if (typePtr.typeSource != null) {
             cBuilder.add("lang::value<").add(typePtr).add(">::def()");
@@ -444,18 +439,6 @@ public class Property extends Member {
     public void buildInit(CppBuilder cBuilder) {
         if (stackInit != null) {
             cBuilder.idt(1).nameSet(nameToken).add("(").add(stackInit, 1).add(");").ln();
-        } else if (isAuto()) {
-            cBuilder.idt(1).nameField(nameToken).add(" = ");
-            if (typePtr.typeSource != null) {
-                cBuilder.add("lang::value<").add(typePtr).add(">::def()");
-            } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
-                cBuilder.add("nullptr");
-            } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
-                cBuilder.add(typePtr).add("()");
-            } else {
-                cBuilder.add("0");
-            }
-            cBuilder.add(";").ln();
         }
     }
 
@@ -464,13 +447,13 @@ public class Property extends Member {
 
         cBuilder.toHeader();
         cBuilder.idt(1);
-        cBuilder.add("virtual ").add(getPtr).add(" get_").add(nameToken).add("();").ln();
+        cBuilder.add("virtual ").add(getPtr).add(" ").nameGet(nameToken).add("();").ln();
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(getPtr)
-                .add(" ").path(self).add("::get_").add(nameToken).add("() {").ln()
-                .idt(1).add("return ").path(self.type.parent).add("::get_").add(nameToken).add("();").ln()
+                .add(" ").path(self).add("::").nameGet(nameToken).add("() {").ln()
+                .idt(1).add("return ").path(self.type.parent).add("::").nameGet(nameToken).add("();").ln()
                 .add("}").ln()
                 .ln();
     }
@@ -479,14 +462,13 @@ public class Property extends Member {
         cBuilder.toHeader();
         cBuilder.idt(1);
         cBuilder.add("virtual ");
-        cBuilder.add(typePtr)
-                .add(" own_").add(nameToken).add("();").ln();
+        cBuilder.add(typePtr).add(" ").nameOwn(nameToken).add("();").ln();
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(typePtr)
-                .add(" ").path(self).add("::own_").add(nameToken).add("() {").ln()
-                .idt(1).add("return ").path(self.type.parent).add("::own_").add(nameToken).add("();").ln()
+                .add(" ").path(self).add("::").nameOwn(nameToken).add("() {").ln()
+                .idt(1).add("return ").path(self.type.parent).add("::").nameOwn(nameToken).add("();").ln()
                 .add("}").ln()
                 .ln();
     }
@@ -494,13 +476,13 @@ public class Property extends Member {
     public void buildImplSet(CppBuilder cBuilder, Pointer self) {
         cBuilder.toHeader();
         cBuilder.idt(1);
-        cBuilder.add("virtual void set_").add(nameToken).add("(").add(typePtr).add(" v_value);").ln();
+        cBuilder.add("virtual void ").nameSet(nameToken).add("(").add(typePtr).add(" v_value);").ln();
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add("void ").path(self).add("::set_").add(nameToken)
-                .add("(").add(typePtr).add(" v_value) {").ln()
-                .idt(1).path(self.type.parent).add("::set_").add(nameToken).add("(v_value);").ln()
+                .add("void ")
+                .path(self).add("::").nameSet(nameToken).add("(").add(typePtr).add(" v_value) {").ln()
+                .idt(1).path(self.type.parent).add("::").nameSet(nameToken).add("(v_value);").ln()
                 .add("}").ln()
                 .ln();
     }

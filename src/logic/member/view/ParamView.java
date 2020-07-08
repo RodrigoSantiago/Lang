@@ -170,7 +170,7 @@ public class ParamView {
     }
 
     public Token getArgName(int index) {
-        return params.getNameToken(index);
+        return params.getName(index);
     }
 
     @Override

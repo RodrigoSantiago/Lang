@@ -2,16 +2,13 @@ namespace lang;
 using lang::Locale.GlobalLocale;
 
 void main () {
+    Test t = Test.NOONE;
+    Test s = Test.SECOND;
 }
 
-public class Test {
-    public static final int a = 10;
+public enum Test {
+    NOONE(10), SECOND, TIRD(30);
 
-    public this() {
-        int b = 10;
-        switch(b) {
-            case a : Console.WriteLine("algo"); break;
-            default : break;
-        }
+    this(int a) {
     }
 }

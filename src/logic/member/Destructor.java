@@ -24,7 +24,7 @@ public class Destructor extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, false, true, false, false, false, false, false);
+                readModifier(cFile, token, false, true, false, false, false, false, false, false);
             } else if (state == 0 && token.key == Key.BITNOT) {
                 state = 1;
             } else if (state == 1 && token.key == Key.THIS) {
@@ -88,11 +88,11 @@ public class Destructor extends Member {
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add("void ").path(type.self, false).add("::destroy() ").in(1)
+                .add("void ").path(type.self).add("::destroy() ").in(1)
                 .add(stack, 1);
 
         if (type.parent != null) {
-            cBuilder.idt(1).path(type.parent, false).add("::destroy();").ln();
+            cBuilder.idt(1).path(type.parent).add("::destroy();").ln();
         }
 
         cBuilder.out().ln()

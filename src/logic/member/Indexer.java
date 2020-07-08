@@ -18,9 +18,9 @@ public class Indexer extends Member {
     private Parameters params;
     private TokenGroup contentToken;
     private Token getContentToken, setContentToken, ownContentToken;
-    private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
-    private boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate;
-    private boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate;
+    private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate, isGetImplemented;
+    private boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate, isOwnImplemented;
+    private boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate, isSetImplemented;
     private boolean isGetOwn;
 
     private Stack stackGet, stackSet, stackOwn;
@@ -34,7 +34,7 @@ public class Indexer extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), false, true, false);
+                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), false, false, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
@@ -139,6 +139,7 @@ public class Indexer extends Member {
                     if (hasGet || isGetOwn) cFile.erro(token, "Repeated get", this);
                     hasGet = true;
                     getContentToken = token;
+                    isGetImplemented = token.key != Key.SEMICOLON;
                     isGetPublic = (this.isPublic && !isPrivate) || isPublic;
                     isGetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isGetFinal = (this.isFinal && !isAbstract) || isFinal;
@@ -147,6 +148,7 @@ public class Indexer extends Member {
                     if (hasSet) cFile.erro(token, "Repeated set", this);
                     hasSet = true;
                     setContentToken = token;
+                    isSetImplemented = token.key != Key.SEMICOLON;
                     isSetPublic = (this.isPublic && !isPrivate) || isPublic;
                     isSetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isSetFinal = (this.isFinal && !isAbstract) || isFinal;
@@ -155,6 +157,7 @@ public class Indexer extends Member {
                     if (hasOwn || isGetOwn) cFile.erro(token, "Repeated own", this);
                     hasOwn = true;
                     ownContentToken = token;
+                    isOwnImplemented = token.key != Key.SEMICOLON;
                     isOwnPublic = (this.isPublic && !isPrivate) || isPublic;
                     isOwnPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isOwnFinal = (this.isFinal && !isAbstract) || isFinal;
@@ -198,19 +201,30 @@ public class Indexer extends Member {
             cFile.erro(contentToken == null ? token : contentToken.start,
                     "A Indexer should have at least one member", this);
         }
-        if (hasGet && !isGetAbstract && (getContentToken == null || getContentToken.key == Key.SEMICOLON) &&
-                (!isGetOwn || (ownContentToken == null || ownContentToken.key == Key.SEMICOLON))) {
+
+        if (hasGet && !isGetAbstract && !isGetImplemented && (!isGetOwn || !isOwnImplemented)) {
             cFile.erro(getContentToken == null ? token : getContentToken,
                     "A Non-Abstract Get Member should implement", this);
         }
-        if (hasOwn && !isOwnAbstract && (ownContentToken == null || ownContentToken.key == Key.SEMICOLON) &&
-                (!isGetOwn || (getContentToken == null || getContentToken.key == Key.SEMICOLON))) {
+        if (hasGet && isGetAbstract && isGetImplemented) {
+            cFile.erro(getContentToken == null ? token : getContentToken,
+                    "A Abstract Get Member should not implement", this);
+        }
+        if (hasOwn && !isOwnAbstract && !isOwnImplemented && (!isGetOwn || !isGetImplemented)) {
             cFile.erro(ownContentToken == null ? token : ownContentToken,
                     "A Non-Abstract Own Member should implement", this);
         }
-        if (hasSet && !isSetAbstract && (setContentToken == null || setContentToken.key == Key.SEMICOLON)) {
+        if (hasOwn && isOwnAbstract && isOwnImplemented) {
+            cFile.erro(ownContentToken == null ? token : ownContentToken,
+                    "A Abstract Own Member should not implement", this);
+        }
+        if (hasSet && !isSetAbstract && !isSetImplemented) {
             cFile.erro(setContentToken == null ? token : setContentToken,
                     "A Non-Abstract Set Member should implement", this);
+        }
+        if (hasSet && isSetAbstract && isSetImplemented) {
+            cFile.erro(setContentToken == null ? token : setContentToken,
+                    "A Abstract Set Member should not implement", this);
         }
         if (typeToken != null) {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, type, isLet());
@@ -270,7 +284,7 @@ public class Indexer extends Member {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(getPtr)
-                        .add(" ").path(type.self, false).add("::get").add("(").add(params).add(") ").in(1)
+                        .add(" ").path(type.self).add("::get").add("(").add(params).add(") ").in(1)
                         .add(stackGet == null ? stackOwn : stackGet, 1)
                         .out().ln()
                         .ln();
@@ -291,7 +305,7 @@ public class Indexer extends Member {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
                         .add(typePtr)
-                        .add(" ").path(type.self, false).add("::own").add("(").add(params).add(") ").in(1)
+                        .add(" ").path(type.self).add("::own").add("(").add(params).add(") ").in(1)
                         .add(stackOwn == null ? stackGet : stackOwn, 1)
                         .out().ln()
                         .ln();
@@ -310,7 +324,7 @@ public class Indexer extends Member {
             if (!isSetAbstract()) {
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
-                        .add("void ").path(type.self, false).add("::set")
+                        .add("void ").path(type.self).add("::set")
                         .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) ").in(1)
                         .add(stackSet, 1)
                         .out().ln()
@@ -331,8 +345,8 @@ public class Indexer extends Member {
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(getPtr)
-                .add(" ").path(self, false).add("::get").add("(").add(params).add(") {").ln()
-                .idt(1).add("return ").path(self.type.parent, false).add("::get(").args(iw.getParams()).add(");").ln()
+                .add(" ").path(self).add("::get").add("(").add(params).add(") {").ln()
+                .idt(1).add("return ").path(self.type.parent).add("::get(").args(iw.getParams()).add(");").ln()
                 .add("}").ln()
                 .ln();
     }
@@ -347,8 +361,8 @@ public class Indexer extends Member {
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(typePtr)
-                .add(" ").path(self, false).add("::own").add("(").add(params).add(") {").ln()
-                .idt(1).add("return ").path(self.type.parent, false).add("::own(").args(iw.getParams()).add(");").ln()
+                .add(" ").path(self).add("::own").add("(").add(params).add(") {").ln()
+                .idt(1).add("return ").path(self.type.parent).add("::own(").args(iw.getParams()).add(");").ln()
                 .add("}").ln()
                 .ln();
     }
@@ -360,9 +374,9 @@ public class Indexer extends Member {
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add("void ").path(self, false).add("::set")
+                .add("void ").path(self).add("::set")
                 .add("(").add(params).add(params.isEmpty() ? "" : ", ").add(typePtr).add(" v_value) {").ln()
-                .idt(1).path(self.type.parent, false).add("::set(").args(iw.getParams(), true).add(");").ln()
+                .idt(1).path(self.type.parent).add("::set(").args(iw.getParams(), true).add(");").ln()
                 .add("}").ln()
                 .ln();
     }

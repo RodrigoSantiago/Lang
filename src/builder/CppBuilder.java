@@ -308,7 +308,7 @@ public class CppBuilder {
     public CppBuilder add(Parameters params) {
         for (int i = 0; i < params.getCount(); i++) {
             if (i > 0) add(", ");
-            add(params.getTypePtr(i)).add(" v_").add(params.getNameToken(i));
+            add(params.getTypePtr(i)).add(" ").nameParam(params.getNameToken(i));
         }
         return this;
     }
@@ -316,7 +316,7 @@ public class CppBuilder {
     public CppBuilder add(ParamView params) {
         for (int i = 0; i < params.getArgsCount(); i++) {
             if (i > 0) add(", ");
-            add(params.getArgTypePtr(i)).add(" v_").add(params.getArgName(i));
+            add(params.getArgTypePtr(i)).add(" ").nameParam(params.getArgName(i));
         }
         return this;
     }
@@ -328,11 +328,11 @@ public class CppBuilder {
     public CppBuilder args(Parameters params, boolean extraValue) {
         for (int i = 0; i < params.getCount(); i++) {
             if (i > 0) add(", ");
-            add("v_").add(params.getNameToken(i));
+            nameParam(params.getNameToken(i));
         }
         if (extraValue) {
             if (params.getCount() > 0) add(", ");
-            add("v_value");
+            nameParam("value");
         }
         return this;
     }
@@ -344,11 +344,11 @@ public class CppBuilder {
     public CppBuilder args(ParamView params, boolean extraValue) {
         for (int i = 0; i < params.getArgsCount(); i++) {
             if (i > 0) add(", ");
-            add("v_").add(params.getArgName(i));
+            nameParam(params.getArgName(i));
         }
         if (extraValue) {
             if (params.getArgsCount() > 0) add(", ");
-            add("v_value");
+            nameParam("value");
         }
         return this;
     }
@@ -398,6 +398,10 @@ public class CppBuilder {
         return this;
     }
 
+    public CppBuilder path(Pointer pointer) {
+        return path(pointer, false);
+    }
+
     public CppBuilder path(Pointer pointer, boolean _static) {
         if (pointer == Pointer.nullPointer) return add("nullptr");
         if (pointer == Pointer.voidPointer) return add("void");
@@ -414,7 +418,7 @@ public class CppBuilder {
                     tBuilder.append("<");
                     for (int i = 0; i < pointer.pointers.length; i++) {
                         if (i > 0) tBuilder.append(", ");
-                        path(pointer.pointers[i], false);
+                        path(pointer.pointers[i]);
                     }
                     tBuilder.append(">");
                 }
@@ -429,11 +433,7 @@ public class CppBuilder {
         if (pointer.typeSource != null) {
             nameGeneric(pointer.typeSource.nameToken);
         } else {
-            if (!pointer.type.isLangBase() && !tDependences.contains(pointer.type)) {
-                if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
-                    tDependences.add(pointer.type);
-                }
-            }
+            dependence(pointer);
 
             add(pointer.type.pathToken);
 
@@ -455,7 +455,7 @@ public class CppBuilder {
 
     public CppBuilder parent(Pointer pointer) {
         dependenceAdd(pointer);
-        return path(pointer, false);
+        return path(pointer);
     }
 
     public CppBuilder nameGeneric(Token token) {
@@ -612,9 +612,9 @@ public class CppBuilder {
                 has = true;
                 idt(tblock.idt);
                 if (tempVar.array > 0) {
-                    path(tempVar.typePtr, false).add(" ").add(tempVar.name).add(" [").add(tempVar.array).add("]").add(";").ln();
+                    path(tempVar.typePtr).add(" ").add(tempVar.name).add(" [").add(tempVar.array).add("]").add(";").ln();
                 } else if (tempVar.ptr) {
-                    path(tempVar.typePtr, false).add("* ").add(tempVar.name).add(";").ln();
+                    path(tempVar.typePtr).add("* ").add(tempVar.name).add(";").ln();
                 } else {
                     add(tempVar.typePtr).add(" ").add(tempVar.name).add(";").ln();
                 }

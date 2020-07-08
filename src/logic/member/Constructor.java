@@ -30,7 +30,7 @@ public class Constructor extends Member {
             next = token.getNext();
 
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, false, false, true, false, true);
+                readModifier(cFile, token, true, true, false, false, true, true, false, true);
             } else if (state == 0 && token.key == Key.THIS) {
                 this.token = token;
                 state = 1;
@@ -72,7 +72,9 @@ public class Constructor extends Member {
         if (token != null && params != null) {
             params.load(isStatic() ? null : type);
 
-            if (isStatic() && params.getCount() > 0) {
+            if (isSync() && params.getCount() > 0) {
+                cFile.erro(token, "Sync constructors cannot have parameters", this);
+            } else if (isStatic() && params.getCount() > 0) {
                 cFile.erro(token, "Static constructors cannot have parameters", this);
             }
 
@@ -117,12 +119,12 @@ public class Constructor extends Member {
         } else {
             if (type.isPointer()) {
                 cBuilder.toHeader();
-                cBuilder.idt(1).path(type.self, false).add("*").add(" create(").add(params).add(");").ln();
+                cBuilder.idt(1).path(type.self).add("*").add(" create(").add(params).add(");").ln();
 
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
-                        .path(type.self, false).add("*")
-                        .add(" ").path(type.self, false).add("::create(").add(params).add(") ").in(1);
+                        .path(type.self).add("*")
+                        .add(" ").path(type.self).add("::create(").add(params).add(") ").in(1);
                 if (stack.getConstructorCall() == null && constructorTarget != null) {
                     cBuilder.idt(1).add(type.parent.type.pathToken).add("::create();").ln();
                 }
@@ -145,7 +147,7 @@ public class Constructor extends Member {
 
                 cBuilder.toSource(type.template != null);
                 cBuilder.add(type.template)
-                        .path(type.self, false).add("::").add(type.pathToken);
+                        .path(type.self).add("::").add(type.pathToken);
                 if (params.isEmpty()) {
                     cBuilder.add("(empty e) : ");
                 } else if (params.getCount() == 1 && params.getTypePtr(0).equals(type.self)) {
@@ -171,14 +173,17 @@ public class Constructor extends Member {
 
     public void buildEmpty(Type type, CppBuilder cBuilder) {
         cBuilder.toHeader();
-        cBuilder.idt(1).path(type.self, false).add("*").add(" create();").ln();
+        cBuilder.idt(1).path(type.self).add("*").add(" create();").ln();
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .path(type.self, false).add("*")
-                .add(" ").path(type.self, false).add("::create() ").in(1)
-                .idt(1).path(type.parent, false).add("::create();").ln()
-                .idt(1).add("return this;").ln()
+                .path(type.self).add("*")
+                .add(" ").path(type.self).add("::create() ").in(1)
+                .idt(1).path(type.parent).add("::create();").ln();
+        if (type.hasInstanceInit()) {
+            cBuilder.idt(1).add("init();").ln();
+        }
+        cBuilder.idt(1).add("return this;").ln()
                 .out().ln()
                 .ln();
     }

@@ -6,7 +6,9 @@ import content.TokenGroup;
 import builder.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
+import logic.stack.LambdaResolve;
 import logic.stack.Stack;
+import logic.stack.expression.LambdaCall;
 import logic.typdef.Type;
 
 import java.util.ArrayList;
@@ -31,7 +33,7 @@ public class Variable extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, false, true, true, true, false);
+                readModifier(cFile, token, true, true, false, true, true, true, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 this.token = token;
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
@@ -72,7 +74,6 @@ public class Variable extends Member {
             }
             token = next;
         }
-
     }
 
     @Override
@@ -83,8 +84,8 @@ public class Variable extends Member {
                 typePtr = cFile.langObjectPtr(isLet());
                 return false;
             }
-            if (isStatic() && !typePtr.type.isSync()) {
-                cFile.erro(typeToken, "A Static variable must be a Sync Type", this);
+            if (isSync() && !typePtr.type.isSync()) {
+                cFile.erro(typeToken, "A Sync variable must be a Sync Type", this);
                 return false;
             }
 
@@ -118,6 +119,9 @@ public class Variable extends Member {
             cBuilder.idt(1);
             if (isStatic()) {
                 cBuilder.add("static ");
+                if (!isSync()) {
+                    cBuilder.add("thread_local ");
+                }
             }
             cBuilder.add(typePtr)
                     .add(" f_").add(name).add(";").ln();
@@ -132,7 +136,7 @@ public class Variable extends Member {
             for (int i = 0; i < nameTokens.size(); i++) {
                 Token name = nameTokens.get(i);
                 cBuilder.toSource();
-                cBuilder.add(typePtr)
+                cBuilder.add(isStatic() && !isSync(), "thread_local ").add(typePtr)
                         .add(" ").path(type.self, isStatic()).add("::f_").add(name).add(" = ");
                 if (isInitialized(i) && isLiteral(i)) {
                     initStacks.get(i).build(cBuilder, 1);
@@ -151,7 +155,7 @@ public class Variable extends Member {
                 if (isInitialized(i) && !isLiteral(i)) {
                     cBuilder.add(typePtr)
                             .add("& ").path(type.self, isStatic()).add("::s_").add(name).add("() ").in(1)
-                            .idt(1).add("init();").ln()
+                            .idt(1).add(isSync() ? "syncInit();" : "init();").ln()
                             .idt(1).add("return f_").add(name).add(";").ln()
                             .out().ln()
                             .ln();
@@ -207,6 +211,16 @@ public class Variable extends Member {
         }
     }
 
+    public void buildLambdas(CppBuilder cBuilder) {
+        for (Stack initStack : initStacks) {
+            if (initStack != null) {
+                for (LambdaCall lambdaCall : initStack.getLambdas()) {
+                    LambdaResolve.build(cBuilder, 1, lambdaCall);
+                }
+            }
+        }
+    }
+
     public ArrayList<FieldView> getFields() {
         if (fields == null) {
             fields = new ArrayList<>();
@@ -238,7 +252,7 @@ public class Variable extends Member {
     }
 
     public boolean isConstant(int pos) {
-        return isFinal() && isLiteral(pos);
+        return isFinal() && initTokens.get(pos) != null && initTokens.get(pos).isLiteral();
     }
 
     public boolean isInitialized(int pos) {

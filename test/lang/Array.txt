@@ -101,7 +101,12 @@ public class Array<T> : List<T> {
 
     public ~this() {
         native (source) {
+            for (long i = 0; i < this->f_length; i++) {
+                (&this->data[i])->~GPtr<g_T>();
+            }
             lang::memory::dearray(this->data);
+            this->f_length = 0;
+            this->data = nullptr;
         }
     }
 }

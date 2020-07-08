@@ -62,7 +62,11 @@ public class LineCase extends Line {
                 caseExp.requestGet(null);
             }
             if (!caseExp.isLiteral()) {
-                cFile.erro(caseToken, "The case value should be Literal", this);
+                if (caseExp.isConstant()) {
+                    if (switchOwner != null) switchOwner.setSimple(false);
+                } else {
+                    cFile.erro(caseToken, "The case value should be Literal", this);
+                }
             } else if (switchOwner != null) {
                 if (switchOwner.compareCase(this)) {
                     cFile.erro(caseToken, "Repeated Case Expression", this);

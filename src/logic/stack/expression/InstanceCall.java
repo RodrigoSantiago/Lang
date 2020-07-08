@@ -30,6 +30,7 @@ public class InstanceCall extends Call {
 
     Pointer typePtr;
     private int indexArgs;
+    private boolean isNullRequest;
 
     public InstanceCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -299,8 +300,11 @@ public class InstanceCall extends Call {
     @Override
     public void requestGet(Pointer pointer) {
         if (getNaturalPtr(pointer) == null) return;
-        if (pointer == null) pointer = naturalPtr;
+        if (pointer == null) {
+            pointer = naturalPtr;
+        }
         pointer = pointer.toLet();
+        isNullRequest = true;
 
         requestPtr = pointer;
 
@@ -323,9 +327,13 @@ public class InstanceCall extends Call {
     @Override
     public void requestOwn(Pointer pointer) {
         if (getNaturalPtr(pointer) == null) return;
-        if (pointer == null) pointer = naturalPtr;
+        if (pointer == null) {
+            isNullRequest = true;
+            pointer = naturalPtr;
+        }
 
         requestPtr = pointer;
+        if (requestPtr.let) isNullRequest = true;
 
         if (pointer.canReceive(naturalPtr) <= 0) {
             cFile.erro(getToken(), "Cannot cast [" + naturalPtr + "] to [" + pointer + "]", this);
@@ -350,13 +358,17 @@ public class InstanceCall extends Call {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, boolean next) {
+        if (typePtr.isPointer() || isPathLine || isNullRequest) {
+            cBuilder.add(typePtr).add("(");
+        }
+
         if (typePtr.isPointer()) {
             if (indexArgs > 0) {
                 if (indexArgs == 1) {
-                    cBuilder.add("(new ").path(typePtr, false).add("())->create(").add(indexArguments.get(0), idt).add(")");
+                    cBuilder.add("(new ").path(typePtr).add("())->create(").add(indexArguments.get(0), idt).add(")");
                 } else {
                     Temp t = cBuilder.temp(cFile.langIntPtr(), indexArguments.size());
-                    cBuilder.add("array<").path(typePtr, false).add(">::fill(").add("new ").path(typePtr, false).add("(), (");
+                    cBuilder.add("array<").path(typePtr).add(">::fill(").add("new ").path(typePtr).add("(), (");
                     for (int i = 0; i < indexArgs; i++) {
                         if (i > 0) cBuilder.add(", ");
                         cBuilder.add(t).add("[").add(i).add("] = ").add(indexArguments.get(i), idt);
@@ -370,7 +382,7 @@ public class InstanceCall extends Call {
                 Temp t = cBuilder.temp(typePtr, true);
                 Temp t2 = cBuilder.temp(typePtr.pointers[0], true);
                 cBuilder.add("(").add(t).add(" = ")
-                        .add("(new ").path(typePtr, false).add("())->create(").add(arrayInitArgs.size()).add(")");
+                        .add("(new ").path(typePtr).add("())->create(").add(arrayInitArgs.size()).add(")");
                 cBuilder.add(", ").add(t2).add(" = ").add(t).add("->data");
                 for (int i = 0; i < arrayInitArgs.size(); i++) {
                     Expression arg = arrayInitArgs.get(i);
@@ -380,7 +392,7 @@ public class InstanceCall extends Call {
             } else if (initFields.size() > 0) {
                 Temp t = cBuilder.temp(typePtr, true);
                 cBuilder.add("(").add(t).add(" = ")
-                        .add("(new ").path(typePtr, false).add("())->create(").add(arguments, idt).add(")");
+                        .add("(new ").path(typePtr).add("())->create(").add(arguments, idt).add(")");
                 for (int i = 0; i < initFields.size(); i++) {
                     FieldView field = initFields.get(i);
                     cBuilder.add(", ").add(t).add("->");
@@ -392,13 +404,13 @@ public class InstanceCall extends Call {
                 }
                 cBuilder.add(", ").add(t).add(")");
             } else {
-                cBuilder.add("(new ").path(typePtr, false).add("())->create(").add(arguments, idt).add(")");
+                cBuilder.add("(new ").path(typePtr).add("())->create(").add(arguments, idt).add(")");
             }
         } else {
             if (initFields.size() > 0) {
                 Temp t = cBuilder.temp(typePtr);
                 cBuilder.add("(").add(t).add(" = ")
-                        .path(typePtr, false).add("(");
+                        .path(typePtr).add("(");
 
                 if (constructorView == ConstructorView.structInit) {
                     cBuilder.add(")");
@@ -421,7 +433,7 @@ public class InstanceCall extends Call {
                 }
                 cBuilder.add(", ").add(t).add(")");
             } else {
-                cBuilder.path(typePtr, false).add("(");
+                cBuilder.path(typePtr).add("(");
                 if (constructorView == ConstructorView.structInit) {
                     cBuilder.add(")");
                 } else if (constructorView.isEmpty()) {
@@ -432,6 +444,9 @@ public class InstanceCall extends Call {
                     cBuilder.add(arguments, idt).add(")");
                 }
             }
+        }
+        if (typePtr.isPointer() || isPathLine || isNullRequest) {
+            cBuilder.add(")");
         }
         if (next) {
             cBuilder.add(requestPtr.isPointer() ? "->" : ".");

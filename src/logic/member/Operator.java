@@ -31,7 +31,7 @@ public class Operator extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, false, true, true, true, false);
+                readModifier(cFile, token, true, true, false, true, true, false, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
@@ -164,7 +164,7 @@ public class Operator extends Member {
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(typePtr)
-                .add(" ").path(type.self, false).add("::").nameOp(getOp(), typePtr)
+                .add(" ").path(type.self).add("::").nameOp(getOp(), typePtr)
                 .add("(").add(params).add(") ").in(1)
                 .add(stack, 1)
                 .out().ln()
@@ -174,9 +174,9 @@ public class Operator extends Member {
     public void buildOperator(CppBuilder cBuilder) {
         if (op == Key.EQUAL || op == Key.DIF) {
             cBuilder.toHeader();
-            cBuilder.add("inline bool operator ").add(op.string).add("(const ").path(params.getTypePtr(0), false).add("& left, const ")
-                    .path(params.getTypePtr(1), false).add("& right) ").in(1);
-            cBuilder.idt(1).add("return ").path(type.self, false).add("::").nameOp(op, typePtr).add("(left, right);").ln();
+            cBuilder.add("inline bool operator ").add(op.string).add("(const ").path(params.getTypePtr(0)).add("& left, const ")
+                    .path(params.getTypePtr(1)).add("& right) ").in(1);
+            cBuilder.idt(1).add("return ").path(type.self).add("::").nameOp(op, typePtr).add("(left, right);").ln();
             cBuilder.out().ln()
                     .ln();
         } else if (isCasting()) {
@@ -185,11 +185,11 @@ public class Operator extends Member {
             cBuilder.add("template<>").ln()
                     .add("struct cast<").add(type.self).add(", ").add(getTypePtr()).add("> {").ln()
                     .idt(1).add("inline static ").add(getTypePtr()).add(" as(const ").add(in).add("& from) {").ln()
-                    .idt(2).add("return ").path(type.self, false).add("::").nameOp(op, typePtr).add("(from);").ln()
+                    .idt(2).add("return ").path(type.self).add("::").nameOp(op, typePtr).add("(from);").ln()
                     .idt(1).add("}").ln()
-                    .idt(1).add("inline static bool is(const ").path(type.self, false).add("& from) { return true; }").ln()
+                    .idt(1).add("inline static bool is(const ").path(type.self).add("& from) { return true; }").ln()
                     .idt(1).add("inline static bool is(const ")
-                    .path(type.self, false).add("& from, ").path(getTypePtr(), false).add("& result) {").ln()
+                    .path(type.self).add("& from, ").path(getTypePtr()).add("& result) {").ln()
                     .idt(2).add("result = as(from);").ln()
                     .idt(2).add("return true;").ln()
                     .idt(1).add("}").ln()
@@ -209,7 +209,7 @@ public class Operator extends Member {
             cBuilder.toSource(type.template != null);
             cBuilder.add(type.template)
                     .add(type.cFile.langBoolPtr())
-                    .add(" ").path(type.self, false).add("::equal(")
+                    .add(" ").path(type.self).add("::equal(")
                     .add(type.self).add(" left,").add(type.self).add(" right) ").in(1);
             boolean val = false;
             cBuilder.idt(1).add("return ");
@@ -237,12 +237,12 @@ public class Operator extends Member {
     public static void buildAutomaticOperator(CppBuilder cBuilder, Type type, Operator equal, Operator dif) {
         if (equal == null) {
             cBuilder.toHeader();
-            cBuilder.add("inline bool operator ==(const ").path(type.self, false).add("& left, const ")
-                    .path(type.self, false).add("& right) ").in(1);
+            cBuilder.add("inline bool operator ==(const ").path(type.self).add("& left, const ")
+                    .path(type.self).add("& right) ").in(1);
             if (dif != null) {
-                cBuilder.idt(1).add("return !").path(type.self, false).add("::dif(left, right);").ln();
+                cBuilder.idt(1).add("return !").path(type.self).add("::dif(left, right);").ln();
             } else {
-                cBuilder.idt(1).add("return ").path(type.self, false).add("::equal(left, right);").ln();
+                cBuilder.idt(1).add("return ").path(type.self).add("::equal(left, right);").ln();
             }
             cBuilder.out().ln()
                     .ln();
@@ -250,9 +250,9 @@ public class Operator extends Member {
 
         if (dif == null) {
             cBuilder.toHeader();
-            cBuilder.add("inline bool operator !=(const ").path(type.self, false).add("& left, const ")
-                    .path(type.self, false).add("& right) ").in(1);
-            cBuilder.idt(1).add("return !").path(type.self, false).add("::equal(left, right);").ln();
+            cBuilder.add("inline bool operator !=(const ").path(type.self).add("& left, const ")
+                    .path(type.self).add("& right) ").in(1);
+            cBuilder.idt(1).add("return !").path(type.self).add("::equal(left, right);").ln();
             cBuilder.out().ln()
                     .ln();
         }

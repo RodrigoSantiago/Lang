@@ -261,7 +261,7 @@ public class BlockFor extends Block {
             if (!startFields.contains(field)) {
                 if (!field.getTypePtr().isLangBase()) {
                     cBuilder.idt(idt).add("(&").nameParam(field.getName())
-                            .add(")->~").path(field.getTypePtr(), false).add("();").ln();
+                            .add(")->~").path(field.getTypePtr()).add("();").ln();
                 }
             }
         }
@@ -274,7 +274,7 @@ public class BlockFor extends Block {
             Field field = startFields.get(i);
             if (!field.getTypePtr().isLangBase()) {
                 cBuilder.idt(idt).add("(&").nameParam(field.getName())
-                        .add(")->~").path(field.getTypePtr(), false).add("();").ln();
+                        .add(")->~").path(field.getTypePtr()).add("();").ln();
             }
         }
     }

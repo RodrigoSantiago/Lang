@@ -5,28 +5,13 @@ void main () {
 }
 
 public class Test {
+    public static final int a = 10;
 
-    int a;
     public this() {
-    }
-
-    public void letsYield(Object work) {
-        function<Iterator<int>> it = () -> {
-            if (work != null) {
-                yield return ((function<Iterator<int>>)() -> {
-                                 if (work != null) {
-                                     yield return 10;
-                                 }
-                                 for (int i = 0; i < 10; i++) {
-                                     yield return i;
-                                 }
-                                 yield return 10;
-                             }).run();
-            }
-            for (int i = 0; i < 10; i++) {
-                yield return i;
-            }
-            yield return 10;
-        };
+        int b = 10;
+        switch(b) {
+            case a : Console.WriteLine("algo"); break;
+            default : break;
+        }
     }
 }

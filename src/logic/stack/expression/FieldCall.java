@@ -46,12 +46,17 @@ public class FieldCall extends Call {
 
     @Override
     public boolean isDirectCall() {
-        return field != null && field.temp == null && (field.getName().key == Key.THIS || field.getName().key == Key.BASE);
+        return field != null && !field.isShadow() && (field.getName().key == Key.THIS || field.getName().key == Key.BASE);
     }
 
     @Override
     public boolean isMethodSetter() {
         return fieldView != null && fieldView.isProperty();
+    }
+
+    @Override
+    public boolean isConstant() {
+        return fieldView != null && fieldView.isVariable() && fieldView.srcVar.isConstant(fieldView.srcID);
     }
 
     public Pointer getTypePtr() {

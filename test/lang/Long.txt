@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Long {
+public class Long {
     public final long value;
 
     public this(long value) {

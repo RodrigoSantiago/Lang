@@ -100,4 +100,8 @@ public abstract class Call {
     public void markArgument() {
         isArg = true;
     }
+
+    public boolean isConstant() {
+        return false;
+    }
 }

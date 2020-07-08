@@ -11,6 +11,7 @@ import logic.params.Parameters;
 import logic.stack.block.*;
 import logic.stack.expression.ConstructorCall;
 import logic.stack.expression.Expression;
+import logic.stack.expression.LambdaCall;
 import logic.stack.line.LineYield;
 
 import java.util.ArrayList;
@@ -23,9 +24,7 @@ public class Stack {
     private Pointer returnPtr;
     private Pointer yieldPtr;
     public Token referenceToken;
-    private int yieldID;
 
-    public Line line;
     public Block block;
     public Expression expression;
 
@@ -34,18 +33,24 @@ public class Stack {
     private boolean isConstructor;
     private boolean isYield;
     private boolean hasConstructorCall;
-    public Parameters param;
+
     private Pointer valuePtr;
-    public HashMap<Token, Field> shadowFields = new HashMap<>();
-    public ArrayList<LineYield> yields = new ArrayList<>();
+    private Stack source;
+    private Line parent;
 
-    private ConstructorCall constructorCall;
-
+    public Parameters param;
     public HashMap<Token, Field> fields = new HashMap<>();
+    public HashMap<Token, Field> shadowFields = new HashMap<>();
+
+    public ArrayList<LineYield> yields = new ArrayList<>();
+    public ArrayList<LambdaCall> lambdas = new ArrayList<>();
 
     private GenericOwner generics;
+    private ConstructorCall constructorCall;
 
-    Stack(Stack source, Token referenceToken, Pointer returnPtr) {
+    public Stack(Line parent, Stack source, Token referenceToken, Pointer returnPtr, Parameters param) {
+        this.parent = parent;
+        this.source = source;
         this.cFile = source.cFile;
         this.sourcePtr = source.sourcePtr;
         this.returnPtr = returnPtr;
@@ -53,6 +58,7 @@ public class Stack {
         this.isStatic = source.isStatic;
         this.isConstructor = false;
         this.referenceToken = referenceToken;
+        this.param = param;
     }
 
     public Stack(ContentFile cFile, Token referenceToken, Pointer sourcePtr, Pointer returnPtr, GenericOwner generics,
@@ -101,6 +107,9 @@ public class Stack {
         if (isExpression) {
             expression.build(cBuilder, idt);
         } else {
+            for (LambdaCall lambda : lambdas) {
+                lambda.setLambdaID(LambdaResolve.build(cBuilder, idt, lambda));
+            }
             if (isYieldMode()) {
                 YieldResolve.build(cBuilder, idt, this, param, valuePtr);
             } else {
@@ -110,6 +119,14 @@ public class Stack {
                 block.buildDestroyer(cBuilder, idt);
             }
         }
+    }
+
+    public ArrayList<LambdaCall> getLambdas() {
+        return lambdas;
+    }
+
+    public Stack getSource() {
+        return source;
     }
 
     public boolean isStatic() {
@@ -151,7 +168,21 @@ public class Stack {
     }
 
     public Field findField(Token nameToken) {
-        return fields.get(nameToken);
+        if (nameToken.key == Key.BASE && (source != null || isYieldMode())) return null;
+
+        Field local = fields.get(nameToken);
+        if (local == null && source != null) {
+            Field shadow = shadowFields.get(nameToken);
+            if (shadow == null) {
+                Field outside = source.findField(nameToken);
+                if (outside != null) {
+                    shadow = new Field(this, outside);
+                    shadowFields.put(outside.getName(), shadow);
+                }
+            }
+            return shadow;
+        }
+        return local;
     }
 
     public Pointer getPointer(TokenGroup tokenGroup, boolean isLet) {
@@ -186,7 +217,7 @@ public class Stack {
         Token nameThis = new Token("this", 0, 4, Key.THIS, false);
         fields.put(nameThis, new Field(this, referenceToken, nameThis, sourcePtr.toLet(), true, block));
 
-        if (sourcePtr.type.parent != null && !isYieldMode()) {
+        if (sourcePtr.type.parent != null && !isYieldMode() && !isLambda()) {
             Token nameBase =  new Token("base", 0, 4, Key.BASE, false);
             fields.put(nameBase, new Field(this, referenceToken, nameBase, sourcePtr.type.parent.toLet(), true, block));
         }
@@ -232,7 +263,15 @@ public class Stack {
         return isYield;
     }
 
-    public boolean isChildOf(Block source) {
-        return false;
+    public boolean isLambda() {
+        return parent != null;
+    }
+
+    public boolean isChildOf(Block block) {
+        return parent != null && parent.isChildOf(block);
+    }
+
+    public void addLambda(LambdaCall lambdaCall) {
+        lambdas.add(lambdaCall);
     }
 }

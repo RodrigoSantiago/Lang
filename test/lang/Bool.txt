@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Bool {
+public class Bool {
     public final bool value;
 
     public this(bool value) {

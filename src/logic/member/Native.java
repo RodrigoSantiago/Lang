@@ -26,7 +26,7 @@ public class Native extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, false, false, false, false, true, false, false);
+                readModifier(cFile, token, false, false, false, false, true, false, false, false);
             } else if (state == 0 && token.key == Key.NATIVE) {
                 this.token = token;
                 state = 2;

@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Float {
+public class Float {
     public final float value;
 
     public this(float value) {

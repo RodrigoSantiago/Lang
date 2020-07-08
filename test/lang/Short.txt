@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Short {
+public class Short {
     public final short value;
 
     public this(short value) {

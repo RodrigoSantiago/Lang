@@ -236,6 +236,10 @@ public class BlockSwitch extends Block {
         return typePtr;
     }
 
+    public void setSimple(boolean simple) {
+        this.simple = simple;
+    }
+
     public boolean isSimple() {
         return simple;
     }

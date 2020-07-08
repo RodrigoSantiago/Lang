@@ -205,6 +205,10 @@ public class Expression {
         return groups.size() == 1 && groups.get(0).isLiteral();
     }
 
+    public boolean isConstant() {
+        return groups.size() == 1 && groups.get(0).isConstant();
+    }
+
     public LiteralCall getLiteral() {
         return groups.size() == 1 ? groups.get(0).getLiteral() : null;
     }

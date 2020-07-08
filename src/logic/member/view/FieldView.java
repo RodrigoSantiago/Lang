@@ -169,6 +169,10 @@ public class FieldView {
         return srcPro != null;
     }
 
+    public boolean isAutoProperty() {
+        return srcPro != null && srcPro.isAuto();
+    }
+
     public boolean isVariable() {
         return srcVar != null;
     }
@@ -179,6 +183,10 @@ public class FieldView {
 
     public boolean isStatic() {
         return srcPro != null ? srcPro.isStatic() : srcVar != null ? srcVar.isStatic() : true;
+    }
+
+    public boolean isSync() {
+        return (srcVar != null && srcVar.isSync()) || srcNum != null;
     }
 
     public boolean isLet() {

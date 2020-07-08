@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Double {
+public class Double {
     public final double value;
 
     public this(double value) {

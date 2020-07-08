@@ -1,5 +1,7 @@
 package logic.stack.expression;
 
+import builder.CppBuilder;
+import builder.Temp;
 import content.Key;
 import content.Token;
 import logic.Pointer;
@@ -94,5 +96,25 @@ public class InitCall extends Call {
     @Override
     public void requestSet() {
         cFile.erro(getToken(), "SET not allowed", this);
+    }
+
+    @Override
+    public void build(CppBuilder cBuilder, int idt, boolean next) {
+        // cBuilder.add(requestArray).add("(");
+        if (arguments.size() == 0) {
+            cBuilder.add("(new ").path(requestArray).add("())->create(0)");
+        } else {
+            Temp t = cBuilder.temp(requestArray, true);
+            Temp t2 = cBuilder.temp(requestArray.pointers[0], true);
+            cBuilder.add("(").add(t).add(" = ")
+                    .add("(new ").path(requestArray).add("())->create(").add(arguments.size()).add(")");
+            cBuilder.add(", ").add(t2).add(" = ").add(t).add("->data");
+            for (int i = 0; i < arguments.size(); i++) {
+                Expression arg = arguments.get(i);
+                cBuilder.add(", ").add(t2).add("[").add(i).add("] = ").add(arg, idt);
+            }
+            cBuilder.add(", ").add(t).add(")");
+        }
+        // cBuilder.add(")");
     }
 }

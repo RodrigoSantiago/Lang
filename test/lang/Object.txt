@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Object {
+public class Object {
     native (header) {
         lang::weakptr* weak;
 
@@ -10,11 +10,15 @@ public sync class Object {
 
     public this() {
         native (source) {
-            weak = lang::memory::weak(reinterpret_cast<void*>(this));
+            weak = lang::memory::weak(1);
         }
     }
 
     public ~this() {
+        native (source) {
+            weak->val = 0;
+            if (--weak->count == 0) lang::memory::deweak(weak);
+        }
     }
 
     public string toString() {

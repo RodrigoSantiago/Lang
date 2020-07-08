@@ -42,7 +42,7 @@ public class Method extends Member implements GenericOwner {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, !mainMethod && type.isAbsAllowed(), type.isFinalAllowed(), true, !mainMethod, false);
+                readModifier(cFile, token, true, true, !mainMethod && type.isAbsAllowed(), type.isFinalAllowed(), true, false, !mainMethod, false);
             } else if (state == 0 && token.key == Key.GENERIC && token.getChild() != null) {
                 if (mainMethod) {
                     cFile.erro(token, "The Main method cannot have templates", this);
@@ -103,6 +103,9 @@ public class Method extends Member implements GenericOwner {
     public boolean load() {
         if (contentToken != null && contentToken.start.key == Key.SEMICOLON && !isAbstract()) {
             cFile.erro(contentToken.start, "A Non-Abstract Method should implement", this);
+        }
+        if (hasImplementation && isAbstract()) {
+            cFile.erro(contentToken.start, "A Abstract Method should not implement", this);
         }
 
         if (typeToken != null) {
@@ -216,10 +219,10 @@ public class Method extends Member implements GenericOwner {
         cBuilder.add(self.type.template)
                 .add(template)
                 .add(typePtr)
-                .add(" ").path(self, false).add("::m_").add(nameToken)
+                .add(" ").path(self).add("::m_").add(nameToken)
                 .add("(").add(params).add(") {").ln()
                 .idt(1).add(typePtr != Pointer.voidPointer, "return ")
-                .path(self.type.parent, false).add("::m_").add(nameToken)
+                .path(self.type.parent).add("::m_").add(nameToken)
                 .add("(").args(mw.getParams()).add(");").ln()
                 .add("}").ln()
                 .ln();

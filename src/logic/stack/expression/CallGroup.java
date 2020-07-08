@@ -134,6 +134,13 @@ public class CallGroup {
         return false;
     }
 
+    public boolean isConstant() {
+        if (calls.size() > 0) {
+            return calls.get(0).isConstant();
+        }
+        return false;
+    }
+
     public LiteralCall getLiteral() {
         return calls.size() == 1 && calls.get(0) instanceof LiteralCall ? (LiteralCall) calls.get(0) : null;
     }
@@ -492,7 +499,7 @@ public class CallGroup {
             } else if (operatorView.operator != null && operatorView.operator.type.isLangBase()) {
                 cBuilder.add(left, idt).add(" ").add(center.operatorToken).add(" ").add(right, idt);
             } else {
-                cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp(), null)
+                cBuilder.path(operatorView.caller).add("::").nameOp(operatorView.operator.getOp(), null)
                         .add("(").add(left, idt).add(", ").add(right, idt).add(")");
             }
         } else if (left != null && left.isCastingOperator() && center != null) {
@@ -624,7 +631,7 @@ public class CallGroup {
             left.buildCall(cBuilder, idt, false);
             cBuilder.add(" ").add(op).add(" ").add(right, idt);
         } else {
-            cBuilder.path(operatorView.caller, false).add("::").nameOp(operatorView.operator.getOp(), null);
+            cBuilder.path(operatorView.caller).add("::").nameOp(operatorView.operator.getOp(), null);
             cBuilder.add("(");
             if (tl != null) {
                 cBuilder.add(tl);

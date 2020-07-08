@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Int : Object {
+public class Int : Object {
     public final int value;
 
     public this(int value) {

@@ -158,7 +158,7 @@ public abstract class Block extends Line {
             Field field = localFields.get(i);
             if (!field.getTypePtr().isLangBase()) {
                 cBuilder.idt(idt).add("(&").nameParam(field.nameToken)
-                        .add(")->~").path(field.typePtr, false).add("();").ln();
+                        .add(")->~").path(field.typePtr).add("();").ln();
             }
         }
     }

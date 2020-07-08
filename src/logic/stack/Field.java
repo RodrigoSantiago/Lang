@@ -8,7 +8,6 @@ import logic.Pointer;
 
 public class Field {
 
-    public Temp temp;
     Field copy;
 
     Stack stack;
@@ -41,7 +40,7 @@ public class Field {
         this.source = field.source;
         this.token = field.token;
         this.nameToken = field.nameToken;
-        this.typePtr = field.typePtr;
+        this.typePtr = field.getTypePtr().toLet();
         isReadyOnly = true;
     }
 
@@ -65,20 +64,9 @@ public class Field {
         return isReadyOnly || stack != getStack();
     }
 
-    public void buildParam(CppBuilder cBuilder) {
-        temp = cBuilder.temp(typePtr.toLet());
-        cBuilder.add(temp).add(" = ");
-        copy.build(cBuilder, false);
-    }
-
     public void build(CppBuilder cBuilder, boolean next) {
-        if (temp != null) {
-            cBuilder.add(temp);
-            if (next) {
-                cBuilder.add(typePtr.isPointer() ? "->" : ".");
-            }
-        } else if (nameToken.key == Key.THIS) {
-            if (stack.isYieldMode()) {
+        if (nameToken.key == Key.THIS) {
+            if (stack.isYieldMode() || stack.isLambda()) {
                 if (typePtr.isPointer()) {
                     cBuilder.nameParam("this").add(next, "->");
                 } else {
@@ -100,5 +88,9 @@ public class Field {
 
     public String next() {
         return typePtr.isPointer() ? "->" : ".";
+    }
+
+    public boolean isShadow() {
+        return copy != null;
     }
 }

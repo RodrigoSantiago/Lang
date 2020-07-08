@@ -311,7 +311,7 @@ public class LiteralCall extends Call {
             cBuilder.add(resultBool ? "true" : "false");
         } else if (literalType == STRING) {
             if (isPathLine) {
-                cBuilder.path(cFile.langStringPtr(), false).add("(");
+                cBuilder.path(cFile.langStringPtr()).add("(");
             }
             cBuilder.dependence(cFile.langStringPtr());
             cBuilder.add("\"").add(resultStr).add("\"");

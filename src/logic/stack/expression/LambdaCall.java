@@ -8,15 +8,15 @@ import logic.Pointer;
 import logic.params.Parameters;
 import logic.stack.Context;
 import logic.stack.Field;
-import logic.stack.StackExpansion;
+import logic.stack.Stack;
 
 import java.util.ArrayList;
 
 public class LambdaCall extends Call {
 
-    StackExpansion innerStack;
+    public Stack innerStack;
 
-    ArrayList<Token> nameTokens = new ArrayList<>();
+    public  ArrayList<Token> nameTokens = new ArrayList<>();
     ArrayList<Pointer> typePointers = new ArrayList<>();
 
     ArrayList<TokenGroup> typeTokens = new ArrayList<>();
@@ -31,6 +31,7 @@ public class LambdaCall extends Call {
 
     boolean isAutomatic;
     boolean isNoTyped;
+    private int lambdaID;
 
     public LambdaCall(CallGroup group, Token start, Token end) {
         super(group, start, end);
@@ -192,6 +193,8 @@ public class LambdaCall extends Call {
             }
             functionPtr = cFile.langFunctionPtr(pointers);
         }
+
+        getStack().addLambda(this);
     }
 
     @Override
@@ -279,7 +282,7 @@ public class LambdaCall extends Call {
             for (int i = 0; i < nameTokens.size(); i++) {
                 types.add(naturalPtr.pointers[i + 1]);
             }
-            innerStack = new StackExpansion(getExpression().parent, getStack(), token, naturalPtr.pointers[0],
+            innerStack = new Stack(getExpression().parent, getStack(), token, naturalPtr.pointers[0],
                     new Parameters(cFile, token, nameTokens, types));
             innerStack.read(contentToken.start, contentToken.end, true);
             for (int i = 0; i < nameTokens.size(); i++) {
@@ -308,7 +311,7 @@ public class LambdaCall extends Call {
             for (int i = 0; i < nameTokens.size(); i++) {
                 types.add(naturalPtr.pointers[i + 1]);
             }
-            innerStack = new StackExpansion(getExpression().parent, getStack(), token, naturalPtr.pointers[0],
+            innerStack = new Stack(getExpression().parent, getStack(), token, naturalPtr.pointers[0],
                     new Parameters(cFile, token, nameTokens, types));
             innerStack.read(contentToken.start, contentToken.end, true);
             innerStack.load();
@@ -325,34 +328,28 @@ public class LambdaCall extends Call {
         if (isPathLine) {
             cBuilder.add(naturalPtr).add("(");
         }
-        if (innerStack.shadowFields.size() > 0) {
-            cBuilder.add("(");
-            for (Field shadow : innerStack.shadowFields.values()) {
-                shadow.buildParam(cBuilder);
-                cBuilder.add(", ");
-            }
+        cBuilder.add("lambda").add(lambdaID).add("(");
+        boolean first = false;
+        for (Field field : innerStack.shadowFields.values()) {
+            if (first) cBuilder.add(", ");
+            field.build(cBuilder, false);
+            first = true;
         }
-        cBuilder.add("[=](");
-        for (int i = 0; i < nameTokens.size(); i++) {
-            if (i > 0) cBuilder.add(", ");
-            cBuilder.add(naturalPtr.pointers[i + 1]).add(" ").nameParam(nameTokens.get(i));
-        }
-        cBuilder.add(") mutable -> ").add(naturalPtr.pointers[0]).add(" ").in(idt + 1);
-        innerStack.build(cBuilder, idt + 1);
-        cBuilder.out();
-        if (innerStack.shadowFields.size() > 0) {
-            cBuilder.add(")");
-        }
+        cBuilder.add(")");
         if (isPathLine) {
             cBuilder.add(")");
         }
         if (next) {
-            cBuilder.add(requestPtr.isPointer() ? "->" : ".");
+            cBuilder.add(".");
         }
     }
 
     @Override
     public void markLine() {
         super.markLine();
+    }
+
+    public void setLambdaID(int lambdaID) {
+        this.lambdaID = lambdaID;
     }
 }

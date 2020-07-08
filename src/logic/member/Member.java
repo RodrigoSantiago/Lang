@@ -11,7 +11,7 @@ public abstract  class Member {
     public final Type type;
     public Token token;
 
-    boolean isPrivate, isPublic, isAbstract, isFinal, isStatic, isLet, isDefault;
+    boolean isPrivate, isPublic, isAbstract, isFinal, isStatic, isSync, isLet, isDefault;
 
     public Member(Type type, ContentFile cFile, Token token) {
         this.type = type;
@@ -59,8 +59,13 @@ public abstract  class Member {
         return isDefault;
     }
 
+    public boolean isSync() {
+        return isSync;
+    }
+
     void readModifier(ContentFile cFile, Token token, boolean hasPrivate, boolean hasPublic,
-                      boolean hasAbstract, boolean hasFinal, boolean hasStatic, boolean hasLet, boolean hasDefault) {
+                      boolean hasAbstract, boolean hasFinal, boolean hasStatic, boolean hasSync,
+                      boolean hasLet, boolean hasDefault) {
         if ((token.key == Key.PUBLIC && hasPublic) || (token.key == Key.PRIVATE && hasPrivate)) {
             if (isPublic || isPrivate) {
                 cFile.erro(token, "Repeated acess modifier", this);
@@ -70,20 +75,21 @@ public abstract  class Member {
             }
         } else if ((token.key == Key.ABSTRACT && hasAbstract) || (token.key == Key.FINAL && hasFinal)) {
             if (isAbstract || isFinal) {
-                cFile.erro(token, "Repeated modifier", this);
+                cFile.erro(token, "Repeated inheritence modifier", this);
             } else {
                 isAbstract = (token.key == Key.ABSTRACT);
                 isFinal = (token.key == Key.FINAL);
             }
-        } else if (token.key == Key.STATIC && hasStatic) {
-            if (isStatic) {
+        } else if ((token.key == Key.STATIC && hasStatic) || (token.key == Key.SYNC && hasSync)) {
+            if (isStatic || isSync) {
                 cFile.erro(token, "Repeated modifier", this);
             } else {
                 isStatic = true;
+                isSync = (token.key == Key.SYNC);
             }
         } else if (token.key == Key.LET && hasLet) {
             if (isLet) {
-                cFile.erro(token, "Repeated modifier", this);
+                cFile.erro(token, "Repeated pointer modifier", this);
             } else {
                 isLet = true;
             }

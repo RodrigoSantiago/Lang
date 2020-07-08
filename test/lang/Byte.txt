@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Byte {
+public class Byte {
     public final byte value;
 
     public this(byte value) {

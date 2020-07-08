@@ -6,8 +6,12 @@ import content.TokenGroup;
 import builder.CppBuilder;
 import logic.Pointer;
 import logic.member.view.FieldView;
+import logic.stack.LambdaResolve;
 import logic.stack.Stack;
+import logic.stack.expression.LambdaCall;
 import logic.typdef.Type;
+
+import java.util.ArrayList;
 
 public class Property extends Member {
 
@@ -19,10 +23,10 @@ public class Property extends Member {
     private TokenGroup initToken;
     private Token getContentToken, setContentToken, ownContentToken;
 
-    private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate;
-    private boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate;
-    private boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate;
-    private boolean isGetOwn;
+    private boolean hasGet, isGetFinal, isGetAbstract, isGetPublic, isGetPrivate, isGetImplemented;
+    private boolean hasOwn, isOwnFinal, isOwnAbstract, isOwnPublic, isOwnPrivate, isOwnImplemented;
+    private boolean hasSet, isSetFinal, isSetAbstract, isSetPublic, isSetPrivate, isSetImplemented;
+    private boolean isGetOwn, isAuto;
 
     private Stack stackGet, stackSet, stackOwn, stackInit;
 
@@ -35,7 +39,7 @@ public class Property extends Member {
         while (token != null && token != end) {
             next = token.getNext();
             if (state == 0 && token.key.isAttribute) {
-                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, true, false);
+                readModifier(cFile, token, true, true, type.isAbsAllowed(), type.isFinalAllowed(), true, false, true, false);
             } else if (state == 0 && token.key == Key.WORD) {
                 typeToken = new TokenGroup(token, next = TokenGroup.nextType(next, end));
                 state = 1;
@@ -153,6 +157,7 @@ public class Property extends Member {
                     if (hasGet || isGetOwn) cFile.erro(token, "Repeated get", this);
                     hasGet = true;
                     getContentToken = token;
+                    isGetImplemented = token.key != Key.SEMICOLON;
                     isGetPublic = (this.isPublic && !isPrivate) || isPublic;
                     isGetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isGetFinal = (this.isFinal && !isAbstract) || isFinal;
@@ -161,6 +166,7 @@ public class Property extends Member {
                     if (hasSet) cFile.erro(token, "Repeated set", this);
                     hasSet = true;
                     setContentToken = token;
+                    isSetImplemented = token.key != Key.SEMICOLON;
                     isSetPublic = (this.isPublic && !isPrivate) || isPublic;
                     isSetPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isSetFinal = (this.isFinal && !isAbstract) || isFinal;
@@ -169,6 +175,7 @@ public class Property extends Member {
                     if (hasOwn || isGetOwn) cFile.erro(token, "Repeated own", this);
                     hasOwn = true;
                     ownContentToken = token;
+                    isOwnImplemented = token.key != Key.SEMICOLON;
                     isOwnPublic = (this.isPublic && !isPrivate) || isPublic;
                     isOwnPrivate = (this.isPrivate && !isPublic) || isPrivate;
                     isOwnFinal = (this.isFinal && !isAbstract) || isFinal;
@@ -186,6 +193,15 @@ public class Property extends Member {
             }
             token = next;
         }
+
+        if (hasGet && !isGetAbstract && !isGetImplemented) {
+            if ((!hasSet || (!isSetAbstract && !isSetImplemented)) && (!hasOwn || (!isOwnAbstract && !isOwnImplemented))) {
+                isGetImplemented = true;
+                if (hasSet) isSetImplemented = true;
+                if (hasOwn) isOwnImplemented = true;
+                isAuto = true;
+            }
+        }
     }
 
     public void toAbstract() {
@@ -193,6 +209,10 @@ public class Property extends Member {
         isGetAbstract = true;
         isSetAbstract = true;
         isOwnAbstract = true;
+        isAuto = false;
+        if (hasGet) isGetImplemented = getContentToken != null && getContentToken.key != Key.SEMICOLON;
+        if (hasSet) isSetImplemented = setContentToken != null && setContentToken.key != Key.SEMICOLON;
+        if (hasOwn) isOwnImplemented = ownContentToken != null && ownContentToken.key != Key.SEMICOLON;
     }
 
     @Override
@@ -223,19 +243,29 @@ public class Property extends Member {
             cFile.erro(contentToken == null ? token : contentToken.start,
                     "A Property should have at least one member", this);
         }
-        if (hasGet && !isGetAbstract && (getContentToken == null || getContentToken.key == Key.SEMICOLON) &&
-                (!isGetOwn || (ownContentToken == null || ownContentToken.key == Key.SEMICOLON))) {
+        if (hasGet && !isGetAbstract && !isGetImplemented && (!isGetOwn || !isOwnImplemented)) {
             cFile.erro(getContentToken == null ? token : getContentToken,
                     "A Non-Abstract Get Member should implement", this);
         }
-        if (hasOwn && !isOwnAbstract && (ownContentToken == null || ownContentToken.key == Key.SEMICOLON) &&
-                (!isGetOwn || (getContentToken == null || getContentToken.key == Key.SEMICOLON))) {
+        if (hasGet && isGetAbstract && isGetImplemented) {
+            cFile.erro(getContentToken == null ? token : getContentToken,
+                    "A Abstract Get Member should not implement", this);
+        }
+        if (hasOwn && !isOwnAbstract && !isOwnImplemented && (!isGetOwn || !isGetImplemented)) {
             cFile.erro(ownContentToken == null ? token : ownContentToken,
                     "A Non-Abstract Own Member should implement", this);
         }
-        if (hasSet && !isSetAbstract && (setContentToken == null || setContentToken.key == Key.SEMICOLON)) {
+        if (hasOwn && isOwnAbstract && isOwnImplemented) {
+            cFile.erro(ownContentToken == null ? token : ownContentToken,
+                    "A Abstract Own Member should not implement", this);
+        }
+        if (hasSet && !isSetAbstract && !isSetImplemented) {
             cFile.erro(setContentToken == null ? token : setContentToken,
                     "A Non-Abstract Set Member should implement", this);
+        }
+        if (hasSet && isSetAbstract && isSetImplemented) {
+            cFile.erro(setContentToken == null ? token : setContentToken,
+                    "A Abstract Set Member should not implement", this);
         }
         if (typeToken != null) {
             typePtr = cFile.getPointer(typeToken.start, typeToken.end, null, isStatic() ? null : type, isLet());
@@ -249,6 +279,15 @@ public class Property extends Member {
     }
 
     public void make() {
+        if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
+            stackInit = new Stack(cFile, token, type.self, typePtr,
+                    isStatic() ? null : type, true, isStatic(), false, null, null);
+            stackInit.read(initToken.start, initToken.end, true);
+            stackInit.load();
+        }
+
+        if (isAuto) return;
+
         if (hasGet && getContentToken != null && getContentToken.key == Key.BRACE && getContentToken.getChild() != null) {
             stackGet = new Stack(cFile, token, type.self, isGetOwn ? typePtr : typePtr.toLet(),
                     isStatic() ? null : type, false, isStatic(), false, null, null);
@@ -270,15 +309,28 @@ public class Property extends Member {
             stackSet.read(setContentToken.getChild(), setContentToken.getLastChild(), true);
             stackSet.load();
         }
-        if (initToken != null && initToken.start != null && initToken.start != initToken.end) {
-            stackInit = new Stack(cFile, token, type.self, typePtr,
-                    isStatic() ? null : type, true, isStatic(), false, null, null);
-            stackInit.read(initToken.start, initToken.end, true);
-            stackInit.load();
-        }
     }
 
     public void build(CppBuilder cBuilder) {
+        if (isAuto) {
+            cBuilder.toHeader();
+            cBuilder.idt(1).add(isStatic(), "static thread_local ").add(typePtr).add(" ").nameField(nameToken).add(";").ln();
+
+            if (isStatic()) {
+                cBuilder.toSource(false);
+                cBuilder.add("thread_local ").add(typePtr).add(" ").nameField(nameToken).add(" = ");
+                if (typePtr.typeSource != null) {
+                    cBuilder.add("lang::value<").add(typePtr).add(">::def()");
+                } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
+                    cBuilder.add("nullptr");
+                } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
+                    cBuilder.add(typePtr).add("()");
+                } else {
+                    cBuilder.add("0");
+                }
+                cBuilder.add(";").ln();
+            }
+        }
 
         if (hasGet()) {
             cBuilder.toHeader();
@@ -299,9 +351,13 @@ public class Property extends Member {
                     cBuilder.add(type.template);
                 }
                 cBuilder.add(getPtr)
-                        .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() ").in(1)
-                        .add(stackGet == null ? stackOwn : stackGet, 1)
-                        .out().ln()
+                        .add(" ").path(type.self, isStatic()).add("::get_").add(nameToken).add("() ").in(1);
+                if (isAuto) {
+                    cBuilder.idt(1).add("return ").nameField(nameToken).add(";").ln();
+                } else {
+                    cBuilder.add(stackGet == null ? stackOwn : stackGet, 1);
+                }
+                cBuilder.out().ln()
                         .ln();
             }
         }
@@ -324,9 +380,13 @@ public class Property extends Member {
                     cBuilder.add(type.template);
                 }
                 cBuilder.add(typePtr)
-                        .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() ").in(1)
-                        .add(stackOwn == null ? stackGet : stackOwn, 1)
-                        .out().ln()
+                        .add(" ").path(type.self, isStatic()).add("::own_").add(nameToken).add("() ").in(1);
+                if (isAuto) {
+                    cBuilder.idt(1).add("return ").nameField(nameToken).add(";").ln();
+                } else {
+                    cBuilder.add(stackOwn == null ? stackGet : stackOwn, 1);
+                }
+                cBuilder.out().ln()
                         .ln();
             }
         }
@@ -348,10 +408,35 @@ public class Property extends Member {
                     cBuilder.add(type.template);
                 }
                 cBuilder.add("void ").path(type.self, isStatic()).add("::set_").add(nameToken)
-                        .add("(").add(typePtr).add(" v_value) ").in(1)
-                        .add(stackSet, 1)
-                        .out().ln()
+                        .add("(").add(typePtr).add(" v_value) ").in(1);
+                if (isAuto) {
+                    cBuilder.idt(1).nameField(nameToken).add(" = v_value;").ln();
+                } else {
+                    cBuilder.add(stackSet, 1);
+                }
+                cBuilder.out().ln()
                         .ln();
+            }
+        }
+    }
+    public void buildDefault(CppBuilder cBuilder) {
+        cBuilder.idt(1).nameField(nameToken).add("(");
+        if (typePtr.typeSource != null) {
+            cBuilder.add("lang::value<").add(typePtr).add(">::def()");
+        } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
+            cBuilder.add("nullptr");
+        } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
+            cBuilder.add(typePtr).add("()");
+        } else {
+            cBuilder.add("0");
+        }
+        cBuilder.add(")");
+    }
+
+    public void buildLambdas(CppBuilder cBuilder) {
+        if (stackInit != null) {
+            for (LambdaCall lambdaCall : stackInit.getLambdas()) {
+                LambdaResolve.build(cBuilder, 1, lambdaCall);
             }
         }
     }
@@ -359,6 +444,18 @@ public class Property extends Member {
     public void buildInit(CppBuilder cBuilder) {
         if (stackInit != null) {
             cBuilder.idt(1).nameSet(nameToken).add("(").add(stackInit, 1).add(");").ln();
+        } else if (isAuto()) {
+            cBuilder.idt(1).nameField(nameToken).add(" = ");
+            if (typePtr.typeSource != null) {
+                cBuilder.add("lang::value<").add(typePtr).add(">::def()");
+            } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
+                cBuilder.add("nullptr");
+            } else if (typePtr.type != null && typePtr.type.isValue() && !typePtr.type.isLangBase()) {
+                cBuilder.add(typePtr).add("()");
+            } else {
+                cBuilder.add("0");
+            }
+            cBuilder.add(";").ln();
         }
     }
 
@@ -372,8 +469,8 @@ public class Property extends Member {
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(getPtr)
-                .add(" ").path(self, false).add("::get_").add(nameToken).add("() {").ln()
-                .idt(1).add("return ").path(self.type.parent, false).add("::get_").add(nameToken).add("();").ln()
+                .add(" ").path(self).add("::get_").add(nameToken).add("() {").ln()
+                .idt(1).add("return ").path(self.type.parent).add("::get_").add(nameToken).add("();").ln()
                 .add("}").ln()
                 .ln();
     }
@@ -388,8 +485,8 @@ public class Property extends Member {
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
                 .add(typePtr)
-                .add(" ").path(self, false).add("::own_").add(nameToken).add("() {").ln()
-                .idt(1).add("return ").path(self.type.parent, false).add("::own_").add(nameToken).add("();").ln()
+                .add(" ").path(self).add("::own_").add(nameToken).add("() {").ln()
+                .idt(1).add("return ").path(self.type.parent).add("::own_").add(nameToken).add("();").ln()
                 .add("}").ln()
                 .ln();
     }
@@ -401,9 +498,9 @@ public class Property extends Member {
 
         cBuilder.toSource(type.template != null);
         cBuilder.add(type.template)
-                .add("void ").path(self, false).add("::set_").add(nameToken)
+                .add("void ").path(self).add("::set_").add(nameToken)
                 .add("(").add(typePtr).add(" v_value) {").ln()
-                .idt(1).path(self.type.parent, false).add("::set_").add(nameToken).add("(v_value);").ln()
+                .idt(1).path(self.type.parent).add("::set_").add(nameToken).add("(v_value);").ln()
                 .add("}").ln()
                 .ln();
     }
@@ -478,6 +575,10 @@ public class Property extends Member {
 
     public boolean isSetPrivate() {
         return isSetPrivate;
+    }
+
+    public boolean isAuto() {
+        return isAuto;
     }
 
     public boolean hasOwn() {

@@ -1,6 +1,6 @@
 namespace lang;
 
-public sync class Date {
+public class Date {
     public final date value;
 
     public this(date value) {

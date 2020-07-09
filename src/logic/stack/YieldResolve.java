@@ -6,16 +6,23 @@ import content.Token;
 import data.ContentFile;
 import logic.Pointer;
 import logic.params.Parameters;
+import logic.stack.line.LineYield;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class YieldResolve {
 
     public static void build(CppBuilder cBuilder, int idt, Stack stack, Parameters param, Pointer valuePtr) {
+        HashMap<Token, Field> fields = stack.getFields();
+        HashMap<Token, Field> shadowFields = stack.getShadowFields();
+        ArrayList<LineYield> yields = stack.getYields();
 
         ContentFile cFile = stack.cFile;
         Pointer typePtr = stack.getReturnPtr();
         Pointer yieldPtr = stack.getYiledPtr().toLet();
-        Field yThis = stack.shadowFields.get(new Token("this", 0, 4, Key.THIS, false));
-        Field sThis = yThis == null ? stack.fields.get(new Token("this", 0, 4, Key.THIS, false)) : null;
+        Field yThis = shadowFields.get(new Token("this", 0, 4, Key.THIS, false));
+        Field sThis = yThis == null ? fields.get(new Token("this", 0, 4, Key.THIS, false)) : null;
 
         cBuilder.idt(idt).add("class yield : public ").path(cFile.langObjectPtr())
                 .add(", public ").path(typePtr).add(" {").ln()
@@ -54,10 +61,10 @@ public class YieldResolve {
         cBuilder.idt(idt + 1).add(typePtr).add(" yieldInner;").ln();
         cBuilder.idt(idt + 1).add(cFile.langBoolPtr()).add(" yieldBreak = false;").ln();
         cBuilder.idt(idt + 1).add(cFile.langIntPtr()).add(" yieldID = -1;").ln();
-        for (Field shadow : stack.shadowFields.values()) {
+        for (Field shadow : shadowFields.values()) {
             cBuilder.idt(idt + 1).add(shadow.getTypePtr().toLet()).add(" ").nameParam(shadow.nameToken).add(";").ln();
         }
-        for (Field field : stack.fields.values()) {
+        for (Field field : fields.values()) {
             cBuilder.idt(idt + 1).add(field.typePtr).add(" ").nameParam(field.nameToken).add(";").ln();
         }
         cBuilder.ln();
@@ -72,7 +79,7 @@ public class YieldResolve {
             cBuilder.add(first, ", ").add(valuePtr).add(" ").nameParam("value");
             first = true;
         }
-        for (Field shadow : stack.shadowFields.values()) {
+        for (Field shadow : shadowFields.values()) {
             cBuilder.add(first, ", ").add(shadow.getTypePtr().toLet()).add(" ").nameParam(shadow.nameToken);
             first = true;
         }
@@ -91,7 +98,7 @@ public class YieldResolve {
         if (valuePtr != null) {
             cBuilder.idt(idt + 2).add("this->").nameParam("value").add(" = ").nameParam("value").add(";").ln();
         }
-        for (Field shadow : stack.shadowFields.values()) {
+        for (Field shadow : shadowFields.values()) {
             cBuilder.idt(idt + 2).add("this->").nameParam(shadow.nameToken)
                     .add(" = ").nameParam(shadow.nameToken).add(";").ln();
         }
@@ -109,9 +116,9 @@ public class YieldResolve {
                 .idt(idt + 3).add("return true;").ln()
                 .idt(idt + 2).add("} else if (yieldInner != nullptr) yieldInner = nullptr;").ln();
 
-        for (int i = 0; i < stack.yields.size(); i++) {
+        for (int i = 0; i < yields.size(); i++) {
             int temp = cBuilder.temp();
-            stack.yields.get(i).setYieldID(temp);
+            yields.get(i).setYieldID(temp);
             cBuilder.idt(idt + 2).add(i > 0, "else ").add("if (yieldID == ").add(i)
                     .add(") goto yield_").add(temp).add(";").ln();
         }
@@ -136,39 +143,55 @@ public class YieldResolve {
                 .idt(idt + 1).add("}").ln()
                 .ln();
 
+        // Transfer OUT [Strong[+Open], Non-Sync Struct]
         cBuilder.idt(idt + 1).add("virtual void transferOut() {").ln();
-        for (Field field : stack.fields.values()) {
-            if (field.getTypePtr().isOpen()) {
-                cBuilder.idt(1).add("transfer<").add(field.getTypePtr()).add(">::transferOut(").nameParam(field.getName()).add(");").ln();
-            } else if (!field.getTypePtr().type.isSync()) {
-                cBuilder.idt(1).add("this->").nameParam(field.getName()).add(".transferOut();").ln();
+        for (Field field : shadowFields.values()) {
+            Pointer ptr = field.getTypePtr();
+            if (!ptr.let && !ptr.isSync()) {
+                if (ptr.isOpen()) {
+                    cBuilder.idt(1).add("transfer<").add(ptr).add(">::out(").nameField(field.getName()).add(");").ln();
+                } else {
+                    cBuilder.idt(1).add("this->").nameField(field.getName()).add(".transferOut();").ln();
+                }
             }
         }
-        if (sThis != null && !sThis.getTypePtr().type.isSync()) {
-            cBuilder.idt(1).add("this->").nameParam("this").add(".transferOut();").ln();
-        }
         cBuilder.idt(idt + 1).add("}").ln();
+
+        // Transfer IN [Strong[+Open], Non-Sync Struct]
         cBuilder.idt(idt + 1).add("virtual void transferIn() {").ln();
-        for (Field field : stack.fields.values()) {
-            if (field.getTypePtr().isOpen()) {
-                cBuilder.idt(1).add("transfer<").add(field.getTypePtr()).add(">::transferIn(").nameParam(field.getName()).add(");").ln();
-            } else if (!field.getTypePtr().type.isSync()) {
-                cBuilder.idt(1).add("this->").nameParam(field.getName()).add(".transferIn();").ln();
+        for (Field field : shadowFields.values()) {
+            Pointer ptr = field.getTypePtr();
+            if (!ptr.let && !ptr.isSync()) {
+                if (ptr.isOpen()) {
+                    cBuilder.idt(1).add("transfer<").add(ptr).add(">::in(").nameField(field.getName()).add(");").ln();
+                } else {
+                    cBuilder.idt(1).add("this->").nameField(field.getName()).add(".transferIn();").ln();
+                }
             }
-        }
-        if (sThis != null && !sThis.getTypePtr().type.isSync()) {
-            cBuilder.idt(1).add("this->").nameParam("this").add(".transferIn();").ln();
         }
         cBuilder.idt(idt + 1).add("}").ln();
+
+        // Transfer Clear [Strong/Weak[+Open], Non-Sync Struct]
         cBuilder.idt(idt + 1).add("virtual void clear() {").ln();
-        for (Field field : stack.fields.values()) {
-            if (field.getTypePtr().isOpen()) {
-                cBuilder.idt(1).add("transfer<").add(field.getTypePtr()).add(">::clear(").nameParam(field.getName()).add(");").ln();
-            } else if (!field.getTypePtr().type.isSync()) {
-                cBuilder.idt(1).add("this->").nameParam(field.getName()).add(".clear();").ln();
+        for (Field field : shadowFields.values()) {
+            Pointer ptr = field.getTypePtr();
+            if (!ptr.isSync()) {
+                if (ptr.isOpen()) {
+                    cBuilder.idt(1).add("transfer<").add(ptr).add(">::clear(").nameField(field.getName()).add(");").ln();
+                } else {
+                    cBuilder.idt(1).add("this->").nameField(field.getName()).add(".clear();").ln();
+                }
             }
         }
-        if (sThis != null && !sThis.getTypePtr().type.isSync()) {
+        if (sThis != null) {
+            Pointer ptr = sThis.getTypePtr();
+            if (!ptr.isSync()) {
+                if (ptr.isOpen()) {
+                    cBuilder.idt(1).add("transfer<").add(ptr).add(">::clear(").nameField("this").add(");").ln();
+                } else {
+                    cBuilder.idt(1).add("this->").nameField("this").add(".clear();").ln();
+                }
+            }
             cBuilder.idt(1).add("this->").nameParam("this").add(".clear();").ln();
         }
         cBuilder.idt(idt + 1).add("}").ln();
@@ -187,8 +210,8 @@ public class YieldResolve {
             cBuilder.add(first, ", ").nameParam("value");
             first = true;
         }
-        if (stack.shadowFields.size() > 0) {
-            for (Field shadow : stack.shadowFields.values()) {
+        if (shadowFields.size() > 0) {
+            for (Field shadow : shadowFields.values()) {
                 cBuilder.add(first, ", ").nameParam(shadow.nameToken);
                 first = true;
             }

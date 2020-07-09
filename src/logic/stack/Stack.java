@@ -21,15 +21,16 @@ import java.util.HashMap;
 public class Stack {
 
     public final ContentFile cFile;
-    private final Pointer sourcePtr;
-    private Pointer returnPtr;
-    private Pointer yieldPtr;
-    public Token referenceToken;
 
     public Block block;
     public Expression expression;
     public ArrayList<Expression> expressions;
     public ConstructorView enumConstructor;
+
+    private final Pointer sourcePtr;
+    private Pointer returnPtr;
+    private Pointer yieldPtr;
+    private Token token;
 
     private boolean isExpression;
     private boolean isStatic;
@@ -41,17 +42,17 @@ public class Stack {
     private Stack source;
     private Line parent;
 
-    public Parameters param;
-    public HashMap<Token, Field> fields = new HashMap<>();
-    public HashMap<Token, Field> shadowFields = new HashMap<>();
+    private Parameters param;
+    private HashMap<Token, Field> fields = new HashMap<>();
+    private HashMap<Token, Field> shadowFields = new HashMap<>();
 
-    public ArrayList<LineYield> yields = new ArrayList<>();
-    public ArrayList<LambdaCall> lambdas = new ArrayList<>();
+    private ArrayList<LineYield> yields = new ArrayList<>();
+    private ArrayList<LambdaCall> lambdas = new ArrayList<>();
 
     private GenericOwner generics;
     private ConstructorCall constructorCall;
 
-    public Stack(Line parent, Stack source, Token referenceToken, Pointer returnPtr, Parameters param) {
+    public Stack(Line parent, Stack source, Token token, Pointer returnPtr, Parameters param) {
         this.parent = parent;
         this.source = source;
         this.cFile = source.cFile;
@@ -60,11 +61,11 @@ public class Stack {
         this.isExpression = false;
         this.isStatic = source.isStatic;
         this.isConstructor = false;
-        this.referenceToken = referenceToken;
+        this.token = token;
         this.param = param;
     }
 
-    public Stack(ContentFile cFile, Token referenceToken, Pointer sourcePtr, Pointer returnPtr, GenericOwner generics,
+    public Stack(ContentFile cFile, Token token, Pointer sourcePtr, Pointer returnPtr, GenericOwner generics,
                  boolean isExpression, boolean isStatic, boolean isConstructor, Parameters param, Pointer valuePtr) {
         this.cFile = cFile;
         this.sourcePtr = sourcePtr;
@@ -73,7 +74,7 @@ public class Stack {
         this.isExpression = isExpression;
         this.isStatic = isStatic;
         this.isConstructor = isConstructor;
-        this.referenceToken = referenceToken;
+        this.token = token;
         this.param = param;
         this.valuePtr = valuePtr;
     }
@@ -125,9 +126,9 @@ public class Stack {
             if (expressions != null) {
                 ArrayList<ConstructorView> cvs = new Context(this).findConstructor(sourcePtr, expressions);
                 if (cvs == null || cvs.size() == 0) {
-                    cFile.erro(referenceToken, "Constructor Not Found", this);
+                    cFile.erro(token, "Constructor Not Found", this);
                 } else if (cvs.size() > 1) {
-                    cFile.erro(referenceToken, "Ambigous Constructor Call", this);
+                    cFile.erro(token, "Ambigous Constructor Call", this);
                     enumConstructor = cvs.get(0);
                 } else {
                     enumConstructor = cvs.get(0);
@@ -169,6 +170,14 @@ public class Stack {
 
     public ArrayList<LambdaCall> getLambdas() {
         return lambdas;
+    }
+
+    public HashMap<Token, Field> getFields() {
+        return fields;
+    }
+
+    public HashMap<Token, Field> getShadowFields() {
+        return shadowFields;
     }
 
     public Stack getSource() {
@@ -256,16 +265,16 @@ public class Stack {
 
     public void value (Pointer valuePtr) {
         Token nameValue = new Token("value", 0, 5, Key.WORD, false);
-        fields.put(nameValue, new Field(this, referenceToken, nameValue, valuePtr, false, block));
+        fields.put(nameValue, new Field(this, token, nameValue, valuePtr, false, block));
     }
 
     public void thisBase() {
         Token nameThis = new Token("this", 0, 4, Key.THIS, false);
-        fields.put(nameThis, new Field(this, referenceToken, nameThis, sourcePtr.toLet(), true, block));
+        fields.put(nameThis, new Field(this, token, nameThis, sourcePtr.toLet(), true, block));
 
         if (sourcePtr.type.parent != null && !isYieldMode() && !isLambda()) {
             Token nameBase =  new Token("base", 0, 4, Key.BASE, false);
-            fields.put(nameBase, new Field(this, referenceToken, nameBase, sourcePtr.type.parent.toLet(), true, block));
+            fields.put(nameBase, new Field(this, token, nameBase, sourcePtr.type.parent.toLet(), true, block));
         }
     }
 
@@ -303,6 +312,10 @@ public class Stack {
             }
         }
         yields.add(lineYield);
+    }
+
+    public ArrayList<LineYield> getYields() {
+        return yields;
     }
 
     public boolean isYieldMode() {

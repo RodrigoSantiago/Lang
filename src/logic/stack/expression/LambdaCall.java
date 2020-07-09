@@ -330,7 +330,7 @@ public class LambdaCall extends Call {
         }
         cBuilder.add("lambda").add(lambdaID).add("(");
         boolean first = false;
-        for (Field field : innerStack.shadowFields.values()) {
+        for (Field field : innerStack.getShadowFields().values()) {
             if (first) cBuilder.add(", ");
             field.build(cBuilder, false);
             first = true;

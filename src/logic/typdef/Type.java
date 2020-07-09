@@ -236,7 +236,7 @@ public abstract class Type implements GenericOwner {
             for (Variable variable : variables) {
                 hasInstanceVars = hasInstanceVars || !variable.isStatic();
                 for (int i = 0; i < variable.getCount(); i++) {
-                    if (variable.isInitialized(i) && !variable.isLiteral(i)) {
+                    if (!variable.isLiteral(i)) {
                         hasInstanceInit = hasInstanceInit || !variable.isStatic();
                         hasStaticInit = hasStaticInit || (variable.isStatic() && !variable.isSync());
                         hasSyncInit = hasSyncInit || variable.isSync();

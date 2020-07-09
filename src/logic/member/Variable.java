@@ -147,7 +147,7 @@ public class Variable extends Member {
                 }
                 cBuilder.ln();
 
-                if (isInitialized(i) && !isLiteral(i)) {
+                if (!isLiteral(i)) {
                     cBuilder.add(typePtr).add("& ")
                             .path(type.self, isStatic()).add("::s_").add(name).add("() ").in(1)
                             .idt(1).add(isSync() ? "syncInit();" : "init();").ln()

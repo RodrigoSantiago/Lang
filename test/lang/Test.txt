@@ -2,13 +2,41 @@ namespace lang;
 using lang::Locale.GlobalLocale;
 
 void main () {
-    Test t = Test.NOONE;
-    Test s = Test.SECOND;
+    Object outside = new Object();
+    Test<int> obj = new Test<int>();
+    obj.method(10);
+    obj.obj = outside;
+    let tt = obj;
+    Console.WriteLine("Antes");
+    Console.WriteLine(tt);
+    Console.WriteLine(obj);
+    Console.WriteLine(obj.obj);
+    native (source) {
+        v_obj.transferOut();
+        v_obj.clear();
+        v_obj.transferIn();
+    }
+    Console.WriteLine("Depois");
+    Console.WriteLine(tt);
+    Console.WriteLine(obj);
+    Console.WriteLine(obj.obj);
+    Console.WriteLine(obj.integer);
+    Console.WriteLine(obj.strong);
+    Console.WriteLine(obj.weak);
 }
 
-public enum Test {
-    NOONE(10), SECOND, TIRD(30);
+public class Test<T> {
+    let Object obj;
+    let Int integer;
+    T strong;
+    let T weak;
 
-    this(int a) {
+    this() {
+        integer = (Int) obj;
+    }
+
+    void method(T in) {
+        strong = in;
+        weak = strong;
     }
 }

@@ -285,18 +285,23 @@ public sync struct string : String {
     }
 
     string operator +(string value, string other) {
+        return "empty";
     }
 
     string operator +(string value, let Object other) {
+        return "empty";
     }
 
     string operator +(let Object value, string other) {
+        return "empty";
     }
 
     string operator +(string value, let String other) {
+        return "empty";
     }
 
     string operator +(let String value, string other) {
+        return "empty";d
     }
 }
 

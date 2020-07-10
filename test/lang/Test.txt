@@ -2,31 +2,26 @@ namespace lang;
 using lang::Locale.GlobalLocale;
 
 void main () {
-    Object outside = new Object();
     Test<int> obj = new Test<int>();
-    obj.method(10);
-    obj.obj = outside;
-    let tt = obj;
-    Console.WriteLine("Antes");
-    Console.WriteLine(tt);
-    Console.WriteLine(obj);
-    Console.WriteLine(obj.obj);
+    obj.obj = new Int(10);
+    obj.integer = (Int) obj.obj;
+    function<void> func = () -> {
+        Console.WriteLine(obj);
+    };
+    func.run();
     native (source) {
         v_obj.transferOut();
         v_obj.clear();
         v_obj.transferIn();
     }
-    Console.WriteLine("Depois");
-    Console.WriteLine(tt);
-    Console.WriteLine(obj);
-    Console.WriteLine(obj.obj);
+    func.run();
     Console.WriteLine(obj.integer);
-    Console.WriteLine(obj.strong);
-    Console.WriteLine(obj.weak);
+    obj.obj = null;
+    Console.WriteLine(obj.integer);
 }
 
 public class Test<T> {
-    let Object obj;
+    Object obj;
     let Int integer;
     T strong;
     let T weak;

@@ -50,10 +50,11 @@ public class LambdaResolve {
         for (Field field : shadowFields.values()) {
             Pointer ptr = field.getTypePtr();
             if (!ptr.let && !ptr.isSync()) {
+                cBuilder.idt(idt + 2);
                 if (ptr.isOpen()) {
-                    cBuilder.idt(1).add("transfer<").add(ptr).add(">::out(").nameField(field.getName()).add(");").ln();
+                    cBuilder.add("transfer<").add(ptr).add(">::out(").nameParam(field.getName()).add(");").ln();
                 } else {
-                    cBuilder.idt(1).add("this->").nameField(field.getName()).add(".transferOut();").ln();
+                    cBuilder.add("this->").nameParam(field.getName()).add(".transferOut();").ln();
                 }
             }
         }
@@ -64,10 +65,11 @@ public class LambdaResolve {
         for (Field field : shadowFields.values()) {
             Pointer ptr = field.getTypePtr();
             if (!ptr.let && !ptr.isSync()) {
+                cBuilder.idt(idt + 2);
                 if (ptr.isOpen()) {
-                    cBuilder.idt(1).add("transfer<").add(ptr).add(">::in(").nameField(field.getName()).add(");").ln();
+                    cBuilder.add("transfer<").add(ptr).add(">::in(").nameParam(field.getName()).add(");").ln();
                 } else {
-                    cBuilder.idt(1).add("this->").nameField(field.getName()).add(".transferIn();").ln();
+                    cBuilder.add("this->").nameParam(field.getName()).add(".transferIn();").ln();
                 }
             }
         }
@@ -78,10 +80,11 @@ public class LambdaResolve {
         for (Field field : shadowFields.values()) {
             Pointer ptr = field.getTypePtr();
             if (!ptr.isSync()) {
+                cBuilder.idt(idt + 2);
                 if (ptr.isOpen()) {
-                    cBuilder.idt(1).add("transfer<").add(ptr).add(">::clear(").nameField(field.getName()).add(");").ln();
+                    cBuilder.add("transfer<").add(ptr).add(">::clear(").nameParam(field.getName()).add(");").ln();
                 } else {
-                    cBuilder.idt(1).add("this->").nameField(field.getName()).add(".clear();").ln();
+                    cBuilder.add("this->").nameParam(field.getName()).add(".clear();").ln();
                 }
             }
         }

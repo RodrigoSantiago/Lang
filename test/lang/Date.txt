@@ -7,7 +7,7 @@ public class Date {
         this.value = value;
     }
 
-    public static date Current {
+    public static date current {
         get {
             native (return) {
                 return lang_date(lang::date::millis());
@@ -15,7 +15,7 @@ public class Date {
         }
     }
 
-    public static long Nano {
+    public static long nano {
         get {
             native (return) {
                 return lang::date::nano();
@@ -28,8 +28,8 @@ public class Date {
     }
 
     public static string toString(date value) {
-        return value.Year + "/" + value.Month + "/" + value.MonthDay + " - " +
-               value.Hours + ":" + value.Min + ":" + value.Sec + "::" + value.Millis;
+        return value.year + "/" + value.month + "/" + value.monthDay + " - " +
+               value.hours + ":" + value.min + ":" + value.sec + "::" + value.millis;
     }
 
     public string toString() {
@@ -47,12 +47,12 @@ public class Date {
 }
 
 public sync struct date : Date {
-    private static final int[] monthDay = new int[]{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
-    private static final int[] monthDayLeap = new int[]{0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
+    private static final int[] _monthDay = new int[]{0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
+    private static final int[] _monthDayLeap = new int[]{0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
 
     private long value;
 
-    public int Year {
+    public int year {
         get {
             long days = value / 86400000L;
             long years = days / 146097 * 400;
@@ -82,11 +82,11 @@ public sync struct date : Date {
         }
     }
 
-    public int Month {
+    public int month {
         get {
-            let int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
-            int yearDay = YearDay;
-            for (int i = 1; i < arr.Length; i++) {
+            let int[] arr = isLeapYear(year) ? _monthDayLeap : _monthDay;
+            int yearDay = yearDay;
+            for (int i = 1; i < arr.length; i++) {
                 if (yearDay <= arr[i]) {
                     return i;
                 }
@@ -95,11 +95,11 @@ public sync struct date : Date {
         }
     }
 
-    public int MonthDay {
+    public int monthDay {
         get {
-            let int[] arr = isLeapYear(Year) ? monthDayLeap : monthDay;
-            int yearDay = YearDay;
-            for (int i = 1; i < arr.Length; i++) {
+            let int[] arr = isLeapYear(year) ? _monthDayLeap : _monthDay;
+            int yearDay = yearDay;
+            for (int i = 1; i < arr.length; i++) {
                 if (yearDay <= arr[i]) {
                     return yearDay - arr[i - 1];
                 }
@@ -108,13 +108,13 @@ public sync struct date : Date {
         }
     }
 
-    public int WeekDay {
+    public int weekDay {
         get {
             return (int) ((value / 86400000L + 6) % 7) + 1;
         }
     }
 
-    public int YearDay {
+    public int yearDay {
         get {
             long days = value / 86400000L;
             long daysOut = days % 146097;
@@ -142,25 +142,25 @@ public sync struct date : Date {
         }
     }
 
-    public int Hours {
+    public int hours {
         get {
             return (int) ((value / 3600000L) % 24);
         }
     }
 
-    public int Min {
+    public int min {
         get {
             return (int) ((value / 60000L) % 60);
         }
     }
 
-    public int Sec {
+    public int sec {
         get {
             return (int) ((value / 1000L) % 60);
         }
     }
 
-    public int Millis {
+    public int millis {
         get {
             return (int) (value % 1000L);
         }
@@ -214,7 +214,7 @@ public sync struct date : Date {
             days = (year - div4) * 365 + div4 * 366;
         }
 
-        days += (isLeapYear(year) ? monthDayLeap : monthDay)[month - 1] + monthday - 1;
+        days += (isLeapYear(year) ? _monthDayLeap : _monthDay)[month - 1] + monthday - 1;
         this.value = days * 86400000L + hour * 3600000L + minuts * 60000L + seconds * 1000L + miliseconds;
     }
 

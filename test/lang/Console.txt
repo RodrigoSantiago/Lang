@@ -2,33 +2,33 @@ namespace lang;
 
 public final class Console {
 
-    public static void Write(string value) {
+    public static void write(string value) {
         native (source) {
             lang::console::write(v_value.data);
         }
     }
 
-    public static void Write(let Object value) {
-        Write(value == null ? "null" : value.toString());
+    public static void write(let Object value) {
+        write(value == null ? "null" : value.toString());
     }
 
-    public static void WriteLine(string value) {
+    public static void writeLine(string value) {
         native (source) {
             lang::console::writeline(v_value.data);
         }
     }
 
-    public static void WriteLine(let Object value) {
-        WriteLine(value == null ? "null" : value.toString());
+    public static void writeLine(let Object value) {
+        writeLine(value == null ? "null" : value.toString());
     }
 
-    public static string ReadChar() {
+    public static string readChar() {
         native (return) {
             return lang_string(lang::console::readchar());
         }
     }
 
-    public static string ReadLine() {
+    public static string readLine() {
         native (return) {
             return lang_string(lang::console::readline());
         }

@@ -32,15 +32,20 @@ public class Bool {
 public sync struct bool : Bool {
 
     private this() {
+        // internal
     }
 
     bool operator ==(bool value, bool other) {
+        // internal
     }
     bool operator !=(bool value, bool other) {
+        // internal
     }
 
     bool operator !(bool value) {
+        // internal
     }
     bool operator ^(bool value, bool other) {
+        // internal
     }
 }

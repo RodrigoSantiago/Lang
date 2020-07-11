@@ -2,42 +2,45 @@ namespace lang;
 
 public class WeakArray<T> : List<T> {
 
-    private final int length;
-    public int Length {
+    private final int _length;
+    public int length {
         get {
-            return length;
+            return _length;
         }
     }
 
     public let T this[int i] {
         get, own {
             native (return) {
-                return data[ ARRAY_ACESS(v_i, f_length) ];
+                return data[ ARRAY_ACESS(v_i, f__length) ];
             }
         }
         set {
             native (source) {
-                data[ ARRAY_ACESS(v_i, f_length) ] = v_value;
+                data[ ARRAY_ACESS(v_i, f__length) ] = v_value;
             }
         }
     }
 
     native (header) {
         GLet<g_T>* data;
-        lang_WeakArray<g_T>* create(GLet<g_T>* list, long size);
+        lang_WeakArray<g_T>* create(lang_int size, lang_bool init);
     }
 
     native (source) {
         template <typename g_T>
-        lang_WeakArray<g_T>* lang_WeakArray<g_T>::create(GLet<g_T>* list, long size) {
+        lang_WeakArray<g_T>* lang_WeakArray<g_T>::create(lang_int size, lang_bool init) {
+            lang_Object::create();
             this->data = sCast(GLet<g_T>*, lang::memory::array(sizeof(GLet<g_T>), size));
 
             if (this->data == nullptr) {
-                this->f_length = 0;
+                this->f__length = 0;
             } else {
-                this->f_length = size;
-                for (long i = 0; i < size; i++) {
-                    this->data[i] = list[i];
+                this->f__length = size;
+                if (init) {
+                    for (lang_int i = 0; i < size; i++) {
+                        new (&this->data[i]) GLet<g_T>(lang::value<GLet<g_T>>::def());
+                    }
                 }
             }
             return this;
@@ -45,7 +48,7 @@ public class WeakArray<T> : List<T> {
     }
 
     public this() {
-        this.length = 0;
+        this._length = 0;
 
         native (source) {
             this->data = nullptr;
@@ -53,17 +56,28 @@ public class WeakArray<T> : List<T> {
     }
 
     public this(int length) {
+        if (length < 0) length = 0;
+
         native (source) {
             this->data = sCast(GLet<g_T>*, lang::memory::array(sizeof(GLet<g_T>), v_length));
 
             if (this->data == nullptr) {
-                this->f_length = 0;
+                this->f__length = 0;
             } else {
-                this->f_length = v_length;
-                for (long i = 0; i < v_length; i++) {
-                    this->data[i] = lang::value<GLet<g_T>>::def();
+                this->f__length = v_length;
+                for (lang_int i = 0; i < v_length; i++) {
+                    new (&this->data[i]) GLet<g_T>(lang::value<GLet<g_T>>::def());
                 }
             }
+        }
+    }
+
+    public ~this() {
+        native (source) {
+            for (lang_int i = 0; i < this->f__length; i++) {
+                (&this->data[i])->~GLet<g_T>();
+            }
+            lang::memory::dearray(this->data);
         }
     }
 }

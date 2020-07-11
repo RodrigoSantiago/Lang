@@ -40,100 +40,142 @@ public class Int : Object {
 public sync struct int : Int {
 
     private this() {
+        // internal
     }
 
     byte operator cast(int value) {
+        // internal
     }
     short operator cast(int value) {
+        // internal
     }
     long operator auto(int value) {
+        // internal
     }
     float operator auto(int value) {
+        // internal
     }
     double operator auto(int value) {
+        // internal
     }
 
     bool operator ==(int value, double other) {
+        // internal
     }
     bool operator !=(int value, double other) {
+        // internal
     }
     bool operator >(int value, double other) {
+        // internal
     }
     bool operator <(int value, double other) {
+        // internal
     }
     bool operator >=(int value, double other) {
+        // internal
     }
     bool operator <=(int value, double other) {
+        // internal
     }
 
     int operator +(int value, int other) {
+        // internal
     }
     int operator -(int value, int other) {
+        // internal
     }
     int operator *(int value, int other) {
+        // internal
     }
     int operator /(int value, int other) {
+        // internal
     }
 
     long operator +(int value, long other) {
+        // internal
     }
     long operator -(int value, long other) {
+        // internal
     }
     long operator *(int value, long other) {
+        // internal
     }
     long operator /(int value, long other) {
+        // internal
     }
 
     float operator +(int value, float other) {
+        // internal
     }
     float operator -(int value, float other) {
+        // internal
     }
     float operator *(int value, float other) {
+        // internal
     }
     float operator /(int value, float other) {
+        // internal
     }
 
     double operator +(int value, double other) {
+        // internal
     }
     double operator -(int value, double other) {
+        // internal
     }
     double operator *(int value, double other) {
+        // internal
     }
     double operator /(int value, double other) {
+        // internal
     }
 
     int operator %(int value, long other) {
+        // internal
     }
 
     int operator ++(int value) {
+        // internal
     }
     int operator --(int value) {
+        // internal
     }
 
     int operator +(int value) {
+        // internal
     }
     int operator -(int value) {
+        // internal
     }
 
     int operator ~(int value) {
+        // internal
     }
 
     int operator |(int value, int other) {
+        // internal
     }
     int operator &(int value, int other) {
+        // internal
     }
     int operator ^(int value, int other) {
+        // internal
     }
 
     long operator |(int value, long other) {
+        // internal
     }
     long operator &(int value, long other) {
+        // internal
     }
     long operator ^(int value, long other) {
+        // internal
     }
 
     int operator >>(int value, long other) {
+        // internal
     }
     int operator <<(int value, long other) {
+        // internal
     }
 }

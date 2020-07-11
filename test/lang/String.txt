@@ -23,7 +23,7 @@ public final class String {
 
 public sync struct string : String {
 
-    public int Length {
+    public int length {
         get {
             native (source) {
                 return data == nullptr ? 0 : data->length;
@@ -134,7 +134,7 @@ public sync struct string : String {
     }
 
     public this(let byte[] chars) {
-        this(chars, 0, chars.Length);
+        this(chars, 0, chars.length);
     }
 
     public this(let byte[] chars, int start, int length) {
@@ -143,8 +143,8 @@ public sync struct string : String {
 
     public this(let byte[] chars, int start, int length, int charSet) {
         if (start < 0) start = 0;
-        if (start > chars.Length) start = chars.Length;
-        if (length > chars.Length) length = chars.Length;
+        if (start > chars.length) start = chars.length;
+        if (length > chars.length) length = chars.length;
 
         native (source) {
             this->data = lang::text::str(reinterpret_cast<char*>(&v_chars->data[v_start]), v_length, v_charSet);
@@ -152,13 +152,13 @@ public sync struct string : String {
     }
 
     public this(let short[] chars) {
-        this(chars, 0, chars.Length);
+        this(chars, 0, chars.length);
     }
 
     public this(let short[] chars, int start, int length) {
         if (start < 0) start = 0;
-        if (start > chars.Length) start = chars.Length;
-        if (length > chars.Length) length = chars.Length;
+        if (start > chars.length) start = chars.length;
+        if (length > chars.length) length = chars.length;
 
         native (source) {
             this->data = lang::text::str(reinterpret_cast<char*>(&v_chars->data[v_start]), v_length, 16);
@@ -166,13 +166,13 @@ public sync struct string : String {
     }
 
     public this(let int[] chars) {
-        this(chars, 0, chars.Length);
+        this(chars, 0, chars.length);
     }
 
     public this(let int[] chars, int start, int length) {
         if (start < 0) start = 0;
-        if (start > chars.Length) start = chars.Length;
-        if (length > chars.Length) length = chars.Length;
+        if (start > chars.length) start = chars.length;
+        if (length > chars.length) length = chars.length;
 
         native (source) {
             this->data = lang::text::str(reinterpret_cast<char*>(&v_chars->data[v_start]), v_length, 32);
@@ -189,7 +189,7 @@ public sync struct string : String {
 
         var it = iterateUTF32();
         var itOther = other.iterateUTF32();
-        var l = Locale.GlobalLocale;
+        var l = Locale.global;
 
         while (it.move() && itOther.move()) {
             if (l.toUpperCase(it.current) != l.toUpperCase(itOther.current)) {
@@ -207,7 +207,7 @@ public sync struct string : String {
     }
 
     public string toUpperCase() {
-        return toUpperCase(Locale.GlobalLocale);
+        return toUpperCase(Locale.global);
     }
 
     public string toUpperCase(locale customLocale) {
@@ -219,7 +219,7 @@ public sync struct string : String {
     }
 
     public string toLowerCase() {
-        return toLowerCase(Locale.GlobalLocale);
+        return toLowerCase(Locale.global);
     }
 
     public string toLowerCase(locale customLocale) {
@@ -273,35 +273,41 @@ public sync struct string : String {
     }
 
     bool operator >(string value, string other) {
+        return false;
     }
 
     bool operator <(string value, string other) {
+        return false;
     }
 
     bool operator >=(string value, string other) {
+        return false;
     }
 
     bool operator <=(string value, string other) {
+        return false;
     }
 
     string operator +(string value, string other) {
-        return "empty";
+        native (return) {
+            return lang::text::add(v_value.data, v_other.data);
+        }
     }
 
     string operator +(string value, let Object other) {
-        return "empty";
+        return value + (other == null ? "null" : other.toString());
     }
 
     string operator +(let Object value, string other) {
-        return "empty";
+    return (value == null ? "null" : value.toString()) + other;
     }
 
     string operator +(string value, let String other) {
-        return "empty";
+        return value + (other == null ? "null" : other.toString());
     }
 
     string operator +(let String value, string other) {
-        return "empty";d
+        return (value == null ? "null" : value.toString()) + other;
     }
 }
 
@@ -316,7 +322,7 @@ final class StringUTF8Iterator : Iterator<byte> {
 
     public byte current {
         get {
-            if (index >= 0 && index < content.Length) {
+            if (index >= 0 && index < content.length) {
                 native (source) {
                     return f_content.data->chars[ f_index ];
                 }
@@ -327,7 +333,7 @@ final class StringUTF8Iterator : Iterator<byte> {
     }
 
     public bool move() {
-        return ++ index < content.Length;
+        return ++ index < content.length;
     }
 
     public bool remove() {

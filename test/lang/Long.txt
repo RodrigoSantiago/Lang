@@ -40,84 +40,119 @@ public class Long {
 public sync struct long : Long {
 
     private this() {
+        // internal
     }
 
     byte operator cast(long value) {
+        // internal
     }
     short operator cast(long value) {
+        // internal
     }
     int operator cast(long value) {
+        // internal
     }
     float operator auto(long value) {
+        // internal
     }
     double operator auto(long value) {
+        // internal
     }
 
     bool operator ==(long value, double other) {
+        // internal
     }
     bool operator !=(long value, double other) {
+        // internal
     }
     bool operator >(long value, double other) {
+        // internal
     }
     bool operator <(long value, double other) {
+        // internal
     }
     bool operator >=(long value, double other) {
+        // internal
     }
     bool operator <=(long value, double other) {
+        // internal
     }
 
     long operator +(long value, long other) {
+        // internal
     }
     long operator -(long value, long other) {
+        // internal
     }
     long operator *(long value, long other) {
+        // internal
     }
     long operator /(long value, long other) {
+        // internal
     }
 
     float operator +(long value, float other) {
+        // internal
     }
     float operator -(long value, float other) {
+        // internal
     }
     float operator *(long value, float other) {
+        // internal
     }
     float operator /(long value, float other) {
+        // internal
     }
 
     double operator +(long value, double other) {
+        // internal
     }
     double operator -(long value, double other) {
+        // internal
     }
     double operator *(long value, double other) {
+        // internal
     }
     double operator /(long value, double other) {
+        // internal
     }
 
     long operator %(long value, long other) {
+        // internal
     }
 
     long operator ++(long value) {
+        // internal
     }
     long operator --(long value) {
+        // internal
     }
 
     long operator +(long value) {
+        // internal
     }
     long operator -(long value) {
+        // internal
     }
 
     long operator ~(long value) {
+        // internal
     }
 
     long operator |(long value, long other) {
+        // internal
     }
     long operator &(long value, long other) {
+        // internal
     }
     long operator ^(long value, long other) {
+        // internal
     }
 
     long operator >>(long value, long other) {
+        // internal
     }
     long operator <<(long value, long other) {
+        // internal
     }
 }

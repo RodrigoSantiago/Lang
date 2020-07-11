@@ -1,7 +1,7 @@
 namespace lang;
 
 public interface List<T> {
-    public int Length { get; }
+    public int length { get; };
 
     public T this[int i] { get; }
 }

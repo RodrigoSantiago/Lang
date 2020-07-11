@@ -3,21 +3,21 @@ using lang::Locale.GlobalLocale;
 
 void main () {
     Test<int> obj = new Test<int>();
-    obj.obj = new Int(10);
+    obj.obj = new Int(-2147483648);
     obj.integer = (Int) obj.obj;
     function<void> func = () -> {
-        Console.WriteLine(obj);
+        Console.writeLine(obj);
     };
-    func.run();
+    func.call();
     native (source) {
         v_obj.transferOut();
         v_obj.clear();
         v_obj.transferIn();
     }
-    func.run();
-    Console.WriteLine(obj.integer);
+    func.call();
+    Console.writeLine(obj.integer);
     obj.obj = null;
-    Console.WriteLine(obj.integer);
+    Console.writeLine(obj.integer);
 }
 
 public class Test<T> {
@@ -25,6 +25,8 @@ public class Test<T> {
     let Int integer;
     T strong;
     let T weak;
+
+    int property { get; } = 100;
 
     this() {
         integer = (Int) obj;

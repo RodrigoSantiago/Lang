@@ -36,11 +36,11 @@ public class Float {
     }
 
     public static string toString(float value) {
-        return "";
+        return "0.0";
     }
 
     public static string toHexString(float value) {
-        return "";
+        return "0x0.0";
     }
 
     public string toString() {
@@ -60,57 +60,81 @@ public class Float {
 public sync struct float : Float {
 
     private this() {
+        // internal
     }
 
     byte operator cast(float value) {
+        // internal
     }
     short operator cast(float value) {
+        // internal
     }
     int operator cast(float value) {
+        // internal
     }
     long operator cast(float value) {
+        // internal
     }
     double operator auto(float value) {
+        // internal
     }
 
     bool operator ==(float value, double other) {
+        // internal
     }
     bool operator !=(float value, double other) {
+        // internal
     }
     bool operator >(float value, double other) {
+        // internal
     }
     bool operator <(float value, double other) {
+        // internal
     }
     bool operator >=(float value, double other) {
+        // internal
     }
     bool operator <=(float value, double other) {
+        // internal
     }
 
     float operator +(float value, float other) {
+        // internal
     }
     float operator -(float value, float other) {
+        // internal
     }
     float operator *(float value, float other) {
+        // internal
     }
     float operator /(float value, float other) {
+        // internal
     }
 
     double operator +(float value, double other) {
+        // internal
     }
     double operator -(float value, double other) {
+        // internal
     }
     double operator *(float value, double other) {
+        // internal
     }
     double operator /(float value, double other) {
+        // internal
     }
 
     float operator ++(float value) {
+        // internal
     }
     float operator --(float value) {
+        // internal
     }
 
     float operator +(float value) {
+        // internal
     }
     float operator -(float value) {
+        // internal
     }
 }

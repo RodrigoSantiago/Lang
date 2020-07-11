@@ -28,11 +28,11 @@ public class Double {
     }
 
     public static string toString(double value) {
-        return "";
+        return "0.0";
     }
 
     public static string toHexString(double value) {
-        return "";
+        return "0x0.0";
     }
 
     public string toString() {
@@ -52,48 +52,68 @@ public class Double {
 public sync struct double : Double {
 
     private this() {
+        // internal
     }
 
     byte operator cast(double value) {
+        // internal
     }
     short operator cast(double value) {
+        // internal
     }
     int operator cast(double value) {
+        // internal
     }
     long operator cast(double value) {
+        // internal
     }
     float operator cast(double value) {
+        // internal
     }
 
     bool operator ==(double value, double other) {
+        // internal
     }
     bool operator !=(double value, double other) {
+        // internal
     }
     bool operator >(double value, double other) {
+        // internal
     }
     bool operator <(double value, double other) {
+        // internal
     }
     bool operator >=(double value, double other) {
+        // internal
     }
     bool operator <=(double value, double other) {
+        // internal
     }
 
     double operator +(double value, double other) {
+        // internal
     }
     double operator -(double value, double other) {
+        // internal
     }
     double operator *(double value, double other) {
+        // internal
     }
     double operator /(double value, double other) {
+        // internal
     }
 
     double operator ++(double value) {
+        // internal
     }
     double operator --(double value) {
+        // internal
     }
 
     double operator +(double value) {
+        // internal
     }
     double operator -(double value) {
+        // internal
     }
 }

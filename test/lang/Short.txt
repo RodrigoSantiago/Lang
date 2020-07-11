@@ -32,107 +32,152 @@ public class Short {
 public sync struct short : Short {
 
     private this() {
+        // internal
     }
 
     byte operator cast(short value) {
+        // internal
     }
     int operator auto(short value) {
+        // internal
     }
     long operator auto(short value) {
+        // internal
     }
     float operator auto(short value) {
+        // internal
     }
     double operator auto(short value) {
+        // internal
     }
 
     bool operator ==(short value, double other) {
+        // internal
     }
     bool operator !=(short value, double other) {
+        // internal
     }
     bool operator >(short value, double other) {
+        // internal
     }
     bool operator <(short value, double other) {
+        // internal
     }
     bool operator >=(short value, double other) {
+        // internal
     }
     bool operator <=(short value, double other) {
+        // internal
     }
 
     int operator +(short value, int other) {
+        // internal
     }
     int operator -(short value, int other) {
+        // internal
     }
     int operator *(short value, int other) {
+        // internal
     }
     int operator /(short value, int other) {
+        // internal
     }
 
     long operator +(short value, long other) {
+        // internal
     }
     long operator -(short value, long other) {
+        // internal
     }
     long operator *(short value, long other) {
+        // internal
     }
     long operator /(short value, long other) {
+        // internal
     }
 
     float operator +(short value, float other) {
+        // internal
     }
     float operator -(short value, float other) {
+        // internal
     }
     float operator *(short value, float other) {
+        // internal
     }
     float operator /(short value, float other) {
+        // internal
     }
 
     double operator +(short value, double other) {
+        // internal
     }
     double operator -(short value, double other) {
+        // internal
     }
     double operator *(short value, double other) {
+        // internal
     }
     double operator /(short value, double other) {
+        // internal
     }
 
     short operator %(short value, long other) {
+        // internal
     }
 
     short operator ++(short value) {
+        // internal
     }
     short operator --(short value) {
+        // internal
     }
 
     short operator +(short value) {
+        // internal
     }
     short operator -(short value) {
+        // internal
     }
 
     short operator ~(short value) {
+        // internal
     }
 
     short operator |(short value, short other) {
+        // internal
     }
     short operator &(short value, short other) {
+        // internal
     }
     short operator ^(short value, short other) {
+        // internal
     }
 
     int operator |(short value, int other) {
+        // internal
     }
     int operator &(short value, int other) {
+        // internal
     }
     int operator ^(short value, int other) {
+        // internal
     }
 
     long operator |(short value, long other) {
+        // internal
     }
     long operator &(short value, long other) {
+        // internal
     }
     long operator ^(short value, long other) {
+        // internal
     }
 
     short operator >>(short value, long other) {
+        // internal
     }
     short operator <<(short value, long other) {
+        // internal
     }
 }

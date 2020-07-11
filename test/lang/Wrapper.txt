@@ -16,6 +16,7 @@ public class Wrapper<T> {
     }
 
     public bool equals(let Object other) {
-        return this == other;
+        let obj = (Wrapper<T>) other;
+        return obj != null && obj.value == value;
     }
 }

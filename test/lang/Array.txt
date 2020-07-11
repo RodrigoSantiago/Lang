@@ -2,22 +2,22 @@ namespace lang;
 
 public class Array<T> : List<T> {
 
-    private final int length;
-    public int Length {
+    private final int _length;
+    public int length {
         get {
-            return length;
+            return _length;
         }
     }
 
     public T this[int i] {
         get, own {
             native (return) {
-                return data[ ARRAY_ACESS(v_i, f_length) ];
+                return data[ ARRAY_ACESS(v_i, f__length) ];
             }
         }
         set {
             native (source) {
-                data[ ARRAY_ACESS(v_i, f_length) ] = v_value;
+                data[ ARRAY_ACESS(v_i, f__length) ] = v_value;
             }
         }
     }
@@ -34,11 +34,11 @@ public class Array<T> : List<T> {
             this->data = sCast(GPtr<g_T>*, lang::memory::array(sizeof(GPtr<g_T>), size));
 
             if (this->data == nullptr) {
-                this->f_length = 0;
+                this->f__length = 0;
             } else {
-                this->f_length = size;
+                this->f__length = size;
                 if (init) {
-                    for (long i = 0; i < size; i++) {
+                    for (lang_int i = 0; i < size; i++) {
                         new (&this->data[i]) GPtr<g_T>(lang::value<GPtr<g_T>>::def());
                     }
                 }
@@ -67,7 +67,7 @@ public class Array<T> : List<T> {
                 lang_int len = count[pos];
                 arr->create(len, false);
 
-                for (lang_int i = 0; i < len; ++i) {
+                for (lang_int i = 0; i < len; i++) {
                     new (&arr->data[i]) GPtr<lang_Array<A>>(array<lang_Array<A>>::fill(new lang_Array<A>(), count, pos + 1));
                 }
 
@@ -77,7 +77,7 @@ public class Array<T> : List<T> {
     }
 
     public this() {
-        this.length = 0;
+        this._length = 0;
 
         native (source) {
             this->data = nullptr;
@@ -85,14 +85,16 @@ public class Array<T> : List<T> {
     }
 
     public this(int length) {
+        if (length < 0) length = 0;
+
         native (source) {
             this->data = sCast(GPtr<g_T>*, lang::memory::array(sizeof(GPtr<g_T>), v_length));
 
             if (this->data == nullptr) {
-                this->f_length = 0;
+                this->f__length = 0;
             } else {
-                this->f_length = v_length;
-                for (long i = 0; i < v_length; i++) {
+                this->f__length = v_length;
+                for (lang_int i = 0; i < v_length; i++) {
                     new (&this->data[i]) GPtr<g_T>(lang::value<GPtr<g_T>>::def());
                 }
             }
@@ -101,12 +103,10 @@ public class Array<T> : List<T> {
 
     public ~this() {
         native (source) {
-            for (long i = 0; i < this->f_length; i++) {
+            for (lang_int i = 0; i < this->f__length; i++) {
                 (&this->data[i])->~GPtr<g_T>();
             }
             lang::memory::dearray(this->data);
-            this->f_length = 0;
-            this->data = nullptr;
         }
     }
 }

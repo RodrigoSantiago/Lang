@@ -32,114 +32,162 @@ public class Byte {
 public sync struct byte : Byte {
 
     private this() {
+        // internal
     }
 
     short operator auto(byte value) {
+        // internal
     }
     int operator auto(byte value) {
+        // internal
     }
     long operator auto(byte value) {
+        // internal
     }
     float operator auto(byte value) {
+        // internal
     }
     double operator auto(byte value) {
+        // internal
     }
 
     bool operator ==(byte value, double other) {
+        // internal
     }
     bool operator !=(byte value, double other) {
+        // internal
     }
     bool operator >(byte value, double other) {
+        // internal
     }
     bool operator <(byte value, double other) {
+        // internal
     }
     bool operator >=(byte value, double other) {
+        // internal
     }
     bool operator <=(byte value, double other) {
+        // internal
     }
 
     int operator +(byte value, int other) {
+        // internal
     }
     int operator -(byte value, int other) {
+        // internal
     }
     int operator *(byte value, int other) {
+        // internal
     }
     int operator /(byte value, int other) {
+        // internal
     }
 
     long operator +(byte value, long other) {
+        // internal
     }
     long operator -(byte value, long other) {
+        // internal
     }
     long operator *(byte value, long other) {
+        // internal
     }
     long operator /(byte value, long other) {
+        // internal
     }
 
     float operator +(byte value, float other) {
+        // internal
     }
     float operator -(byte value, float other) {
+        // internal
     }
     float operator *(byte value, float other) {
+        // internal
     }
     float operator /(byte value, float other) {
+        // internal
     }
 
     double operator +(byte value, double other) {
+        // internal
     }
     double operator -(byte value, double other) {
+        // internal
     }
     double operator *(byte value, double other) {
+        // internal
     }
     double operator /(byte value, double other) {
+        // internal
     }
 
     byte operator %(byte value, long other) {
+        // internal
     }
 
     byte operator ++(byte value) {
+        // internal
     }
     byte operator --(byte value) {
+        // internal
     }
 
     byte operator +(byte value) {
+        // internal
     }
     int operator -(byte value) {
+        // internal
     }
 
     byte operator ~(byte value) {
+        // internal
     }
 
     byte operator |(byte value, byte other) {
+        // internal
     }
     byte operator &(byte value, byte other) {
+        // internal
     }
     byte operator ^(byte value, byte other) {
+        // internal
     }
 
     short operator |(byte value, short other) {
+        // internal
     }
     short operator &(byte value, short other) {
+        // internal
     }
     short operator ^(byte value, short other) {
+        // internal
     }
 
     int operator |(byte value, int other) {
+        // internal
     }
     int operator &(byte value, int other) {
+        // internal
     }
     int operator ^(byte value, int other) {
+        // internal
     }
 
     long operator |(byte value, long other) {
+        // internal
     }
     long operator &(byte value, long other) {
+        // internal
     }
     long operator ^(byte value, long other) {
+        // internal
     }
 
     byte operator >>(byte value, long other) {
+        // internal
     }
     byte operator <<(byte value, long other) {
+        // internal
     }
 }

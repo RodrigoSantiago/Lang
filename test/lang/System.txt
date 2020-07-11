@@ -18,8 +18,8 @@ public class System {
         if (srcStart < 0) srcStart = 0;
         if (dstStart < 0) dstStart = 0;
 
-        if (srcStart + length > src.Length) length = src.Length - srcStart;
-        if (dstStart + length > dst.Length) length = dst.Length - dstStart;
+        if (srcStart + length > src.length) length = src.length - srcStart;
+        if (dstStart + length > dst.length) length = dst.length - dstStart;
 
         native (source) {
             g_T* src = &v_src->data[v_srcStart];
@@ -30,7 +30,7 @@ public class System {
         }
     }
 
-    public static <T : Object> string toString(T value) {
-        return value == null ? "null" : value.toString();
+    public static <T> string toString(T value) {
+        return (string) value;
     }
 }

@@ -115,7 +115,7 @@ public class Context {
         return fieldView;
     }
 
-    private ArrayList<MethodView> findFunctionRun(Token nameToken, ArrayList<Expression> arguments) {
+    private ArrayList<MethodView> findFunctionCall(Token nameToken, ArrayList<Expression> arguments) {
         Pointer[] ptrs = pointer.pointers;
         int len = ptrs.length - 1;
         if (len > arguments.size()) {
@@ -129,7 +129,7 @@ public class Context {
         }
 
         ArrayList<MethodView> found = new ArrayList<>();
-        found.add(new MethodView(stack.cFile.langFunction().getMethod(new Token("run")).get(0).method, pointer));
+        found.add(new MethodView(stack.cFile.langFunction().getMethod(new Token("call")).get(0).method, pointer));
         return found;
     }
 
@@ -138,8 +138,8 @@ public class Context {
             arg.load(new Context(this));
         }
 
-        if (type != null && type.isFunction() && !isStatic && nameToken.equals("run")) {
-            return findFunctionRun(nameToken, arguments);
+        if (type != null && type.isFunction() && !isStatic && nameToken.equals("call")) {
+            return findFunctionCall(nameToken, arguments);
         }
         if (type != null) {
             ArrayList<MethodView> found = null;

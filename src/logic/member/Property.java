@@ -215,7 +215,7 @@ public class Property extends Member {
 
     @Override
     public boolean load() {
-        if ((!hasSet || isSetAbstract) && initToken != null) {
+        if ((!hasSet || isSetAbstract) && !isAuto && initToken != null) {
             cFile.erro(initToken, "Init token not allowed without a implemented SET", this);
         }
 
@@ -317,7 +317,8 @@ public class Property extends Member {
 
             if (isStatic()) {
                 cBuilder.toSource(false);
-                cBuilder.add("thread_local ").add(typePtr).add(" ").nameField(nameToken).add(" = ");
+                cBuilder.add("thread_local ").add(typePtr).add(" ")
+                        .path(type.self, true).add("::").nameField(nameToken).add(" = ");
                 if (typePtr.typeSource != null) {
                     cBuilder.add("lang::value<").add(typePtr).add(">::def()");
                 } else if (typePtr.type != null && (typePtr.type.isPointer() || typePtr.type.isFunction())) {
@@ -327,7 +328,8 @@ public class Property extends Member {
                 } else {
                     cBuilder.add("0");
                 }
-                cBuilder.add(";").ln();
+                cBuilder.add(";").ln()
+                        .ln();
             }
         }
 
@@ -438,7 +440,11 @@ public class Property extends Member {
 
     public void buildInit(CppBuilder cBuilder) {
         if (stackInit != null) {
-            cBuilder.idt(1).nameSet(nameToken).add("(").add(stackInit, 1).add(");").ln();
+            if (isAuto) {
+                cBuilder.idt(1).nameField(nameToken).add(" = ").add(stackInit, 1).add(";").ln();
+            } else {
+                cBuilder.idt(1).nameSet(nameToken).add("(").add(stackInit, 1).add(");").ln();
+            }
         }
     }
 

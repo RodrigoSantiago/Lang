@@ -197,6 +197,9 @@ public class MethodCall extends Call {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, boolean next) {
+        cBuilder.dependence(methodView.getTypePtr());
+        cBuilder.dependence(methodView.getParams());
+
         if (clearAcess) {
             if (methodView.isStatic()) {
                 cBuilder.path(methodView.getType().self, true).add("::");

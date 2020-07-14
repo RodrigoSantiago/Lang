@@ -122,8 +122,8 @@ public class Variable extends Member {
             }
             cBuilder.add(typePtr).add(" ").nameField(name).add(";").ln();
 
-            if (isStatic() && !isLiteral(i)) {
-                cBuilder.idt(1).add("static ").add(typePtr).add("& s_").add(name).add("();").ln();
+            if (callInit(i)) {
+                cBuilder.idt(1).add("static ").add(typePtr).add("& ").nameStaticField(name).add("();").ln();
             }
         }
 
@@ -131,8 +131,8 @@ public class Variable extends Member {
             for (int i = 0; i < nameTokens.size(); i++) {
                 Token name = nameTokens.get(i);
                 cBuilder.toSource();
-                cBuilder.add(isStatic() && !isSync(), "thread_local ").add(typePtr)
-                        .add(" ").path(type.self, isStatic()).add("::").nameField(name).add(" = ");
+                cBuilder.add(!isSync(), "thread_local ").add(typePtr)
+                        .add(" ").path(type.self, true).add("::").nameField(name).add(" = ");
                 if (isLiteral(i)) {
                     initStacks.get(i).build(cBuilder, 1);
                     cBuilder.add(";").ln();
@@ -147,10 +147,10 @@ public class Variable extends Member {
                 }
                 cBuilder.ln();
 
-                if (!isLiteral(i)) {
+                if (callInit(i)) {
                     cBuilder.add(typePtr).add("& ")
-                            .path(type.self, isStatic()).add("::s_").add(name).add("() ").in(1)
-                            .idt(1).add(isSync() ? "syncInit();" : "init();").ln()
+                            .path(type.self, true).add("::").nameStaticField(name).add("() ").in(1)
+                            .idt(1).path(type.self, true).add(isSync() ? "::syncInit();" : "::init();").ln()
                             .idt(1).add("return ").nameField(name).add(";").ln()
                             .out().ln()
                             .ln();
@@ -250,5 +250,10 @@ public class Variable extends Member {
 
     public boolean isInitialized(int pos) {
         return initTokens.get(pos) != null;
+    }
+
+    public boolean callInit(int pos) {
+        return (!isSync() && isStatic() && !isLiteral(pos) &&  type.hasStaticInit()) ||
+                (isSync() && !isLiteral(pos) && type.hasSyncInit());
     }
 }

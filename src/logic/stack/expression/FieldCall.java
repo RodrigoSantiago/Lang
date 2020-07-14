@@ -270,10 +270,10 @@ public class FieldCall extends Call {
                     cBuilder.nameField(token);
                 }
             } else if (fieldView.isVariable()) {
-                if (!fieldView.isStatic() || fieldView.srcVar.isLiteral(fieldView.srcID)) {
-                    cBuilder.nameField(token);
-                } else {
+                if (fieldView.srcVar.callInit(fieldView.srcID)) {
                     cBuilder.nameStaticField(token).add("()");
+                } else {
+                    cBuilder.nameField(token);
                 }
             } else if (useGet) {
                 cBuilder.nameGet(token).add("()");
@@ -301,10 +301,10 @@ public class FieldCall extends Call {
                 }
             }
             if (fieldView.isVariable()) {
-                if (!fieldView.isStatic() || fieldView.srcVar.isLiteral(fieldView.srcID)) {
-                    cBuilder.nameField(token);
-                } else {
+                if (fieldView.srcVar.callInit(fieldView.srcID)) {
                     cBuilder.nameStaticField(token).add("()");
+                } else {
+                    cBuilder.nameField(token);
                 }
             } else if (useGet) {
                 cBuilder.nameSet(token).add("(");

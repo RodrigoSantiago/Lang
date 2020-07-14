@@ -37,7 +37,7 @@ public class LambdaResolve {
         }
         cBuilder.add(" {").ln();
         cBuilder.idt(idt + 1).add("}").ln();
-        cBuilder.idt(idt + 1).add(lambda.pointers[0]).add(" ").add("run").add("(");
+        cBuilder.idt(idt + 1).add(lambda.pointers[0]).add(" ").add("call").add("(");
         for (int i = 0; i < lambda.pointers.length - 1; i++) {
             cBuilder.add(i > 1, ", ").add(lambda.pointers[i + 1]).add(" ").nameParam(call.nameTokens.get(i));
         }

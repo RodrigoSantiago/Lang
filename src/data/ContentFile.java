@@ -229,7 +229,7 @@ public class ContentFile {
         }
 
         namespace = library.getNamespace(name);
-        namespace.mark(this);
+        namespace.mark(this); // todo - invalidate namespace only if has class name changes
     }
 
     public Type mark(Type type) {

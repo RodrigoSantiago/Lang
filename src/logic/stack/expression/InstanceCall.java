@@ -358,6 +358,10 @@ public class InstanceCall extends Call {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, boolean next) {
+        if (constructorView != null && constructorView.getParams() != null) {
+            cBuilder.dependence(constructorView.getParams());
+        }
+
         if (typePtr.isPointer() || isPathLine || isNullRequest) {
             cBuilder.add(typePtr).add("(");
         }

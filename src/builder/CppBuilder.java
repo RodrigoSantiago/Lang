@@ -140,7 +140,7 @@ public class CppBuilder {
     }
 
     public void dependence(Pointer pointer) {
-        if (!tDependences.contains(pointer.type)) {
+        if (pointer.type != null && !tDependences.contains(pointer.type)) {
             if (!pointer.type.isLangBase()) {
                 if (tDependences != hDependences || !dDependences.contains(pointer.type)) {
                     tDependences.add(pointer.type);
@@ -148,6 +148,13 @@ public class CppBuilder {
             }
             if (pointer.type.isValue()) {
                 dependence(pointer.type.parent);
+            }
+        }
+    }
+    public void dependence(ParamView params) {
+        if (params != null) {
+            for (int i = 0; i < params.getArgsCount(); i++) {
+                dependence(params.getArgTypePtr(i));
             }
         }
     }

@@ -203,6 +203,9 @@ public class IndexerCall extends Call {
 
     @Override
     public void build(CppBuilder cBuilder, int idt, boolean next) {
+        cBuilder.dependence(indexerView.getTypePtr());
+        cBuilder.dependence(indexerView.getParams());
+
         if (useGet) {
             cBuilder.nameGet().add("(").add(arguments, idt).add(")");
         } else if (useOwn) {

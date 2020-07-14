@@ -117,7 +117,7 @@ public class Pointer {
     }
 
     public int isDerivedFrom(Pointer other) {
-        // null|void|struct|enums [nunca podem entrar neste metodo]
+        // null|void
         if (other == nullPointer || other == voidPointer) throw new RuntimeException("Invalid Argument");
 
         if (other.isOpen()) return 1;
